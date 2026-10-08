@@ -1,1391 +1,619 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>KALE DOKUMA TAKİP</title>
-  <style>
-    :root {
-      --bg: #0b1120;
-      --card-bg: #151f32;
-      --card-border: #233554;
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
-      --status-running: #22c55e;
-      --status-stopped: #ef4444;
-      --status-maint: #eab308;
-      --status-yarn: #f97316;
-      --w140: #0284c7;
-      --w160: #7c3aed;
-      --w200: #d97706;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    
-    html, body {
-      width: 100%;
-      overflow-x: hidden;
-      background-color: var(--bg);
-      color: var(--text-main);
-      padding-bottom: 40px;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    header {
-      background: #0f172a;
-      border-bottom: 1px solid var(--card-border);
-      padding: 10px 8px;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 100%;
-    }
-
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .top-bar h1 {
-      font-size: 1rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #f8fafc;
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .pdf-btn {
-      background: #0284c7;
-      color: #fff;
-      border: 1px solid #38bdf8;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 0.72rem;
-      font-weight: bold;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .sync-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.72rem;
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--status-running);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      padding: 3px 8px;
-      border-radius: 999px;
-    }
-
-    .pulse {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--status-running);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-    /* شريط الأزرار بعد التقسيم لـ 5 أزرار */
-    .branch-bar {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
-    }
-
-    .branch-btn {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      padding: 6px 1px;
-      border-radius: 6px;
-      font-size: 0.68rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .branch-btn.active {
-      background: #0284c7;
-      color: #fff;
-      border-color: #38bdf8;
-      font-weight: 700;
-    }
-
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-    }
-
-    .stat-pill {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 6px;
-      padding: 5px 2px;
-      text-align: center;
-    }
-    .stat-pill .num { font-size: 0.95rem; font-weight: bold; }
-    .stat-pill .lbl { font-size: 0.6rem; color: var(--text-muted); }
-
-    .controls-row {
-      display: flex;
-      gap: 4px;
-      overflow-x: auto;
-    }
-
-    .search-input {
-      flex: 1;
-      min-width: 100px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: #fff;
-      padding: 7px 8px;
-      border-radius: 6px;
-      font-size: 0.78rem;
-      outline: none;
-    }
-
-    .filter-btn {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      padding: 5px 6px;
-      border-radius: 6px;
-      font-size: 0.68rem;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .filter-btn.active {
-      background: var(--accent);
-      color: #0b1120;
-      font-weight: bold;
-      border-color: var(--accent);
-    }
-
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      padding: 8px;
-      width: 100%;
-      max-width: 100vw;
-    }
-
-    @media (min-width: 1024px) {
-      .grid-container { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 12px; max-width: 1400px; margin: 0 auto; }
-    }
-
-    .loom-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-      position: relative;
-      min-width: 0;
-      overflow: hidden;
-      transition: transform 0.15s, border-color 0.15s;
-    }
-
-    .loom-card:active { transform: scale(0.97); }
-
-    .card-color-stripe {
-      width: 100%;
-      height: 8px;
-      flex-shrink: 0;
-    }
-
-    .card-body {
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .loom-title {
-      font-weight: 800;
-      font-size: 1.05rem;
-      color: #38bdf8;
-      flex-shrink: 0;
-    }
-
-    .head-badge {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-radius: 5px;
-      padding: 3px 6px;
-      overflow: hidden;
-      min-width: 0;
-    }
-
-    .head-badge-text {
-      font-size: 0.88rem;
-      font-weight: 800;
-      color: #38bdf8;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: center;
-      width: 100%;
-    }
-
-    .width-tag {
-      font-size: 0.65rem;
-      font-weight: bold;
-      padding: 2px 5px;
-      border-radius: 4px;
-      color: #fff;
-      flex-shrink: 0;
-    }
-    .w-140 { background: var(--w140); }
-    .w-160 { background: var(--w160); }
-    .w-200 { background: var(--w200); }
-
-    .color-hierarchy-box {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 7px;
-      padding: 5px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 0;
-    }
-
-    .main-color-bar {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      background: rgba(255, 255, 255, 0.04);
-      padding: 4px 6px;
-      border-radius: 5px;
-      min-width: 0;
-    }
-
-    .main-color-dot {
-      width: 18px;
-      height: 18px;
-      min-width: 18px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255, 255, 255, 0.7);
-      flex-shrink: 0;
-    }
-
-    .main-color-meta {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-width: 0;
-    }
-    .main-color-lbl { font-size: 0.55rem; color: #38bdf8; font-weight: 700; }
-    .main-color-name { font-size: 0.78rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-
-    .sub-colors-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .sub-color-item {
-      background: #0b1120;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 5px;
-      padding: 3px 2px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      min-width: 0;
-      overflow: hidden;
-    }
-
-    .sub-color-dot {
-      width: 12px;
-      height: 12px;
-      min-width: 12px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      flex-shrink: 0;
-    }
-
-    .sub-color-name {
-      font-size: 0.58rem;
-      font-weight: 600;
-      color: #cbd5e1;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      width: 100%;
-    }
-
-    .customers-section {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-      padding: 5px 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 0;
-    }
-
-    .cust-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.72rem;
-      min-width: 0;
-    }
-    .cust-lbl { color: var(--text-muted); font-size: 0.6rem; font-weight: 700; flex-shrink: 0; }
-    .cust-curr { font-weight: 800; color: #4ade80; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68%; text-align: left; }
-    .cust-next { font-weight: 700; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68%; text-align: left; }
-
-    .warp-section {
-      background: rgba(255, 255, 255, 0.03);
-      padding: 5px 6px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 0;
-    }
-
-    .warp-header-title {
-      font-size: 0.62rem;
-      font-weight: 800;
-      color: #38bdf8;
-    }
-
-    .warp-items-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px;
-      min-width: 0;
-    }
-
-    .warp-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      overflow: hidden;
-      min-width: 0;
-    }
-
-    .warp-num {
-      font-size: 0.7rem;
-      font-weight: 800;
-      color: #94a3b8;
-      flex-shrink: 0;
-    }
-
-    .warp-dot {
-      width: 11px;
-      height: 11px;
-      min-width: 11px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      flex-shrink: 0;
-    }
-
-    .warp-text {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-width: 0;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(5px);
-      z-index: 100;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-    }
-
-    .modal-overlay.open { display: flex; }
-
-    .modal-sheet {
-      background: #1e293b;
-      width: 100%;
-      max-width: 550px;
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
-      padding: 16px;
-      max-height: 90vh;
-      overflow-y: auto;
-      border: 1px solid #334155;
-    }
-
-    .modal-header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 12px;
-      margin-bottom: 12px;
-      border-bottom: 1px solid #334155;
-      gap: 8px;
-    }
-
-    .modal-btn-cancel {
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      padding: 7px 12px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .modal-btn-save {
-      background: #0284c7;
-      color: #fff;
-      border: 1px solid #38bdf8;
-      padding: 7px 16px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600; }
-    .form-input, .form-select { width: 100%; background: #0f172a; border: 1px solid #334155; padding: 9px 11px; border-radius: 6px; color: #fff; font-size: 0.85rem; outline: none; }
-
-    .status-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .status-opt-btn { padding: 9px; border-radius: 6px; border: 2px solid transparent; background: #0f172a; color: #fff; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
-    .status-opt-btn.sel-running { border-color: var(--status-running); background: rgba(34, 197, 94, 0.15); }
-    .status-opt-btn.sel-stopped { border-color: var(--status-stopped); background: rgba(239, 68, 68, 0.15); }
-    .status-opt-btn.sel-yarn { border-color: var(--status-yarn); background: rgba(249, 115, 22, 0.15); }
-    .status-opt-btn.sel-maint { border-color: var(--status-maint); background: rgba(234, 179, 8, 0.15); }
-
-    .color-select-item {
-      background: #0f172a;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid #334155;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-bottom: 6px;
-    }
-
-    .color-indicator {
-      width: 20px;
-      height: 20px;
-      min-width: 20px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.4);
-    }
-
-    /* PIN Modal */
-    .pin-box {
-      background: #1e293b;
-      width: 90%;
-      max-width: 320px;
-      border-radius: 14px;
-      padding: 20px;
-      text-align: center;
-      border: 1px solid #38bdf8;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-      margin: auto;
-    }
-
-    .pin-input {
-      width: 100%;
-      background: #0f172a;
-      border: 2px solid #334155;
-      padding: 12px;
-      border-radius: 8px;
-      color: #38bdf8;
-      font-size: 1.3rem;
-      text-align: center;
-      letter-spacing: 6px;
-      font-weight: bold;
-      outline: none;
-      margin: 14px 0;
-    }
-    .pin-input:focus { border-color: #38bdf8; }
-
-    #printSection { display: none; }
-
-    @media print {
-      body * { visibility: hidden; }
-      #printSection, #printSection * { visibility: visible; }
-      #printSection {
-        display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: #fff !important;
-        color: #000 !important;
-        padding: 15px;
-      }
-      .print-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-      }
-      .print-table th, .print-table td {
-        border: 1px solid #444;
-        padding: 6px 8px;
-        text-align: left;
-        font-size: 9.5pt;
-        vertical-align: middle;
-      }
-      .print-table th {
-        background-color: #f1f5f9;
-        font-weight: bold;
-      }
-      .print-dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 4px;
-        vertical-align: middle;
-        border: 1px solid #888;
-      }
-      .sub-colors-box {
-        font-size: 8.5pt;
-        line-height: 1.3;
-      }
-    }
-  </style>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KALE DOKUMA TAKİP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1014;--card:#171b22;--card2:#1e232c;--bd:#2a313c;--tx:#f3efe6;--mu:#9aa3b0;--ac:#f0c674;--ac-d:#1a1405;--run:#34d399;--stop:#f87171;--mnt:#c4a3ff;--yarn:#ff9a4d;--ff:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;font-family:var(--ff)}
+html,body{width:100%;overflow-x:hidden;background:var(--bg);color:var(--tx);padding-bottom:40px;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+header{background:rgba(13,16,20,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:12px 10px;position:sticky;top:0;z-index:50;display:flex;flex-direction:column;gap:10px}
+.top-bar,.top-actions{display:flex;align-items:center}
+.top-bar{justify-content:space-between;flex-wrap:wrap;gap:8px}
+.top-actions{gap:8px}
+h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
+.pdf-btn{background:var(--card2);color:var(--tx);border:1px solid var(--bd);padding:6px 11px;border-radius:9px;font-size:.78rem;font-weight:700;cursor:pointer}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:600;color:var(--run);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.28);padding:4px 9px;border-radius:999px}
+.sync.off{color:var(--yarn);background:rgba(255,154,77,.12);border-color:rgba(255,154,77,.3)}
+.pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:p 1.5s infinite}
+@keyframes p{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+.branch-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.branch-btn,.filter-btn{background:var(--card);border:1px solid var(--bd);color:var(--mu);border-radius:8px;cursor:pointer;white-space:nowrap}
+.branch-btn{padding:8px 1px;font-size:.72rem;font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.filter-btn{padding:7px 10px;font-size:.74rem;font-weight:600}
+.branch-btn.active,.filter-btn.active{background:var(--ac);color:var(--ac-d);border-color:var(--ac);font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.stat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:7px 2px;text-align:center}
+.stat b{display:block;font-size:1.2rem;font-weight:800;line-height:1.2}
+.stat span{font-size:.66rem;color:var(--mu);font-weight:600}
+.controls{display:flex;gap:5px;overflow-x:auto}
+.search{flex:1;min-width:120px;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:9px 11px;border-radius:8px;font-size:.84rem}
+.search::placeholder{color:var(--mu)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:10px;width:100%}
+@media(min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:14px;max-width:1400px;margin:0 auto}}
+.empty{grid-column:1/-1;text-align:center;color:var(--mu);padding:30px 0;font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.card:active{transform:scale(.97)}
+.stripe{height:10px;flex-shrink:0}
+.body{padding:9px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:5px;min-width:0}
+.id{font-weight:800;font-size:1.12rem;color:var(--ac)}
+.badge{flex:1;min-width:0;text-align:center;background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:4px 6px;font-size:.92rem;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w{font-size:.68rem;font-weight:800;padding:3px 6px;border-radius:5px;color:#fff}
+.w140{background:#2f7fb5}.w160{background:#7c5cc9}.w200{background:#c27a1e}
+.st{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.box{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.main{display:flex;align-items:center;gap:8px;background:var(--card2);padding:5px 7px;border-radius:6px;min-width:0}
+.dot{border-radius:50%;border:1px solid rgba(255,255,255,.45);flex-shrink:0}
+.main .dot{width:20px;height:20px;border-width:1.5px}
+.meta{display:flex;flex-direction:column;min-width:0}
+.meta small{font-size:.58rem;color:var(--mu);font-weight:700;letter-spacing:.02em}
+.meta span{font-size:.86rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.sub{background:var(--card2);border-radius:6px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.sub .dot{width:13px;height:13px}
+.sub span{font-size:.62rem;font-weight:700;color:#d6dae0;width:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cust,.warp{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:6px 7px;display:flex;flex-direction:column;gap:4px}
+.row{display:flex;justify-content:space-between;gap:6px;font-size:.8rem;min-width:0}
+.row small{color:var(--mu);font-size:.62rem;font-weight:700;flex-shrink:0;align-self:center}
+.row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#d6dae0}
+.row .cur{color:var(--run);font-weight:800}
+.warp small{font-size:.62rem;font-weight:700;color:var(--mu)}
+.warps{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wi{display:flex;align-items:center;gap:5px;min-width:0;font-size:.76rem;font-weight:700}
+.wi .dot{width:12px;height:12px}
+.wi span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.overlay{position:fixed;inset:0;background:rgba(5,7,10,.86);backdrop-filter:blur(6px);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.overlay.mid{align-items:center}
+.sheet{background:var(--card);width:100%;max-width:550px;border-radius:18px 18px 0 0;padding:18px;max-height:90vh;overflow-y:auto;border:1px solid var(--bd)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--bd);gap:8px}
+.sheet-head h2{font-size:1.05rem;color:var(--tx);text-align:center;font-weight:800}
+.b-cancel{background:rgba(248,113,113,.12);color:var(--stop);border:1px solid rgba(248,113,113,.3);padding:8px 13px;border-radius:9px;font-size:.84rem;font-weight:700;cursor:pointer}
+.b-save{background:var(--ac);color:var(--ac-d);border:1px solid var(--ac);padding:8px 17px;border-radius:9px;font-size:.88rem;font-weight:800;cursor:pointer}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:.8rem;color:var(--mu);margin-bottom:6px;font-weight:700}
+.inp{width:100%;background:var(--bg);border:1px solid var(--bd);padding:10px 12px;border-radius:8px;color:var(--tx);font-size:.9rem}
+.stsel{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sbtn{padding:10px;border-radius:8px;border:2px solid transparent;background:var(--bg);color:var(--tx);font-size:.84rem;font-weight:700;cursor:pointer}
+.sbtn.sel-running{border-color:var(--run);background:rgba(52,211,153,.14)}
+.sbtn.sel-stopped{border-color:var(--stop);background:rgba(248,113,113,.14)}
+.sbtn.sel-yarn{border-color:var(--yarn);background:rgba(255,154,77,.14)}
+.sbtn.sel-maint{border-color:var(--mnt);background:rgba(196,163,255,.14)}
+.csel{background:var(--bg);padding:6px 8px;border-radius:8px;border:1px solid var(--bd);display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.csel .ind{width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.4);flex-shrink:0}
+.csel i{font-style:normal;font-weight:700;color:var(--mu);font-size:.8rem;min-width:38px}
+.csel .inp{border:0;padding:7px 4px}
+.subs.two{grid-template-columns:repeat(2,1fr)}
+.wing-h{font-size:.84rem;font-weight:800;color:var(--ac);margin:10px 0 6px}
+.cm-add{display:flex;gap:7px;margin-bottom:12px}
+.cm-add .inp{flex:1}
+.cm-list{display:flex;flex-direction:column;gap:6px}
+.cm-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+.cm-item b{flex:1;min-width:0;font-size:.92rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-item small{color:var(--mu);font-size:.7rem;font-weight:600;flex-shrink:0}
+.cm-item button{background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:.85rem}
+.cm-item button.del{color:var(--stop);border-color:rgba(248,113,113,.3)}
+.pin{background:var(--card);width:90%;max-width:320px;border-radius:16px;padding:22px;text-align:center;border:1px solid var(--ac)}
+.pin input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--ac);font-size:1.3rem;text-align:center;letter-spacing:6px;font-weight:700;margin:14px 0}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
+#printSection{display:none}
+@media print{
+body *{visibility:hidden}
+#printSection,#printSection *{visibility:visible}
+#printSection{display:block!important;position:absolute;left:0;top:0;width:100%;background:#fff!important;color:#000!important;padding:15px}
+.pt{width:100%;border-collapse:collapse;margin-top:12px}
+.pt th,.pt td{border:1px solid #444;padding:6px 8px;text-align:left;font-size:9.5pt}
+.pt th{background:#f1f5f9}
+.pd{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;border:1px solid #888}
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-  <datalist id="customersDatalist"></datalist>
-
-  <header>
-    <div class="top-bar">
-      <h1>🧵 KALE DOKUMA TAKİP</h1>
-      <div class="top-actions">
-        <button type="button" class="pdf-btn" onclick="generatePdfReport()">🖨️ PDF / Yazdır</button>
-        <div class="sync-badge">
-          <span class="pulse"></span>
-          <span id="syncText">Hazır</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- أزرار الشُعب الـ 4 مع التوزيع الجديد -->
-    <div class="branch-bar">
-      <button class="branch-btn active" data-branch="all">Tümü (34)</button>
-      <button class="branch-btn" data-branch="R">Rüya (16)</button>
-      <button class="branch-btn" data-branch="A">Acar (4)</button>
-      <button class="branch-btn" data-branch="Y">Y. Acar (8)</button>
-      <button class="branch-btn" data-branch="K">Karaman (6)</button>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-pill"><div class="num" id="statRunning" style="color:var(--status-running)">0</div><div class="lbl">Çalışıyor</div></div>
-      <div class="stat-pill"><div class="num" id="statStopped" style="color:var(--status-stopped)">0</div><div class="lbl">Duruş</div></div>
-      <div class="stat-pill"><div class="num" id="statYarn" style="color:var(--status-yarn)">0</div><div class="lbl">İplik Yok</div></div>
-      <div class="stat-pill"><div class="num" id="statMaint" style="color:var(--status-maint)">0</div><div class="lbl">Bakımda</div></div>
-    </div>
-
-    <div class="controls-row">
-      <input type="text" id="searchInput" class="search-input" placeholder="Müşteri veya Makine Ara...">
-      <button class="filter-btn active" data-filter="all">Tüm Boylar</button>
-      <button class="filter-btn" data-filter="140">140 cm</button>
-      <button class="filter-btn" data-filter="160">160 cm</button>
-      <button class="filter-btn" data-filter="200">200 cm</button>
-    </div>
-  </header>
-
-  <main class="grid-container" id="loomsGrid"></main>
-
-  <div id="printSection"></div>
-
-  <!-- PIN Modal -->
-  <div class="modal-overlay" id="pinModal" style="align-items:center;">
-    <div class="pin-box">
-      <h3 style="color:#f8fafc; font-size:1rem; margin-bottom:4px;">🔒 Güvenlik Kilidi</h3>
-      <p style="color:#94a3b8; font-size:0.75rem;">Düzenleme yapmak için şifreyi giriniz:</p>
-      
-      <input type="password" id="pinInput" class="pin-input" maxlength="8" placeholder="••••" inputmode="numeric">
-      <div id="pinError" style="color:#ef4444; font-size:0.75rem; display:none; margin-bottom:10px;">Hatalı şifre! Lütfen tekrar deneyin.</div>
-
-      <div style="display:flex; gap:8px;">
-        <button type="button" class="modal-btn-cancel" style="flex:1;" onclick="closePinModal()">Vazgeç</button>
-        <button type="button" class="modal-btn-save" style="flex:1;" onclick="verifyPin()">Giriş</button>
-      </div>
+<header>
+  <div class="top-bar">
+    <h1>🧵 KALE DOKUMA TAKİP</h1>
+    <div class="top-actions">
+      <button type="button" class="pdf-btn" id="custBtn">👥 Müşteriler</button>
+      <button type="button" class="pdf-btn" id="pdfBtn">🖨️ PDF / Yazdır</button>
+      <div class="sync off" id="sync"><span class="pulse"></span><span id="syncText">Bağlanıyor</span></div>
     </div>
   </div>
+  <div class="branch-bar" id="branchBar"></div>
+  <div class="stats">
+    <div class="stat"><b id="sRun" style="color:var(--run)">0</b><span>Çalışıyor</span></div>
+    <div class="stat"><b id="sStop" style="color:var(--stop)">0</b><span>Duruş</span></div>
+    <div class="stat"><b id="sYarn" style="color:var(--yarn)">0</b><span>İplik Yok</span></div>
+    <div class="stat"><b id="sMnt" style="color:var(--mnt)">0</b><span>Bakımda</span></div>
+  </div>
+  <div class="controls">
+    <input type="search" id="search" class="search" placeholder="Müşteri veya Makine Ara..." aria-label="Ara">
+    <button class="filter-btn active" data-filter="all">Tüm Boylar</button>
+    <button class="filter-btn" data-filter="140">140 cm</button>
+    <button class="filter-btn" data-filter="160">160 cm</button>
+    <button class="filter-btn" data-filter="200">200 cm</button>
+  </div>
+</header>
 
-  <!-- Modal تعديل البطاقات -->
-  <div class="modal-overlay" id="editModal">
-    <div class="modal-sheet">
-      <div class="modal-header-top">
-        <button type="button" class="modal-btn-cancel" id="modalCancelBtn">✕ Kapat</button>
-        <h2 id="modalLoomTitle" style="font-size: 1rem; color:#38bdf8; margin:0; text-align:center;">Makine Ayarı</h2>
-        <button type="button" class="modal-btn-save" id="saveBtn">✓ Kaydet</button>
-      </div>
+<main class="grid" id="grid"></main>
+<div id="printSection"></div>
+<div class="toast" id="toast"></div>
 
-      <div class="form-group">
-        <label>Makine Durumu</label>
-        <div class="status-selector">
-          <button type="button" class="status-opt-btn" data-val="running">Çalışıyor</button>
-          <button type="button" class="status-opt-btn" data-val="yarn">İplik Yok</button>
-          <button type="button" class="status-opt-btn" data-val="stopped">Durduruldu</button>
-          <button type="button" class="status-opt-btn" data-val="maint">Arıza / Bakım</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Mevcut Müşteri (Şu Anda Çalışan)</label>
-        <input type="text" id="formCurrentCustomer" class="form-input" list="customersDatalist" placeholder="Müşteri adı giriniz...">
-      </div>
-
-      <div class="form-group">
-        <label>Gelecek Müşteri (Sonraki Planlanan)</label>
-        <input type="text" id="formNextCustomer" class="form-input" list="customersDatalist" placeholder="Gelecek müşteri adı giriniz...">
-      </div>
-
-      <div class="form-group">
-        <label>En (Genişlik)</label>
-        <select id="formWidth" class="form-select">
-          <option value="140">140 cm</option>
-          <option value="160">160 cm</option>
-          <option value="200">200 cm (2 Metre)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Ana Renk (Büyük Daire - 1. Renk)</label>
-        <div class="color-select-item">
-          <span class="color-indicator" id="colDot1" style="width:22px; height:22px;"></span>
-          <select id="colSelect1" class="form-select" onchange="updateColDot(1)"></select>
-        </div>
-
-        <label style="margin-top:6px;">Alt Renkler (2, 3 ve 4. Renkler)</label>
-        <div class="color-select-item">
-          <span style="font-weight:bold; color:#94a3b8; font-size:0.75rem;">2:</span>
-          <span class="color-indicator" id="colDot2"></span>
-          <select id="colSelect2" class="form-select" onchange="updateColDot(2)"></select>
-        </div>
-        <div class="color-select-item">
-          <span style="font-weight:bold; color:#94a3b8; font-size:0.75rem;">3:</span>
-          <span class="color-indicator" id="colDot3"></span>
-          <select id="colSelect3" class="form-select" onchange="updateColDot(3)"></select>
-        </div>
-        <div class="color-select-item">
-          <span style="font-weight:bold; color:#94a3b8; font-size:0.75rem;">4:</span>
-          <span class="color-indicator" id="colDot4"></span>
-          <select id="colSelect4" class="form-select" onchange="updateColDot(4)"></select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Çözgü Renkleri (Siyah, Beyaz, Sarı)</label>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-          <div class="color-select-item">
-            <span style="font-weight:bold; color:#94a3b8; font-size:0.75rem;">1:</span>
-            <span class="color-indicator" id="warpDot1"></span>
-            <select id="warpSelect1" class="form-select" onchange="updateWarpDot(1)"></select>
-          </div>
-          <div class="color-select-item">
-            <span style="font-weight:bold; color:#94a3b8; font-size:0.75rem;">2:</span>
-            <span class="color-indicator" id="warpDot2"></span>
-            <select id="warpSelect2" class="form-select" onchange="updateWarpDot(2)"></select>
-          </div>
-        </div>
-      </div>
-
+<div class="overlay mid" id="pinModal">
+  <div class="pin">
+    <h3 style="font-size:1rem;margin-bottom:4px">🔒 Güvenlik Kilidi</h3>
+    <p style="color:var(--mu);font-size:.78rem">Düzenleme için şifreyi giriniz:</p>
+    <input type="password" id="pinInput" maxlength="8" placeholder="••••" inputmode="numeric" autocomplete="off">
+    <div id="pinErr" style="color:var(--stop);font-size:.78rem;display:none;margin-bottom:10px">Hatalı şifre! Tekrar deneyin.</div>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="b-cancel" style="flex:1" id="pinCancel">Vazgeç</button>
+      <button type="button" class="b-save" style="flex:1" id="pinOk">Giriş</button>
     </div>
   </div>
+</div>
 
-  <script>
-    const MASTER_PIN = "1989";
-    let isAuthorized = sessionStorage.getItem('kale_auth_ok') === 'true';
-    let pendingLoomId = null;
+<div class="overlay" id="editModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="closeBtn">✕ Kapat</button>
+      <h2 id="mTitle">Makine Ayarı</h2>
+      <button type="button" class="b-save" id="saveBtn">✓ Kaydet</button>
+    </div>
+    <div class="fg"><label>Makine Durumu</label>
+      <div class="stsel">
+        <button type="button" class="sbtn" data-val="running">Çalışıyor</button>
+        <button type="button" class="sbtn" data-val="yarn">İplik Yok</button>
+        <button type="button" class="sbtn" data-val="stopped">Durduruldu</button>
+        <button type="button" class="sbtn" data-val="maint">Arıza / Bakım</button>
+      </div>
+    </div>
+    <div class="fg"><label for="fCur">Mevcut Müşteri</label><select class="inp" id="fCur"></select></div>
+    <div class="fg"><label for="fNext">Gelecek Müşteri</label><select class="inp" id="fNext"></select></div>
+    <div class="fg"><label for="fWidth">En (Genişlik)</label>
+      <select id="fWidth" class="inp"><option value="140">140 cm</option><option value="160">160 cm</option><option value="200">200 cm (2 Metre)</option></select>
+    </div>
+    <div class="fg"><label id="colLabel">Ana Renk (1) ve Alt Renkler (2, 3, 4)</label><div id="colRows"></div></div>
+    <div class="fg"><label>Çözgü Renkleri</label><div id="warpRows" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div></div>
+  </div>
+</div>
 
-    const PRESET_COLORS = [
-      { name: "0", hex: "#475569" },
-      { name: "PETROL", hex: "#0ea5e9" },
-      { name: "KOYU BORDO", hex: "#4a0404" },
-      { name: "LACİVERT", hex: "#1e3a8a" },
-      { name: "AÇIK BORDO", hex: "#9f1239" },
-      { name: "AÇIK GRİ", hex: "#d1d5db" },
-      { name: "PAST GRAY", hex: "#f1f5f9" },
-      { name: "SP GREY", hex: "#94a3b8" },
-      { name: "KOYU GRİ", hex: "#334155" },
-      { name: "SİYAH", hex: "#0f172a" },
-      { name: "SİLKY(SARIBEJ)", hex: "#f59e0b" },
-      { name: "SARIBEJ", hex: "#d4a373" },
-      { name: "ŞEKER LT", hex: "#fef9c3" },
-      { name: "IVORY", hex: "#fffff0" },
-      { name: "ŞEKER AYM", hex: "#fef3c7" },
-      { name: "VİZON", hex: "#b08968" },
-      { name: "KOYU KAHVE", hex: "#38220f" },
-      { name: "MARON", hex: "#722f37" },
-      { name: "ZÜMRÜT", hex: "#0e4d64" },
-      { name: "Z-blue", hex: "#0284c7" },
-      { name: "FOWN (AÇIK BAL)", hex: "#e6ccb2" },
-      { name: "NEFTİ", hex: "#14532d" },
-      { name: "FISTIK YEŞİL", hex: "#84cc16" }
-    ];
+<div class="overlay" id="custModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="custClose">✕ Kapat</button>
+      <h2>Müşteri Yönetimi</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div class="cm-add">
+      <input class="inp" id="cmNew" placeholder="Yeni müşteri adı..." maxlength="60" autocomplete="off">
+      <button type="button" class="b-save" id="cmAdd">Ekle</button>
+    </div>
+    <div class="cm-list" id="cmList"></div>
+  </div>
+</div>
 
-    const WARP_COLORS = [
-      { name: "SİYAH", hex: "#0f172a" },
-      { name: "BEYAZ", hex: "#ffffff" },
-      { name: "SARI", hex: "#eab308" }
-    ];
+<script>
+/* ============================================================
+   GÜVENLİK NOTU: Bu PIN sadece arayüz kilididir. Gerçek koruma için
+   Firebase Console > Realtime Database > Rules bölümüne şunu yazın
+   ve Authentication ile giriş ekleyin:
+   {
+     "rules": {
+       ".read": true,
+       ".write": "auth != null"
+     }
+   }
+   PIN değiştirmek için yeni PIN'in SHA-256 değerini PIN_HASH'e yazın.
+   ============================================================ */
+const PIN_HASH = "9113b98df80f877c7a2ee5d865a04c9514b4e9bf25a49d315b0b15f115d2f0d2";
+const CACHE_KEY = "kale_dokuma_local_v3";
+const CUST_KEY = "kale_customers_list_v3";
+const BRANCHES = { R: { name: "Rüya", count: 16 }, A: { name: "Acar", count: 4 }, Y: { name: "Y. Acar", count: 8 }, K: { name: "Karaman", count: 6 } };
+const TOTAL = Object.values(BRANCHES).reduce((s, b) => s + b.count, 0);
+const WIDTHS = [140, 160, 200];
 
-    function getColorHex(name) {
-      const match = PRESET_COLORS.find(c => c.name === name);
-      return match ? match.hex : "#475569";
-    }
+const COLORS = {
+  "0":"#475569","PETROL":"#0ea5e9","KOYU BORDO":"#4a0404","LACİVERT":"#1e3a8a","AÇIK BORDO":"#9f1239",
+  "AÇIK GRİ":"#d1d5db","PAST GRAY":"#f1f5f9","SP GREY":"#94a3b8","KOYU GRİ":"#334155","SİYAH":"#0f172a",
+  "SİLKY(SARIBEJ)":"#f59e0b","SARIBEJ":"#d4a373","ŞEKER LT":"#fef9c3","IVORY":"#fffff0","ŞEKER AYM":"#fef3c7",
+  "VİZON":"#b08968","KOYU KAHVE":"#38220f","MARON":"#722f37","ZÜMRÜT":"#0e4d64","Z-blue":"#0284c7",
+  "FOWN (AÇIK BAL)":"#e6ccb2","NEFTİ":"#14532d","FISTIK YEŞİL":"#84cc16"
+};
+const WARPS = { "SİYAH":"#0f172a", "BEYAZ":"#ffffff", "SARI":"#eab308" };
+const STATUS_COLOR = { running:"var(--run)", stopped:"var(--stop)", yarn:"var(--yarn)", maint:"var(--mnt)" };
+const hexOf = n => COLORS[n] || COLORS["0"];
+const warpHex = n => WARPS[n] || WARPS["SİYAH"];
 
-    function getWarpColorHex(name) {
-      const match = WARP_COLORS.find(c => c.name === name);
-      return match ? match.hex : "#0f172a";
-    }
+/* XSS koruması: kullanıcı metnini HTML'e koymadan önce temizle */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const $ = id => document.getElementById(id);
 
-    const emptyWarps = [
-      { name: "BEYAZ", hex: "#ffffff" },
-      { name: "SİYAH", hex: "#0f172a" }
-    ];
+/* Çevrimdışı / güvenli yerel depolama */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
 
-    const emptyColors = [
-      { name: "0", hex: "#475569" },
-      { name: "0", hex: "#475569" },
-      { name: "0", hex: "#475569" },
-      { name: "0", hex: "#475569" }
-    ];
+const names = o => Array.isArray(o) ? o.map(x => x?.name ?? x) : [];
+const colorCount = w => Number(w) === 140 ? 6 : 4;
+const optsHtml = o => Object.keys(o).map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
+function normalize(l, id) {
+  const base = buildLoom(id);
+  const cols = names(l?.colors), warps = names(l?.warps);
+  const m = { ...base, ...l, id };
+  m.width = Number(m.width) || base.width;
+  m.colors = Array.from({ length: colorCount(m.width) }, (_, i) => (cols[i] in COLORS ? cols[i] : "0"));
+  m.warps = [0,1].map(i => (warps[i] in WARPS ? warps[i] : base.warps[i]));
+  return m;
+}
+function buildLoom(id) {
+  const branch = id[0], num = parseInt(id.slice(1), 10);
+  return { id, num, branch, width: WIDTHS[(num - 1) % 3], status: "running", currentCustomer: "", nextCustomer: "", warps: ["BEYAZ","SİYAH"], colors: ["0","0","0","0"], lastModified: 0 };
+}
+function allIds() {
+  return Object.entries(BRANCHES).flatMap(([b, o]) => Array.from({ length: o.count }, (_, i) => b + (i + 1)));
+}
+function buildFactory() { return Object.fromEntries(allIds().map(id => [id, buildLoom(id)])); }
 
-    // تقسيم الشُعب مع التقسيم الجديد: Acar (4) و Y. Acar (8)
-    function buildEmptyFactory() {
-      const map = {};
-      const widths = [140, 160, 200];
+let looms = {};
+const cached = store.get(CACHE_KEY, null);
+const defaults = buildFactory();
+allIds().forEach(id => { looms[id] = normalize(cached?.[id] ?? defaults[id], id); });
+let customers = store.get(CUST_KEY, []);
 
-      // 1. Rüya: R1 -> R16 (16 ماكينة)
-      for (let i = 1; i <= 16; i++) {
-        const id = `R${i}`;
-        map[id] = {
-          id: id,
-          num: i,
-          branch: 'R',
-          width: widths[(i - 1) % widths.length],
-          status: 'running',
-          currentCustomer: '',
-          nextCustomer: '',
-          warps: JSON.parse(JSON.stringify(emptyWarps)),
-          colors: JSON.parse(JSON.stringify(emptyColors))
-        };
-      }
+let isAuth = sessionStorage.getItem("kale_auth_ok") === "true";
+let pendingId = null, selectedId = null, selectedStatus = "running";
+let branch = "all", widthFilter = "all", query = "";
+let loomsRef = null, custRef = null;
 
-      // 2. Acar: A1 -> A4 (4 ماكينات)
-      for (let i = 1; i <= 4; i++) {
-        const id = `A${i}`;
-        map[id] = {
-          id: id,
-          num: i,
-          branch: 'A',
-          width: widths[(i - 1) % widths.length],
-          status: 'running',
-          currentCustomer: '',
-          nextCustomer: '',
-          warps: JSON.parse(JSON.stringify(emptyWarps)),
-          colors: JSON.parse(JSON.stringify(emptyColors))
-        };
-      }
+/* ---------- Render ---------- */
+function visible(l) {
+  if (branch !== "all" && l.branch !== branch) return false;
+  if (widthFilter !== "all" && String(l.width) !== widthFilter) return false;
+  if (query) {
+    const q = query.toLowerCase();
+    return [l.currentCustomer, l.nextCustomer, l.id].some(v => (v || "").toLowerCase().includes(q));
+  }
+  return true;
+}
+const order = Object.keys(BRANCHES);
+const sorted = () => Object.values(looms).sort((a, b) => a.branch === b.branch ? a.num - b.num : order.indexOf(a.branch) - order.indexOf(b.branch));
 
-      // 3. Y. Acar: Y1 -> Y8 (8 ماكينات)
-      for (let i = 1; i <= 8; i++) {
-        const id = `Y${i}`;
-        map[id] = {
-          id: id,
-          num: i,
-          branch: 'Y',
-          width: widths[(i - 1) % widths.length],
-          status: 'running',
-          currentCustomer: '',
-          nextCustomer: '',
-          warps: JSON.parse(JSON.stringify(emptyWarps)),
-          colors: JSON.parse(JSON.stringify(emptyColors))
-        };
-      }
+const subHtml = c => `<div class="sub"><span class="dot" style="background:${hexOf(c)}"></span><span>${esc(c)}</span></div>`;
+function mainHtml(label, c) {
+  return `<div class="main"><span class="dot" style="background:${hexOf(c)}"></span>
+        <div class="meta"><small>${label}</small><span>${c === "0" ? "0 (Yok)" : esc(c)}</span></div></div>`;
+}
+function colorsHtml(l) {
+  const c = l.colors;
+  if (l.width === 140) {
+    const wing = (k, a, b, d) => `<div class="box">${mainHtml(k + ". KANAT ANA RENK", a)}<div class="subs two">${subHtml(b)}${subHtml(d)}</div></div>`;
+    return wing(1, c[0], c[1], c[2]) + wing(2, c[3], c[4], c[5]);
+  }
+  return `<div class="box">${mainHtml("ANA RENK (1)", c[0])}<div class="subs">${[c[1], c[2], c[3]].map(subHtml).join("")}</div></div>`;
+}
+function cardHtml(l) {
+  const c = l.colors;
+  const cur = l.currentCustomer?.trim() || "-", nxt = l.nextCustomer?.trim() || "-";
+  const warps = l.warps.map((w, i) => `<div class="wi"><span style="color:var(--mu)">${i + 1}:</span><span class="dot" style="background:${warpHex(w)}"></span><span>${esc(w)}</span></div>`).join("");
+  const stripe = l.width === 140 ? `linear-gradient(90deg,${hexOf(c[0])} 50%,${hexOf(c[3])} 50%)` : hexOf(c[0]);
+  return `
+  <div class="stripe" style="background:${stripe}"></div>
+  <div class="body">
+    <div class="top">
+      <span class="id">${esc(l.id)}</span>
+      <span class="badge" title="${esc(cur)}">${esc(cur)}</span>
+      <span class="st" style="background:${STATUS_COLOR[l.status] || "var(--mu)"}"></span>
+      <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
+    </div>
+    ${colorsHtml(l)}
+    <div class="cust">
+      <div class="row"><small>ŞU ANKİ:</small><span class="cur">${esc(cur)}</span></div>
+      <div class="row"><small>GELECEK:</small><span>${esc(nxt)}</span></div>
+    </div>
+    <div class="warp"><small>ÇÖZGÜ</small><div class="warps">${warps}</div></div>
+  </div>`;
+}
 
-      // 4. Karaman: K1 -> K6 (6 ماكينات)
-      for (let i = 1; i <= 6; i++) {
-        const id = `K${i}`;
-        map[id] = {
-          id: id,
-          num: i,
-          branch: 'K',
-          width: widths[(i - 1) % widths.length],
-          status: 'running',
-          currentCustomer: '',
-          nextCustomer: '',
-          warps: JSON.parse(JSON.stringify(emptyWarps)),
-          colors: JSON.parse(JSON.stringify(emptyColors))
-        };
-      }
-      return map;
-    }
+function renderLooms() {
+  const grid = $("grid");
+  const list = sorted().filter(visible);
+  grid.innerHTML = "";
+  if (!list.length) { grid.innerHTML = '<div class="empty">Sonuç bulunamadı. Aramayı veya filtreleri değiştirin.</div>'; return; }
+  const frag = document.createDocumentFragment();
+  list.forEach(l => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "card"; b.innerHTML = cardHtml(l);
+    b.onclick = () => openLoom(l.id);
+    frag.appendChild(b);
+  });
+  grid.appendChild(frag);
+}
 
-    let localCache = localStorage.getItem('kale_dokuma_local_v2');
-    let loomsData = localCache ? JSON.parse(localCache) : buildEmptyFactory();
-    let customersList = JSON.parse(localStorage.getItem('kale_customers_list_v2') || '[]');
+function updateStats() {
+  const c = { running: 0, stopped: 0, yarn: 0, maint: 0 };
+  Object.values(looms).forEach(l => { if ((branch === "all" || l.branch === branch) && l.status in c) c[l.status]++; });
+  $("sRun").textContent = c.running; $("sStop").textContent = c.stopped; $("sYarn").textContent = c.yarn; $("sMnt").textContent = c.maint;
+}
+const refresh = () => { renderLooms(); updateStats(); };
 
-    let selectedLoomId = null;
-    let selectedStatus = 'running';
-    let currentFilter = 'all';
-    let currentBranch = 'all';
-    let currentSearch = '';
+const lc = s => s.toLocaleLowerCase("tr");
+function allCustomers() {
+  const m = new Map();
+  [...customers, ...Object.values(looms).flatMap(l => [l.currentCustomer, l.nextCustomer])].forEach(n => {
+    n = (n || "").trim();
+    if (n && n !== "-" && !m.has(lc(n))) m.set(lc(n), n);
+  });
+  return [...m.values()].sort((a, b) => a.localeCompare(b, "tr"));
+}
+function fillCustSelect(sel, cur) {
+  const list = allCustomers();
+  if (cur && !list.includes(cur)) list.push(cur);
+  sel.innerHTML = '<option value="">— Seçilmedi —</option>' + list.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") + '<option value="__new__">➕ Yeni müşteri ekle…</option>';
+  sel.value = cur || ""; sel.dataset.prev = sel.value;
+}
+function updateCustList() {
+  [$("fCur"), $("fNext")].forEach(s => fillCustSelect(s, s.dataset.prev || ""));
+  if ($("custModal").classList.contains("open")) renderCustManager();
+}
+function saveCustomers() { store.set(CUST_KEY, customers); custRef?.set(customers).catch(() => {}); }
+function addCustomer(raw) {
+  const name = (raw || "").trim().replace(/\s+/g, " ");
+  if (!name || name === "-") return null;
+  const ex = allCustomers().find(n => lc(n) === lc(name));
+  if (ex) return ex;
+  customers = [...customers, name]; saveCustomers(); updateCustList();
+  return name;
+}
+function usage(n) { return Object.values(looms).filter(l => l.currentCustomer === n || l.nextCustomer === n).length; }
+function renderCustManager() {
+  const list = allCustomers();
+  $("cmList").innerHTML = list.length
+    ? list.map((n, i) => `<div class="cm-item"><b title="${esc(n)}">${esc(n)}</b><small>${usage(n)} makine</small><button type="button" data-a="ren" data-i="${i}" aria-label="Düzenle">✎</button><button type="button" class="del" data-a="del" data-i="${i}" aria-label="Sil">🗑</button></div>`).join("")
+    : '<div class="empty">Henüz müşteri yok. Yukarıdan ekleyin.</div>';
+}
+function openCust() { $("cmNew").value = ""; renderCustManager(); $("custModal").classList.add("open"); }
+function changeCustomer(old, neu) {
+  const t = Date.now();
+  Object.values(looms).forEach(l => {
+    const a = l.currentCustomer === old, b = l.nextCustomer === old;
+    if (!a && !b) return;
+    if (a) l.currentCustomer = neu;
+    if (b) l.nextCustomer = neu;
+    l.lastModified = t;
+    loomsRef?.child(l.id).update({ currentCustomer: l.currentCustomer, nextCustomer: l.nextCustomer, lastModified: t }).catch(() => {});
+  });
+  customers = customers.filter(c => c !== old && (!neu || lc(c) !== lc(neu)));
+  if (neu) customers.push(neu);
+  store.set(CACHE_KEY, looms); saveCustomers(); refresh(); updateCustList();
+}
+function renameCustomer(old) {
+  const raw = prompt("Müşteri adı:", old); if (raw === null) return;
+  const name = raw.trim().replace(/\s+/g, " ");
+  if (!name || name === old) return;
+  if (allCustomers().some(n => n !== old && lc(n) === lc(name))) return toast("Bu isimde müşteri zaten var");
+  changeCustomer(old, name); toast("Güncellendi ✓");
+}
+function deleteCustomer(n) {
+  const u = usage(n);
+  if (!confirm(`"${n}" silinsin mi?` + (u ? `\nBu müşteri ${u} makinede kayıtlı; oralardan da kaldırılacak.` : ""))) return;
+  changeCustomer(n, ""); toast("Silindi");
+}
 
-    populateColorDropdowns();
-    renderLooms();
-    updateStats();
-    updateCustomersDatalist();
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2200);
+}
 
-    try {
-      const firebaseConfig = {
-        apiKey: "AIzaSyBWWp1Le6f3y__f7WWoFVvYw9MwdHwFYjc",
-        authDomain: "fabrika-e9b49.firebaseapp.com",
-        databaseURL: "https://fabrika-e9b49-default-rtdb.firebaseio.com",
-        projectId: "fabrika-e9b49",
-        storageBucket: "fabrika-e9b49.firebasestorage.app",
-        messagingSenderId: "208016312960",
-        appId: "1:208016312960:web:db8531b655252e19ecf465"
-      };
+/* ---------- Build static UI ---------- */
+function initUi() {
+  $("branchBar").innerHTML =
+    `<button class="branch-btn active" data-branch="all">Tümü (${TOTAL})</button>` +
+    Object.entries(BRANCHES).map(([k, b]) => `<button class="branch-btn" data-branch="${k}">${esc(b.name)} (${b.count})</button>`).join("");
 
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.database();
-      const loomsRef = db.ref('kale_dokuma_live_v2');
-      const customersRef = db.ref('kale_customers_pool_v2');
+  const opts = o => Object.keys(o).map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
+  $("warpRows").innerHTML = [1,2].map(i => `
+    <div class="csel"><i>${i}:</i><span class="ind" id="wd${i}"></span>
+    <select id="ws${i}" class="inp" data-i="${i}" aria-label="Çözgü ${i}">${opts(WARPS)}</select></div>`).join("");
+  document.querySelectorAll("[id^=ws]").forEach(s => s.onchange = () => $("wd" + s.dataset.i).style.background = warpHex(s.value));
 
-      loomsRef.on('value', (snapshot) => {
-        const remoteData = snapshot.val();
-        if (remoteData && Object.keys(remoteData).length > 0) {
-          loomsData = remoteData;
-          localStorage.setItem('kale_dokuma_local_v2', JSON.stringify(loomsData));
-          renderLooms();
-          updateStats();
-          document.getElementById('syncText').innerText = "Canlı Bağlantı";
-        } else {
-          loomsRef.set(loomsData);
-          document.getElementById('syncText').innerText = "Canlı Bağlantı";
-        }
-      });
+  $("branchBar").onclick = e => {
+    const b = e.target.closest(".branch-btn"); if (!b) return;
+    document.querySelectorAll(".branch-btn").forEach(x => x.classList.toggle("active", x === b));
+    branch = b.dataset.branch; refresh();
+  };
+  document.querySelectorAll(".filter-btn").forEach(btn => btn.onclick = () => {
+    document.querySelectorAll(".filter-btn").forEach(x => x.classList.toggle("active", x === btn));
+    widthFilter = btn.dataset.filter; renderLooms();
+  });
+  let timer;
+  $("search").oninput = e => { clearTimeout(timer); timer = setTimeout(() => { query = e.target.value.trim(); renderLooms(); }, 200); };
+  document.querySelectorAll(".sbtn").forEach(b => b.onclick = () => setStatus(b.dataset.val));
+  $("fWidth").onchange = () => buildColorRows($("fWidth").value, readColors());
+  [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => {
+    if (sel.value !== "__new__") { sel.dataset.prev = sel.value; return; }
+    const n = addCustomer(prompt("Yeni müşteri adı:"));
+    fillCustSelect(sel, n || sel.dataset.prev || "");
+  });
+  $("custBtn").onclick = () => openLoom("__cust__");
+  $("custClose").onclick = () => $("custModal").classList.remove("open");
+  $("cmAdd").onclick = () => { const n = addCustomer($("cmNew").value); if (n) { $("cmNew").value = ""; renderCustManager(); toast("Kaydedildi ✓"); } };
+  $("cmNew").addEventListener("keydown", e => { if (e.key === "Enter") $("cmAdd").onclick(); });
+  $("cmList").onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const n = allCustomers()[+b.dataset.i]; if (!n) return;
+    if (b.dataset.a === "ren") renameCustomer(n); else deleteCustomer(n);
+  };
+  $("closeBtn").onclick = () => $("editModal").classList.remove("open");
+  $("saveBtn").onclick = saveLoom;
+  $("pdfBtn").onclick = printReport;
+  $("pinCancel").onclick = closePin;
+  $("pinOk").onclick = verifyPin;
+  $("pinInput").addEventListener("keydown", e => { if (e.key === "Enter") verifyPin(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); closePin(); } });
+}
 
-      customersRef.on('value', (snapshot) => {
-        const list = snapshot.val();
-        if (list && Array.isArray(list)) {
-          customersList = list;
-          localStorage.setItem('kale_customers_list_v2', JSON.stringify(customersList));
-          updateCustomersDatalist();
-        }
-      });
+/* ---------- PIN ---------- */
+async function sha256(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+const enter = id => id === "__cust__" ? openCust() : openModal(id);
+function openLoom(id) {
+  if (isAuth) return enter(id);
+  pendingId = id; $("pinInput").value = ""; $("pinErr").style.display = "none";
+  $("pinModal").classList.add("open"); setTimeout(() => $("pinInput").focus(), 100);
+}
+function closePin() { $("pinModal").classList.remove("open"); pendingId = null; }
+async function verifyPin() {
+  if (!crypto?.subtle) { $("pinErr").textContent = "Güvenli bağlantı (HTTPS) gerekli."; $("pinErr").style.display = "block"; return; }
+  if (await sha256($("pinInput").value.trim()) === PIN_HASH) {
+    isAuth = true; sessionStorage.setItem("kale_auth_ok", "true");
+    const id = pendingId; closePin(); if (id) enter(id);
+  } else {
+    $("pinErr").textContent = "Hatalı şifre! Tekrar deneyin.";
+    $("pinErr").style.display = "block"; $("pinInput").value = ""; $("pinInput").focus();
+  }
+}
 
-      window.loomsRef = loomsRef;
-      window.customersRef = customersRef;
-    } catch (e) {
-      console.log("Firebase offline mode active:", e);
-      document.getElementById('syncText').innerText = "Yerel Mod";
-    }
+/* ---------- Edit modal ---------- */
+function setStatus(st) {
+  selectedStatus = st;
+  document.querySelectorAll(".sbtn").forEach(b => b.className = "sbtn" + (b.dataset.val === st ? " sel-" + st : ""));
+}
+function buildColorRows(width, vals = []) {
+  const wide = Number(width) === 140, n = colorCount(width);
+  const lab = wide ? ["Ana","Alt 1","Alt 2","Ana","Alt 1","Alt 2"] : ["1","2","3","4"];
+  $("colLabel").textContent = wide ? "Renkler (her kanatta 1 ana + 2 alt renk)" : "Ana Renk (1) ve Alt Renkler (2, 3, 4)";
+  let h = "";
+  for (let i = 1; i <= n; i++) {
+    if (wide && (i === 1 || i === 4)) h += `<div class="wing-h">${i === 1 ? "1. Kanat" : "2. Kanat"}</div>`;
+    h += `<div class="csel"><i>${lab[i - 1]}:</i><span class="ind" id="cd${i}"></span><select id="cs${i}" class="inp" aria-label="Renk ${i}">${optsHtml(COLORS)}</select></div>`;
+  }
+  $("colRows").innerHTML = h;
+  for (let i = 1; i <= n; i++) {
+    const sel = $("cs" + i);
+    sel.value = vals[i - 1] in COLORS ? vals[i - 1] : "0";
+    $("cd" + i).style.background = hexOf(sel.value);
+    sel.onchange = () => $("cd" + i).style.background = hexOf(sel.value);
+  }
+}
+const readColors = () => { const a = []; for (let i = 1; $("cs" + i); i++) a.push($("cs" + i).value); return a; };
+function openModal(id) {
+  const l = looms[id]; if (!l) return;
+  selectedId = id;
+  $("mTitle").textContent = `${l.id} Ayarları`;
+  fillCustSelect($("fCur"), l.currentCustomer || ""); fillCustSelect($("fNext"), l.nextCustomer || "");
+  $("fWidth").value = l.width; buildColorRows(l.width, l.colors);
+  l.warps.forEach((w, i) => { $("ws" + (i + 1)).value = w; $("wd" + (i + 1)).style.background = warpHex(w); });
+  setStatus(l.status || "running");
+  $("editModal").classList.add("open");
+}
+function saveLoom() {
+  if (!selectedId) return;
+  const cur = $("fCur").value.trim(), nxt = $("fNext").value.trim();
+  const data = {
+    ...looms[selectedId], currentCustomer: cur, nextCustomer: nxt,
+    width: parseInt($("fWidth").value, 10), status: selectedStatus,
+    colors: readColors(),
+    warps: [1,2].map(i => $("ws" + i).value),
+    lastModified: Date.now()
+  };
+  looms[selectedId] = data; store.set(CACHE_KEY, looms); refresh();
+  $("editModal").classList.remove("open");
+  if (loomsRef) loomsRef.child(selectedId).set(data).then(() => toast("Kaydedildi ✓")).catch(() => toast("Kaydedilemedi: yetkiniz yok veya bağlantı yok"));
+  else toast("Yerel olarak kaydedildi");
+}
 
-    function populateColorDropdowns() {
-      const colSelects = [
-        document.getElementById('colSelect1'),
-        document.getElementById('colSelect2'),
-        document.getElementById('colSelect3'),
-        document.getElementById('colSelect4')
-      ];
+/* ---------- Print ---------- */
+function printReport() {
+  const now = new Date();
+  const date = now.toLocaleDateString("tr-TR") + " " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const title = branch === "all" ? `Tüm Fabrika (${TOTAL} Makine)` : `${BRANCHES[branch].name} Şubesi`;
+  const dotted = (hex, txt) => `<span class="pd" style="background:${hex}"></span>${esc(txt)}`;
+  const rows = sorted().filter(l => branch === "all" || l.branch === branch).map(l => {
+    const C = l.colors, w140 = l.width === 140;
+    const item = (c, lab) => c === "0" ? `<span style="color:#888">${lab}: Yok (0)</span>` : dotted(hexOf(c), `${lab}: ${c}`);
+    const subs = (w140 ? [["K1/1",1],["K1/2",2],["K2/1",4],["K2/2",5]] : [["2",1],["3",2],["4",3]]).map(([lab, i]) => `<div>${item(C[i], lab)}</div>`).join("");
+    const mains = (w140 ? [["K1",0],["K2",3]] : [["",0]]).map(([lab, i]) => `<div>${dotted(hexOf(C[i]), (lab ? lab + ": " : "") + (C[i] === "0" ? "0 (Yok)" : C[i]))}</div>`).join("");
+    return `<tr>
+      <td style="font-weight:700;text-align:center">${esc(l.id)}</td>
+      <td style="text-align:center">${esc(BRANCHES[l.branch].name)}</td>
+      <td style="text-align:center">${esc(l.width)} cm</td>
+      <td style="font-weight:700">${esc(l.currentCustomer || "-")}</td>
+      <td>${mains}</td>
+      <td style="font-size:8.5pt">${subs}</td>
+      <td style="font-size:8.5pt">1: ${esc(l.warps[0])}<br>2: ${esc(l.warps[1])}</td>
+      <td style="color:#444">${esc(l.nextCustomer || "-")}</td></tr>`;
+  }).join("");
+  $("printSection").innerHTML = `
+    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:8px">
+      <div><h1 style="font-size:15pt">🧵 KALE DOKUMA TAKİP - RAPORU</h1><p style="font-size:9.5pt;color:#444">Bölüm: <strong>${esc(title)}</strong></p></div>
+      <div style="font-size:8.5pt;color:#444">Tarih: ${esc(date)}</div></div>
+    <table class="pt"><thead><tr><th>Makine</th><th>Şube</th><th>En</th><th>Şu Anki Müşteri</th><th>Ana Renk (1)</th><th>Alt Renkler</th><th>Çözgü</th><th>Gelecek Müşteri</th></tr></thead><tbody>${rows}</tbody></table>`;
+  window.print();
+}
 
-      colSelects.forEach(sel => {
-        if (!sel) return;
-        sel.innerHTML = '';
-        PRESET_COLORS.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c.name;
-          opt.innerText = c.name === "0" ? "0 (İplik Yok)" : c.name;
-          sel.appendChild(opt);
-        });
-      });
+/* ---------- Firebase ---------- */
+function setSync(ok, text) { $("sync").classList.toggle("off", !ok); $("syncText").textContent = text; }
 
-      const warpSelects = [
-        document.getElementById('warpSelect1'),
-        document.getElementById('warpSelect2')
-      ];
-
-      warpSelects.forEach(sel => {
-        if (!sel) return;
-        sel.innerHTML = '';
-        WARP_COLORS.forEach(w => {
-          const opt = document.createElement('option');
-          opt.value = w.name;
-          opt.innerText = w.name;
-          sel.appendChild(opt);
-        });
-      });
-    }
-
-    function updateColDot(idx) {
-      const sel = document.getElementById(`colSelect${idx}`);
-      const dot = document.getElementById(`colDot${idx}`);
-      dot.style.backgroundColor = getColorHex(sel.value);
-    }
-
-    function updateWarpDot(idx) {
-      const sel = document.getElementById(`warpSelect${idx}`);
-      const dot = document.getElementById(`warpDot${idx}`);
-      dot.style.backgroundColor = getWarpColorHex(sel.value);
-    }
-
-    function updateCustomersDatalist() {
-      const datalist = document.getElementById('customersDatalist');
-      datalist.innerHTML = '';
-      customersList.sort().forEach(cust => {
-        if (cust && cust.trim() !== '-' && cust.trim() !== '') {
-          const opt = document.createElement('option');
-          opt.value = cust;
-          datalist.appendChild(opt);
-        }
-      });
-    }
-
-    function handleLoomCardClick(loomId) {
-      if (isAuthorized) {
-        openModal(loomId);
-      } else {
-        pendingLoomId = loomId;
-        document.getElementById('pinInput').value = '';
-        document.getElementById('pinError').style.display = 'none';
-        document.getElementById('pinModal').classList.add('open');
-        setTimeout(() => document.getElementById('pinInput').focus(), 100);
-      }
-    }
-
-    function closePinModal() {
-      document.getElementById('pinModal').classList.remove('open');
-      pendingLoomId = null;
-    }
-
-    function verifyPin() {
-      const entered = document.getElementById('pinInput').value.trim();
-      if (entered === MASTER_PIN) {
-        isAuthorized = true;
-        sessionStorage.setItem('kale_auth_ok', 'true');
-        closePinModal();
-        if (pendingLoomId) {
-          openModal(pendingLoomId);
-        }
-      } else {
-        document.getElementById('pinError').style.display = 'block';
-        document.getElementById('pinInput').value = '';
-        document.getElementById('pinInput').focus();
-      }
-    }
-
-    document.getElementById('pinInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') verifyPin();
+function initFirebase() {
+  if (typeof firebase === "undefined") return setSync(false, "Yerel Mod");
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyBWWp1Le6f3y__f7WWoFVvYw9MwdHwFYjc",
+      authDomain: "fabrika-e9b49.firebaseapp.com",
+      databaseURL: "https://fabrika-e9b49-default-rtdb.firebaseio.com",
+      projectId: "fabrika-e9b49",
+      storageBucket: "fabrika-e9b49.firebasestorage.app",
+      messagingSenderId: "208016312960",
+      appId: "1:208016312960:web:db8531b655252e19ecf465"
     });
+    const db = firebase.database();
+    loomsRef = db.ref("kale_dokuma_live_v2");
+    custRef = db.ref("kale_customers_pool_v2");
 
-    function renderLooms() {
-      const container = document.getElementById('loomsGrid');
-      container.innerHTML = '';
+    /* Bağlantı durumu */
+    db.ref(".info/connected").on("value", s => setSync(!!s.val(), s.val() ? "Canlı Bağlantı" : "Çevrimdışı"));
 
-      const branchOrder = { 'R': 1, 'A': 2, 'Y': 3, 'K': 4 };
-
-      const sortedLooms = Object.values(loomsData).sort((a, b) => {
-        if (a.branch === b.branch) {
-          return (a.num || 0) - (b.num || 0);
-        }
-        return (branchOrder[a.branch] || 99) - (branchOrder[b.branch] || 99);
+    /* İlk yükleme: eksik makineleri tamamla (migrasyon), sonra tek tek değişiklikleri dinle */
+    loomsRef.once("value").then(snap => {
+      const remote = snap.val() || {};
+      allIds().forEach(id => {
+        if (remote[id]) looms[id] = normalize(remote[id], id);
+        else loomsRef.child(id).set(looms[id]).catch(() => {});
       });
-
-      sortedLooms.forEach(loom => {
-        if (currentBranch !== 'all' && loom.branch !== currentBranch) return;
-        if (currentFilter !== 'all' && loom.width.toString() !== currentFilter) return;
-
-        if (currentSearch) {
-          const q = currentSearch.toLowerCase();
-          const matchCurr = (loom.currentCustomer || '').toLowerCase().includes(q);
-          const matchNext = (loom.nextCustomer || '').toLowerCase().includes(q);
-          const matchId = loom.id.toLowerCase().includes(q);
-          if (!matchCurr && !matchNext && !matchId) return;
-        }
-
-        const colors = loom.colors || emptyColors;
-        const mainColor = colors[0] || emptyColors[0];
-        const mainColorHex = getColorHex(mainColor.name) || mainColor.hex;
-
-        const card = document.createElement('div');
-        card.className = `loom-card`;
-        card.onclick = () => handleLoomCardClick(loom.id);
-
-        const warps = loom.warps || emptyWarps;
-        const warp1 = warps[0] || emptyWarps[0];
-        const warp2 = warps[1] || emptyWarps[1];
-
-        const subColors = [colors[1], colors[2], colors[3]];
-        const subColorsHtml = subColors.map(c => {
-          const col = c || emptyColors[0];
-          return `
-            <div class="sub-color-item">
-              <span class="sub-color-dot" style="background-color: ${getColorHex(col.name) || col.hex};"></span>
-              <span class="sub-color-name">${col.name === "0" ? "0" : col.name}</span>
-            </div>
-          `;
-        }).join('');
-
-        const currentCustDisplay = loom.currentCustomer && loom.currentCustomer.trim() !== '' ? loom.currentCustomer : '-';
-        const nextCustDisplay = loom.nextCustomer && loom.nextCustomer.trim() !== '' ? loom.nextCustomer : '-';
-
-        card.innerHTML = `
-          <div class="card-color-stripe" style="background-color: ${mainColorHex};"></div>
-
-          <div class="card-body">
-            <div class="card-top">
-              <span class="loom-title">${loom.id}</span>
-              
-              <div class="head-badge" title="Müşteri: ${currentCustDisplay}">
-                <span class="head-badge-text">${currentCustDisplay}</span>
-              </div>
-
-              <span class="width-tag w-${loom.width}">${loom.width} cm</span>
-            </div>
-
-            <div class="color-hierarchy-box">
-              <div class="main-color-bar">
-                <span class="main-color-dot" style="background-color: ${mainColorHex};"></span>
-                <div class="main-color-meta">
-                  <span class="main-color-lbl">ANA RENK (1)</span>
-                  <span class="main-color-name">${mainColor.name === "0" ? "0 (Yok)" : mainColor.name}</span>
-                </div>
-              </div>
-              <div class="sub-colors-grid">
-                ${subColorsHtml}
-              </div>
-            </div>
-
-            <div class="customers-section">
-              <div class="cust-row">
-                <span class="cust-lbl">ŞU ANKİ:</span>
-                <span class="cust-curr">${currentCustDisplay}</span>
-              </div>
-              <div class="cust-row">
-                <span class="cust-lbl">GELECEK:</span>
-                <span class="cust-next">${nextCustDisplay}</span>
-              </div>
-            </div>
-
-            <div class="warp-section">
-              <span class="warp-header-title">ÇÖZGÜ</span>
-              <div class="warp-items-row">
-                <div class="warp-item">
-                  <span class="warp-num">1:</span>
-                  <span class="warp-dot" style="background-color: ${getWarpColorHex(warp1.name) || warp1.hex};"></span>
-                  <span class="warp-text">${warp1.name}</span>
-                </div>
-                <div class="warp-item">
-                  <span class="warp-num">2:</span>
-                  <span class="warp-dot" style="background-color: ${getWarpColorHex(warp2.name) || warp2.hex};"></span>
-                  <span class="warp-text">${warp2.name}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function updateStats() {
-      let r = 0, s = 0, y = 0, m = 0;
-      Object.values(loomsData).forEach(l => {
-        if (currentBranch !== 'all' && l.branch !== currentBranch) return;
-        if (l.status === 'running') r++;
-        else if (l.status === 'stopped') s++;
-        else if (l.status === 'yarn') y++;
-        else if (l.status === 'maint') m++;
-      });
-      document.getElementById('statRunning').innerText = r;
-      document.getElementById('statStopped').innerText = s;
-      document.getElementById('statYarn').innerText = y;
-      document.getElementById('statMaint').innerText = m;
-    }
-
-    function openModal(id) {
-      selectedLoomId = id;
-      const l = loomsData[id];
-      if (!l) return;
-
-      document.getElementById('modalLoomTitle').innerText = `${l.id} Ayarları`;
-      document.getElementById('formCurrentCustomer').value = l.currentCustomer || '';
-      document.getElementById('formNextCustomer').value = l.nextCustomer || '';
-      document.getElementById('formWidth').value = l.width || '140';
-
-      const cols = l.colors || emptyColors;
-      for (let i = 1; i <= 4; i++) {
-        const cName = cols[i-1]?.name || "0";
-        document.getElementById(`colSelect${i}`).value = cName;
-        updateColDot(i);
-      }
-
-      const warps = l.warps || emptyWarps;
-      const w1 = WARP_COLORS.some(w => w.name === warps[0]?.name) ? warps[0].name : "BEYAZ";
-      const w2 = WARP_COLORS.some(w => w.name === warps[1]?.name) ? warps[1].name : "SİYAH";
-      document.getElementById('warpSelect1').value = w1;
-      document.getElementById('warpSelect2').value = w2;
-      updateWarpDot(1);
-      updateWarpDot(2);
-
-      setStatusSelection(l.status || 'running');
-      document.getElementById('editModal').classList.add('open');
-    }
-
-    function setStatusSelection(st) {
-      selectedStatus = st;
-      document.querySelectorAll('.status-opt-btn').forEach(b => {
-        b.className = 'status-opt-btn';
-        if (b.dataset.val === st) {
-          b.classList.add(`sel-${st}`);
-        }
-      });
-    }
-
-    document.querySelectorAll('.status-opt-btn').forEach(b => {
-      b.onclick = () => setStatusSelection(b.dataset.val);
-    });
-
-    document.getElementById('modalCancelBtn').onclick = () => {
-      document.getElementById('editModal').classList.remove('open');
-    };
-
-    document.getElementById('saveBtn').onclick = () => {
-      if (!selectedLoomId) return;
-
-      const currCust = document.getElementById('formCurrentCustomer').value.trim();
-      const nextCust = document.getElementById('formNextCustomer').value.trim();
-
-      let updatedList = false;
-      [currCust, nextCust].forEach(name => {
-        if (name && name !== '-' && !customersList.includes(name)) {
-          customersList.push(name);
-          updatedList = true;
-        }
-      });
-
-      if (updatedList) {
-        localStorage.setItem('kale_customers_list_v2', JSON.stringify(customersList));
-        updateCustomersDatalist();
-        if (window.customersRef) {
-          window.customersRef.set(customersList);
-        }
-      }
-
-      const updatedColors = [];
-      for (let i = 1; i <= 4; i++) {
-        const cName = document.getElementById(`colSelect${i}`).value;
-        updatedColors.push({
-          name: cName,
-          hex: getColorHex(cName)
-        });
-      }
-
-      const w1Name = document.getElementById('warpSelect1').value;
-      const w2Name = document.getElementById('warpSelect2').value;
-
-      const updatedWarps = [
-        { name: w1Name, hex: getWarpColorHex(w1Name) },
-        { name: w2Name, hex: getWarpColorHex(w2Name) }
-      ];
-
-      const updatedWidth = parseInt(document.getElementById('formWidth').value);
-
-      const updatedData = {
-        ...loomsData[selectedLoomId],
-        currentCustomer: currCust,
-        nextCustomer: nextCust,
-        width: updatedWidth,
-        status: selectedStatus,
-        warps: updatedWarps,
-        colors: updatedColors
+      store.set(CACHE_KEY, looms); refresh();
+      const onLoom = s => {
+        if (!s.key || !(s.key in looms)) return;
+        looms[s.key] = normalize(s.val(), s.key);
+        store.set(CACHE_KEY, looms); refresh();
       };
+      loomsRef.on("child_changed", onLoom);
+      loomsRef.on("child_added", onLoom);
+    }).catch(() => setSync(false, "Yerel Mod"));
 
-      loomsData[selectedLoomId] = updatedData;
-      localStorage.setItem('kale_dokuma_local_v2', JSON.stringify(loomsData));
-      renderLooms();
-      updateStats();
-      document.getElementById('editModal').classList.remove('open');
-
-      if (window.loomsRef) {
-        window.loomsRef.child(selectedLoomId).set(updatedData);
-      }
-    };
-
-    function generatePdfReport() {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-      
-      // التسميات الجديدة للشعب
-      const branchNames = { 'R': 'Rüya', 'A': 'Acar', 'Y': 'Y. Acar', 'K': 'Karaman' };
-      const currentBranchTitle = currentBranch === 'all' ? 'Tüm Fabrika (34 Makine)' : `${branchNames[currentBranch] || currentBranch} Şubesi`;
-
-      const branchOrder = { 'R': 1, 'A': 2, 'Y': 3, 'K': 4 };
-
-      const sortedLooms = Object.values(loomsData).sort((a, b) => {
-        if (a.branch === b.branch) return (a.num || 0) - (b.num || 0);
-        return (branchOrder[a.branch] || 99) - (branchOrder[b.branch] || 99);
-      });
-
-      let rowsHtml = '';
-      sortedLooms.forEach(l => {
-        if (currentBranch !== 'all' && l.branch !== currentBranch) return;
-
-        const colors = l.colors || emptyColors;
-        const mainColor = colors[0] || emptyColors[0];
-        const colorHex = getColorHex(mainColor.name) || mainColor.hex;
-
-        const subColors = [colors[1], colors[2], colors[3]];
-        const subColorsHtml = subColors.map((sc, idx) => {
-          if (!sc || sc.name === "0") return `<div><span style="color:#888;">${idx + 2}: Yok (0)</span></div>`;
-          const hex = getColorHex(sc.name) || sc.hex;
-          return `
-            <div style="margin-bottom:2px;">
-              <span class="print-dot" style="background-color: ${hex};"></span>
-              <strong>${idx + 2}:</strong> ${sc.name}
-            </div>
-          `;
-        }).join('');
-
-        const warps = l.warps || emptyWarps;
-        const w1 = warps[0]?.name || "-";
-        const w2 = warps[1]?.name || "-";
-        const warpText = `1: ${w1}<br>2: ${w2}`;
-
-        rowsHtml += `
-          <tr>
-            <td style="font-weight:bold; font-size:11pt; text-align:center;">${l.id}</td>
-            <td style="text-align:center;">${branchNames[l.branch] || l.branch}</td>
-            <td style="text-align:center;">${l.width} cm</td>
-            <td style="font-weight:bold; font-size:10pt;">${l.currentCustomer || '-'}</td>
-            <td>
-              <span class="print-dot" style="background-color: ${colorHex};"></span>
-              <strong>${mainColor.name === "0" ? "0 (Yok)" : mainColor.name}</strong>
-            </td>
-            <td>
-              <div class="sub-colors-box">
-                ${subColorsHtml}
-              </div>
-            </td>
-            <td style="font-size:8.5pt; line-height:1.3;">${warpText}</td>
-            <td style="color:#444; font-size:9pt;">${l.nextCustomer || '-'}</td>
-          </tr>
-        `;
-      });
-
-      const printContainer = document.getElementById('printSection');
-      printContainer.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #000; padding-bottom:8px;">
-          <div>
-            <h1 style="font-size:15pt; margin:0;">🧵 KALE DOKUMA TAKİP - RAPORU</h1>
-            <p style="font-size:9.5pt; margin:4px 0 0 0; color:#444;">Bölüm: <strong>${currentBranchTitle}</strong></p>
-          </div>
-          <div style="text-align:right; font-size:8.5pt; color:#444;">
-            Tarih: ${dateStr}
-          </div>
-        </div>
-
-        <table class="print-table">
-          <thead>
-            <tr>
-              <th style="width:8%; text-align:center;">Makine</th>
-              <th style="width:12%; text-align:center;">Şube</th>
-              <th style="width:8%; text-align:center;">En</th>
-              <th style="width:18%;">Şu Anki Müşteri</th>
-              <th style="width:16%;">Ana Renk (1)</th>
-              <th style="width:16%;">Alt Renkler (2, 3, 4)</th>
-              <th style="width:10%;">Çözgü</th>
-              <th style="width:12%;">Gelecek Müşteri</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-      `;
-
-      window.print();
-    }
-
-    document.getElementById('searchInput').oninput = (e) => {
-      currentSearch = e.target.value;
-      renderLooms();
-    };
-
-    document.querySelectorAll('.branch-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('.branch-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentBranch = btn.dataset.branch;
-        renderLooms();
-        updateStats();
-      };
+    custRef.on("value", s => {
+      const v = s.val();
+      customers = v ? Object.values(v).filter(Boolean) : []; store.set(CUST_KEY, customers); updateCustList();
     });
+  } catch (e) {
+    console.warn("Firebase kapalı:", e); setSync(false, "Yerel Mod");
+  }
+}
 
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        renderLooms();
-      };
-    });
-  </script>
+initUi(); refresh(); updateCustList(); initFirebase();
+</script>
 </body>
 </html>
+ 
