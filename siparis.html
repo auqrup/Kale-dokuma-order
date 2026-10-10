@@ -58,6 +58,11 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .qrow{display:flex;align-items:center;gap:10px}
 .qrow .inp{width:110px;text-align:center;font-weight:800}
 .hint{color:var(--mu);font-size:.76rem;font-weight:600;margin-top:6px}
+.dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.dates>div{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+.dates small{color:var(--mu);font-size:.72rem;font-weight:700}
+.dates b{font-size:.95rem;padding:6px 0}
+.dates .inp{padding:6px;font-size:.9rem}
 .ocard{width:100%;display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer}
 .ocard b{font-size:1rem;font-weight:800}
 .ocard small{color:var(--mu);font-size:.76rem;font-weight:600}
@@ -125,8 +130,8 @@ textarea.inp{font-size:.8rem;margin-top:6px}
    siparisin hangi tezgahlara verilebilecegini onerir (suggest). Siparis satirlari
    tezgaha atanabilir (pin), yapilan adet takip edilir.
 
-   VERI: YAZAR kale_siparis_v1/orders. OKUR kale_dokuma_live_v2 (tezgahlar) ve
-   kale_customers_pool_v2 (musteriler) - bu ikisini ASLA yazmaz.
+   VERI: YAZAR kale_siparis_v1/orders. OKUR kale_dokuma_live_v2 (tezgahlar),
+   kale_customers_pool_v2 (musteriler) ve kale_colors_v1 (sonradan eklenen renkler) - bunlari ASLA yazmaz.
 
    TEMEL KURALLAR:
    - P[] urun tablosu ve FULL140 / ONLY100 asagida duzenlenir.
@@ -142,7 +147,8 @@ textarea.inp{font-size:.8rem;margin-top:6px}
    - ESLIK SATIR (comp:{of, m}): satir 140 cm kanatli tezgaha atanirsa ve diger kanatta
      baska bir renk varsa, ayni musteri/ayni adet icin otomatik satir olusur. Asil
      satir silinir/atama kalkarsa silinir; adet degisirse eslik de degisir.
-     "Yapilan" (done) ikisinde BAGIMSIZ tutulur (nihai karar bekliyor).
+     "Yapilan" (done) asil satir ve esligi arasinda BAGLIDIR: biri degisince digeri de
+     ayni degere gelir (ikisi ayni siralarda ayni anda uretilir).
    - Metraj: duz urunlerde satir sayisi x parca boyu; rulolarda rulo sayisi x rulo metresi
      (140=40m, 160=35m, 200=30m; kumas rulo ADEDI ile siparis edilir, metre ile degil).
      Halilar once kumas gibi ardisik uretilir, sonra elle kesilir (metre buna gore).
@@ -192,6 +198,20 @@ const COLORS = {
   "FOWN (AÇIK BAL)":"#e6ccb2","NEFTİ":"#14532d","FISTIK YEŞİL":"#84cc16"
 };
 const hexOf = n => COLORS[n] || "#475569";
+/* Ek renkler: Firebase kale_colors_v1 (index.html yazar, bu sayfa sadece OKUR). Ham makine renkleri saklanır ki ek renkler sonradan gelirse yeniden doğrulanabilsin. */
+const BASE_COLOR_NAMES = new Set(Object.keys(COLORS));
+const CCOL_KEY = "kale_colors_cache_v1";
+const rawColors = {};
+function applyCustomColors(list) {
+  Object.keys(COLORS).forEach(k => { if (!BASE_COLOR_NAMES.has(k)) delete COLORS[k]; });
+  const arr = Array.isArray(list) ? list : Object.values(list || {});
+  const kept = [];
+  arr.forEach(c => {
+    if (c && typeof c.name === "string" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) { COLORS[c.name] = c.hex.toLowerCase(); kept.push({ name: c.name, hex: c.hex.toLowerCase() }); }
+  });
+  try { localStorage.setItem(CCOL_KEY, JSON.stringify(kept)); } catch {}
+}
+try { applyCustomColors(JSON.parse(localStorage.getItem(CCOL_KEY) || "[]")); } catch {}
 const WARPS = { "SİYAH":"#0f172a", "BEYAZ":"#ffffff", "SARI":"#eab308" };
 const WARP_DEF = ["BEYAZ", "SİYAH"];
 const BRANCHES = { R:{ name:"Rüya", count:16 }, A:{ name:"Acar", count:4 }, Y:{ name:"Y. Acar", count:8 }, K:{ name:"Karaman", count:6 } };
@@ -272,6 +292,8 @@ let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
 const pname = p => p.roll ? "Rulo kumaş" : `${p.g} ${p.name}`;
+/* Tarih: o.created = oluşturma (ms), o.due = tahmini bitiş ("YYYY-MM-DD", boş olabilir) */
+const fmtDue = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); return m ? `${m[3]}.${m[2]}.${m[1]}` : ""; };
 const persist = () => { if (S.order?.saved) pushOrder(S.order); };
 
 /* ---------- Öneri motoru ---------- */
@@ -350,14 +372,14 @@ function resHtml(r, i, p, line) {
 function ocard(o) {
   const tot = o.lines.reduce((s, l) => s + rem(l), 0);
   return `<button class="ocard" data-act="open" data-id="${o.id}"><b>${esc(o.cust)}</b>
-    <small>${new Date(o.created).toLocaleDateString("tr-TR")} · ${o.lines.length} satır · ${tot ? `kalan ${tot} adet` : "✓ tamamlandı"}</small></button>`;
+    <small>${new Date(o.created).toLocaleDateString("tr-TR")}${o.due ? ` → bitiş ${fmtDue(o.due)}` : ""} · ${o.lines.length} satır · ${tot ? `kalan ${tot} adet` : "✓ tamamlandı"}</small></button>`;
 }
 function lineHtml(l) {
   const p = prodOf(l.k), r = rem(l);
   const am = Object.keys(l.asg || {}), chg = am.filter(m => looms[m] && l.asg[m] !== wingSig(looms[m]));
   const asgLine = am.length ? `<div class="lq"><span>📌 ${am.map(m => { const t = l.comp ? null : lineM(l, looms[m]); return esc(m) + (t != null ? ` (≈${t} m)` : ""); }).join(", ")}</span>${chg.length ? `<span class="warn">⚠ renk değişti: ${chg.map(esc).join(", ")}</span>` : ""}</div>` : "";
   return `<div class="line${r ? "" : " dn"}"><div class="lh"><span class="dot" style="background:${hexOf(l.color)}"></span>
-    <b>${esc(p ? pname(p) : l.k)} · ${esc(l.color)}</b>${l.comp ? "" : `<button data-act="del-line" data-id="${l.id}" aria-label="Sil">✕</button>`}</div>${l.comp ? `<div class="lq"><span class="ok">↳ Eşlik eden satır (${esc(l.comp.m)} makinesinin diğer kanadı)</span></div>` : ""}
+    <b>${esc(p ? pname(p) : l.k)} · ${esc(l.color)}</b>${l.comp ? "" : `<button data-act="del-line" data-id="${l.id}" aria-label="Sil">✕</button>`}</div>${l.comp ? `<div class="lq"><span class="ok">↳ Eşlik eden satır (${esc(l.comp.m)} makinesinin diğer kanadı) · Yapılan asıl satırla birlikte değişir</span></div>` : ""}
     <div class="lq"><span>Sipariş: ${l.comp ? `<b>${l.qty}</b>` : `<input class="q-in" type="number" inputmode="numeric" min="1" value="${l.qty}" data-id="${l.id}">`}</span>
     <label>Yapılan <input class="dn-in" type="number" inputmode="numeric" min="0" max="${l.qty}" value="${l.done || 0}" data-id="${l.id}"></label>
     <span>${r ? `Kalan: <b>${r}</b>` : "✓ Bitti"}</span></div>${asgLine}</div>`;
@@ -407,6 +429,8 @@ function render(keep) {
     drawSel();
   } else if (V === "order") {
     app.innerHTML = `<h2>Sipariş: ${esc(o.cust)}</h2>` +
+      `<div class="dates"><div><small>Oluşturulma</small><b>${new Date(o.created).toLocaleDateString("tr-TR")}</b></div>` +
+      `<div><small>Tahmini bitiş</small><input type="date" class="inp due-in" value="${esc(o.due || "")}"></div></div>` +
       (o.lines.length ? o.lines.map(lineHtml).join("") : '<div class="empty">Henüz ürün eklenmedi.</div>') +
       `<button class="second" data-act="addmore">➕ Ürün / renk ekle</button>` +
       (o.lines.length ? '<button class="primary" data-act="show">🔍 Makineleri göster</button>' : "") +
@@ -504,7 +528,7 @@ document.addEventListener("click", e => {
         const hasComp = o.lines.some(x => x.comp && x.comp.of === ln.id);
         const hasPartner = o.lines.some(x => x !== ln && !x.comp && x.k === ln.k && x.color === other && rem(x) > 0);
         if (wings.filter(c => c === ln.color).length === 1 && other && other !== "0" && !hasComp && !hasPartner) {
-          o.lines.push({ id: uid(), k: ln.k, color: other, qty: ln.qty, done: 0, asg: { [m]: wingSig(lm) }, comp: { of: ln.id, m } });
+          o.lines.push({ id: uid(), k: ln.k, color: other, qty: ln.qty, done: ln.done || 0, asg: { [m]: wingSig(lm) }, comp: { of: ln.id, m } });
           toast(`Eşlik eden satır eklendi: ${other} × ${ln.qty}`);
         }
       }
@@ -532,14 +556,20 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   const c = e.target.classList, o = S.order;
+  if (o && c.contains("due-in")) { o.due = e.target.value || ""; persist(); return; }
   if (!o || !(c.contains("dn-in") || c.contains("q-in"))) return;
   const l = o.lines.find(x => x.id === e.target.dataset.id); if (!l) return;
   const v = parseInt(e.target.value, 10) || 0;
   if (c.contains("q-in")) {
     /* adet değişince eşlik eden satırın adedi de değişir */
     l.qty = Math.max(1, v); l.done = Math.min(l.done || 0, l.qty);
-    o.lines.forEach(x => { if (x.comp && x.comp.of === l.id) { x.qty = l.qty; x.done = Math.min(x.done || 0, x.qty); } });
-  } else l.done = Math.min(l.qty, Math.max(0, v));
+    o.lines.forEach(x => { if (x.comp && x.comp.of === l.id) { x.qty = l.qty; x.done = l.done; } });
+  } else {
+    /* "Yapılan" asıl satır ile eşlik eden satır(lar)da BİRLİKTE değişir (ikisi aynı sıralarda aynı anda üretilir) */
+    l.done = Math.min(l.qty, Math.max(0, v));
+    const root = l.comp ? l.comp.of : l.id;
+    o.lines.forEach(x => { if (x.id === root || (x.comp && x.comp.of === root)) x.done = Math.min(x.qty, l.done); });
+  }
   persist(); render(true);
 });
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "cin") document.querySelector('[data-act="cust-ok"]').click(); });
@@ -620,10 +650,15 @@ function startData() {
   }, e => { toast("Siparişler Firebase'den okunamadı"); denied(e); });
   db.ref("kale_dokuma_live_v2").on("value", s => {
     const r = s.val() || {};
-    ids.forEach(id => { if (r[id]) looms[id] = norm(r[id], id); });
+    ids.forEach(id => { if (r[id]) { rawColors[id] = r[id].colors; looms[id] = norm(r[id], id); } });
     setSync(true, "Canlı veri ✓");
     if (S.view === "res") render(true); else drawChips();
   }, e => { setSync(false, "Yerel veri"); denied(e); });
+  db.ref("kale_colors_v1").on("value", s => {
+    applyCustomColors(s.val());
+    ids.forEach(id => { if (rawColors[id]) looms[id].colors = norm({ ...looms[id], colors: rawColors[id] }, id).colors; });
+    if (["color", "res", "order"].includes(S.view)) render(true); else drawChips();
+  }, denied);
   db.ref("kale_customers_pool_v2").on("value", s => {
     const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; drawChips();
   }, denied);

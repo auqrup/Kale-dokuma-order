@@ -43,6 +43,7 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .card:active{transform:scale(.97)}
 .stripe{height:15px;flex-shrink:0}
+.xtag{text-align:center;font-size:.74rem;font-weight:800;color:var(--ac);background:rgba(240,198,116,.12);border:1px solid rgba(240,198,116,.35);border-radius:6px;padding:3px 6px}
 .stripe.bot{height:5px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);margin-top:auto}
 .body{padding:9px;display:flex;flex-direction:column;gap:7px;min-width:0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:5px;min-width:0}
@@ -97,6 +98,20 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .csel .inp{border:0;padding:7px 4px}
 .subs.two{grid-template-columns:repeat(2,1fr)}
 .wing-h{font-size:.84rem;font-weight:800;color:var(--ac);margin:10px 0 6px}
+.col-add{display:flex;gap:7px;margin-bottom:12px;align-items:center}
+.col-add .inp{flex:1}
+.col-add input[type=color]{width:46px;height:42px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);cursor:pointer;flex-shrink:0}
+.col-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;cursor:pointer}
+.col-item.open{border-color:var(--ac)}
+.col-item b{flex:1;min-width:0;font-size:.9rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.col-item small{color:var(--mu);font-size:.7rem;font-weight:600;flex-shrink:0}
+.col-item button.del{background:var(--card2);border:1px solid rgba(248,113,113,.3);color:var(--stop);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:.85rem}
+.col-det{background:var(--card2);border:1px solid var(--bd);border-radius:8px;padding:9px 10px;margin:-2px 0 4px;display:flex;flex-direction:column;gap:7px}
+.col-det .lab{font-size:.72rem;font-weight:800;color:var(--mu)}
+.col-det .chips{display:flex;flex-wrap:wrap;gap:5px}
+.lchip{background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:.8rem;font-weight:800}
+.lchip i{font-style:normal;font-weight:600;color:var(--mu);font-size:.68rem}
+.lchip.m{border-color:var(--ac);color:var(--ac)}
 .cm-add{display:flex;gap:7px;margin-bottom:12px}
 .cm-add .inp{flex:1}
 .cm-list{display:flex;flex-direction:column;gap:6px}
@@ -139,6 +154,7 @@ body *{visibility:hidden}
     <h1>🧵 KALE DOKUMA TAKİP</h1>
     <div class="top-actions">
       <button type="button" class="pdf-btn" id="custBtn">👥 Müşteriler</button>
+      <button type="button" class="pdf-btn" id="colBtn">🎨 Renkler</button>
       <button type="button" class="pdf-btn" id="pdfBtn">🖨️ PDF / Yazdır</button>
       <button type="button" class="pdf-btn" id="outBtn" title="Çıkış">🚪</button>
       <div class="sync off" id="sync"><span class="pulse"></span><span id="syncText">Bağlanıyor</span></div>
@@ -221,6 +237,23 @@ body *{visibility:hidden}
   </div>
 </div>
 
+<div class="overlay" id="colModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="colClose">✕ Kapat</button>
+      <h2>Renkler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div class="col-add">
+      <input class="inp" id="colName" placeholder="Yeni renk adı..." maxlength="24" autocomplete="off">
+      <input type="color" id="colHex" value="#808080" aria-label="Renk seç">
+      <button type="button" class="b-save" id="colAdd">Ekle</button>
+    </div>
+    <p style="color:var(--mu);font-size:.74rem;margin-bottom:10px">Bir renge dokunun: hangi makinelerde ana / alt renk olduğunu görün.</p>
+    <div class="cm-list" id="colList"></div>
+  </div>
+</div>
+
 <div class="overlay" id="ordModal">
   <div class="sheet">
     <div class="sheet-head">
@@ -244,6 +277,7 @@ body *{visibility:hidden}
    VERI (Firebase Realtime Database, proje fabrika-e9b49):
      YAZAR : kale_dokuma_live_v2/<makineId>   (tezgahlar)
              kale_customers_pool_v2           (musteri havuzu)
+     YAZAR : kale_colors_v1                   (sonradan eklenen renkler [{name,hex}]; siparis.html okur)
      OKUR  : kale_siparis_v1/orders           (siparis sayfasinin yazdigi siparisler)
    Bu ayrim sadece kodda uygulanan bir kuraldir (veritabani kurallari yazmayi
    UID bazinda kisitlar ama yol bazinda degil). Yeni kod bu ayrima uymali.
@@ -298,6 +332,25 @@ const store = {
 const names = o => Array.isArray(o) ? o.map(x => x?.name ?? x) : [];
 const colorCount = w => Number(w) === 140 ? 6 : 4;
 const optsHtml = o => Object.keys(o).map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
+/* ---------- Ek renkler (Firebase: kale_colors_v1, sadece bu sayfa YAZAR; siparis.html okur) ----------
+   Sabit paletteki renkler silinmez. Eklenen renkler [{name, hex}] listesi olarak saklanır. */
+const BASE_COLOR_NAMES = new Set(Object.keys(COLORS));
+const CCOL_KEY = "kale_colors_cache_v1";
+let customColors = [], colorsRef = null, colSel = null;
+const rawColors = {};   /* makine -> Firebase'den gelen ham renk listesi (ek renkler sonradan yüklenirse yeniden doğrulamak için) */
+function applyCustomColors(list) {
+  Object.keys(COLORS).forEach(k => { if (!BASE_COLOR_NAMES.has(k)) delete COLORS[k]; });
+  const arr = Array.isArray(list) ? list : Object.values(list || {});
+  customColors = [];
+  arr.forEach(c => {
+    if (c && typeof c.name === "string" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) {
+      COLORS[c.name] = c.hex.toLowerCase(); customColors.push({ name: c.name, hex: c.hex.toLowerCase() });
+    }
+  });
+  store.set(CCOL_KEY, customColors);
+}
+applyCustomColors(store.get(CCOL_KEY, []));
+
 /* Makine özelliği (sadece düzenleme penceresinde görünür): "spingel" | "simli" | "" - biri seçilince diğeri kalkar */
 const EXTRAS = ["spingel", "simli"];
 let selectedExtra = "";
@@ -383,6 +436,7 @@ function cardHtml(l) {
       <div class="row"><small>GELECEK:</small><span>${esc(nxt)}</span></div>
     </div>
     <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}</button>
+    ${l.extra ? `<div class="xtag">✅ ${l.extra === "spingel" ? "ŞPİNGEL" : "SİMLİ"}</div>` : ""}
   </div>
   <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
 }
@@ -504,6 +558,70 @@ function renderCustManager() {
     ? list.map((n, i) => `<div class="cm-item"><b title="${esc(n)}">${esc(n)}</b><small>${usage(n)} makine</small><button type="button" data-a="ren" data-i="${i}" aria-label="Düzenle">✎</button><button type="button" class="del" data-a="del" data-i="${i}" aria-label="Sil">🗑</button></div>`).join("")
     : '<div class="empty">Henüz müşteri yok. Yukarıdan ekleyin.</div>';
 }
+/* ---------- Renk yönetimi ---------- */
+function colorUsage(name) {
+  const main = [], sub = [], seen = new Set();
+  Object.values(looms).forEach(l => {
+    const w140 = l.width === 140;
+    l.colors.forEach((c, i) => {
+      if (c !== name) return;
+      const isMain = w140 ? (i === 0 || i === 3) : i === 0;
+      const wing = w140 ? (i < 3 ? "1. kanat" : "2. kanat") : "";
+      const key = (isMain ? "m" : "s") + l.id + wing;
+      if (seen.has(key)) return; seen.add(key);
+      (isMain ? main : sub).push({ id: l.id, wing });
+    });
+  });
+  return { main, sub };
+}
+function renderColManager() {
+  const list = Object.keys(COLORS).filter(k => k !== "0").sort(trCompare);
+  const chips = (arr, cls) => arr.map(x => `<span class="lchip ${cls}">${esc(x.id)}${x.wing ? ` <i>· ${x.wing}</i>` : ""}</span>`).join("");
+  $("colList").innerHTML = list.map(n => {
+    const u = colorUsage(n), open = colSel === n, custom = !BASE_COLOR_NAMES.has(n);
+    let h = `<div class="col-item${open ? " open" : ""}" data-n="${esc(n)}"><span class="dot" style="background:${hexOf(n)};width:22px;height:22px"></span><b title="${esc(n)}">${esc(n)}</b><small>ana ${u.main.length} · alt ${u.sub.length}</small>${custom ? `<button type="button" class="del" data-a="del" data-n="${esc(n)}" aria-label="Sil">🗑</button>` : ""}</div>`;
+    if (open) {
+      h += `<div class="col-det">` +
+        (u.main.length ? `<div><div class="lab">● ANA RENK OLARAK (${u.main.length})</div><div class="chips">${chips(u.main, "m")}</div></div>` : "") +
+        (u.sub.length ? `<div><div class="lab">○ ALT RENK OLARAK (${u.sub.length})</div><div class="chips">${chips(u.sub, "")}</div></div>` : "") +
+        (!u.main.length && !u.sub.length ? `<div class="lab">Hiçbir makinede kullanılmıyor.</div>` : "") + `</div>`;
+    }
+    return h;
+  }).join("");
+}
+function afterColorsChanged() {
+  refresh();
+  if ($("colModal").classList.contains("open")) renderColManager();
+  if ($("editModal").classList.contains("open")) { try { buildColorRows($("fWidth").value, readColors()); } catch {} }
+}
+function renormColors() {   /* ek renkler sonradan geldiyse makine renklerini ham veriden yeniden doğrula */
+  Object.keys(rawColors).forEach(id => { if (looms[id]) looms[id].colors = normalize({ ...looms[id], colors: rawColors[id] }, id).colors; });
+}
+const trUpper = n => n.replace(/i/g, "İ").replace(/ı/g, "I").toUpperCase();
+function saveColors() { store.set(CCOL_KEY, customColors); colorsRef?.set(customColors).catch(() => toast("Renkler kaydedilemedi: yetkiniz yok veya bağlantı yok")); }
+function addColor() {
+  const name = trUpper($("colName").value.trim().replace(/\s+/g, " ")), hex = $("colHex").value;
+  if (!name) return toast("Renk adını yazın");
+  if (name === "0" || name === "-") return toast("Bu ad kullanılamaz");
+  if (Object.keys(COLORS).some(k => lc(k) === lc(name))) return toast("Bu renk zaten var");
+  applyCustomColors([...customColors, { name, hex }]); saveColors();
+  $("colName").value = ""; colSel = name; afterColorsChanged(); toast("Renk eklendi ✓");
+}
+function delColor(name) {
+  const u = colorUsage(name), n = u.main.length + u.sub.length;
+  const ordN = Object.values(ordersData || {}).reduce((t, o) => t + Object.values(o?.lines || {}).filter(l => l && l.color === name).length, 0);
+  const msg = (n || ordN) ? `"${name}" ${n} makine yerinde ve ${ordN} sipariş satırında kullanılıyor. Silinirse makine kartlarında "Yok (0)" olur. Silinsin mi?` : `"${name}" silinsin mi?`;
+  if (!confirm(msg)) return;
+  const t = Date.now();
+  Object.values(looms).forEach(l => {
+    if (!l.colors.includes(name)) return;
+    l.colors = l.colors.map(c => c === name ? "0" : c); l.lastModified = t; rawColors[l.id] = l.colors;
+    loomsRef?.child(l.id).update({ colors: l.colors, lastModified: t }).catch(() => {});
+  });
+  applyCustomColors(customColors.filter(c => c.name !== name)); saveColors();
+  if (colSel === name) colSel = null;
+  store.set(CACHE_KEY, looms); afterColorsChanged();
+}
 function openCust() { $("cmNew").value = ""; renderCustManager(); $("custModal").classList.add("open"); }
 function changeCustomer(old, neu) {
   const t = Date.now();
@@ -570,6 +688,16 @@ function initUi() {
   });
   $("custBtn").onclick = () => openLoom("__cust__");
   $("custClose").onclick = () => $("custModal").classList.remove("open");
+  $("colBtn").onclick = () => { colSel = null; $("colName").value = ""; renderColManager(); $("colModal").classList.add("open"); };
+  $("colClose").onclick = () => $("colModal").classList.remove("open");
+  $("colAdd").onclick = addColor;
+  $("colName").addEventListener("keydown", e => { if (e.key === "Enter") addColor(); });
+  $("colList").addEventListener("click", e => {
+    const d = e.target.closest('[data-a="del"]');
+    if (d) { delColor(d.dataset.n); return; }
+    const it = e.target.closest(".col-item"); if (!it) return;
+    colSel = colSel === it.dataset.n ? null : it.dataset.n; renderColManager();
+  });
   $("cmAdd").onclick = () => { const n = addCustomer($("cmNew").value); if (n) { $("cmNew").value = ""; renderCustManager(); toast("Kaydedildi ✓"); } };
   $("cmNew").addEventListener("keydown", e => { if (e.key === "Enter") $("cmAdd").onclick(); });
   $("cmList").onclick = e => {
@@ -581,7 +709,7 @@ function initUi() {
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); $("colModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
@@ -632,7 +760,7 @@ function saveLoom() {
     extra: selectedExtra,
     lastModified: Date.now()
   };
-  looms[selectedId] = data; store.set(CACHE_KEY, looms); refresh();
+  looms[selectedId] = data; rawColors[selectedId] = data.colors; store.set(CACHE_KEY, looms); refresh();
   $("editModal").classList.remove("open");
   if (loomsRef) loomsRef.child(selectedId).set(data).then(() => toast("Kaydedildi ✓")).catch(() => toast("Kaydedilemedi: yetkiniz yok veya bağlantı yok"));
   else toast("Yerel olarak kaydedildi");
@@ -729,6 +857,9 @@ function startData() {
   const db = firebase.database();
   loomsRef = db.ref("kale_dokuma_live_v2");
   custRef = db.ref("kale_customers_pool_v2");
+  colorsRef = db.ref("kale_colors_v1");
+  /* Ek renkler MAKİNELERDEN ÖNCE yüklenir; yoksa ek renkli makineler "0" sanılır */
+  const colorsReady = colorsRef.once("value").then(sn => applyCustomColors(sn.val())).catch(() => {});
   ordRef = db.ref("kale_siparis_v1/orders");
   ordRef.on("value", s => { ordersData = s.val() || {}; renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, denied);
 
@@ -736,20 +867,21 @@ function startData() {
   db.ref(".info/connected").on("value", s => setSync(!!s.val(), s.val() ? "Canlı Bağlantı" : "Çevrimdışı"));
 
   /* İlk yükleme: eksik makineleri tamamla (migrasyon), sonra tek tek değişiklikleri dinle */
-  loomsRef.once("value").then(snap => {
+  colorsReady.then(() => loomsRef.once("value")).then(snap => {
     const remote = snap.val() || {};
     allIds().forEach(id => {
-      if (remote[id]) looms[id] = normalize(remote[id], id);
+      if (remote[id]) { rawColors[id] = remote[id].colors; looms[id] = normalize(remote[id], id); }
       else loomsRef.child(id).set(looms[id]).catch(() => {});
     });
     store.set(CACHE_KEY, looms); refresh();
     const onLoom = s => {
       if (!s.key || !(s.key in looms)) return;
-      looms[s.key] = normalize(s.val(), s.key);
+      rawColors[s.key] = s.val()?.colors; looms[s.key] = normalize(s.val(), s.key);
       store.set(CACHE_KEY, looms); refresh();
     };
     loomsRef.on("child_changed", onLoom);
     loomsRef.on("child_added", onLoom);
+    colorsRef.on("value", sn => { applyCustomColors(sn.val()); renormColors(); afterColorsChanged(); }, denied);
   }).catch(e => { setSync(false, "Bağlantı yok"); denied(e); });
 
   custRef.on("value", s => {
