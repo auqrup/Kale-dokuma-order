@@ -42,6 +42,7 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .card:active{transform:scale(.97)}
 .stripe{height:10px;flex-shrink:0}
+.stripe.bot{box-shadow:inset 0 1px 0 rgba(255,255,255,.22);margin-top:auto}
 .body{padding:9px;display:flex;flex-direction:column;gap:7px;min-width:0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:5px;min-width:0}
 .id{font-weight:800;font-size:1.12rem;color:var(--ac)}
@@ -104,6 +105,14 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .pin{background:var(--card);width:90%;max-width:320px;border-radius:16px;padding:22px;text-align:center;border:1px solid var(--ac)}
 .pin input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--ac);font-size:1.3rem;text-align:center;letter-spacing:6px;font-weight:700;margin:14px 0}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
+.obtn{width:100%;background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:8px;font-size:.78rem;font-weight:700;cursor:pointer}
+.oi{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;margin-bottom:7px;display:flex;flex-direction:column;gap:4px}
+.oh{display:flex;align-items:center;gap:7px}
+.oh b{flex:1;font-size:.92rem;font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oi small{color:var(--mu);font-size:.76rem;font-weight:600}
+.oi .os{font-size:.8rem;font-weight:700}
+.oi .ok{color:var(--run)}.oi .mid{color:var(--yarn)}.oi .bad{color:var(--mu)}.oi .warn{color:var(--stop)}
+.osec{font-size:.8rem;font-weight:800;color:var(--ac);margin:12px 0 7px}
 #printSection{display:none}
 @media print{
 body *{visibility:hidden}
@@ -202,6 +211,17 @@ body *{visibility:hidden}
   </div>
 </div>
 
+<div class="overlay" id="ordModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="ordClose">✕ Kapat</button>
+      <h2 id="ordTitle">Siparişler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div id="ordBody"></div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    GÜVENLİK NOTU: Bu PIN sadece arayüz kilididir. Gerçek koruma için
@@ -274,7 +294,7 @@ let customers = store.get(CUST_KEY, []);
 let isAuth = sessionStorage.getItem("kale_auth_ok") === "true";
 let pendingId = null, selectedId = null, selectedStatus = "running";
 let branch = "all", widthFilter = "all", query = "";
-let loomsRef = null, custRef = null;
+let loomsRef = null, custRef = null, ordRef = null, ordersData = {}, ordId = null;
 
 /* ---------- Render ---------- */
 function visible(l) {
@@ -305,7 +325,6 @@ function colorsHtml(l) {
 function cardHtml(l) {
   const c = l.colors;
   const cur = l.currentCustomer?.trim() || "-", nxt = l.nextCustomer?.trim() || "-";
-  const warps = l.warps.map((w, i) => `<div class="wi"><span style="color:var(--mu)">${i + 1}:</span><span class="dot" style="background:${warpHex(w)}"></span><span>${esc(w)}</span></div>`).join("");
   const stripe = l.width === 140 ? `linear-gradient(90deg,${hexOf(c[0])} 50%,${hexOf(c[3])} 50%)` : hexOf(c[0]);
   return `
   <div class="stripe" style="background:${stripe}"></div>
@@ -321,9 +340,60 @@ function cardHtml(l) {
       <div class="row"><small>ŞU ANKİ:</small><span class="cur">${esc(cur)}</span></div>
       <div class="row"><small>GELECEK:</small><span>${esc(nxt)}</span></div>
     </div>
-    <div class="warp"><small>ÇÖZGÜ</small><div class="warps">${warps}</div></div>
-  </div>`;
+    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}</button>
+  </div>
+  <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
 }
+
+/* ---------- Siparişler (kale_siparis_v1: sadece OKUMA) ---------- */
+const arr = x => Array.isArray(x) ? x : Object.values(x || {});
+const wingsOf = l => l.width === 140 ? [l.colors[0], l.colors[3]] : [l.colors[0]];
+const hitOf = (ln, l) => wingsOf(l).filter(c => c === ln.color).length;
+/* Şu anki renkle yapılabilir mi? (140'ta tek kanat yeterli, tam-en ürünlerde iki kanat da aynı olmalı) */
+/* Satırın bu makinede tahmini tezgah metresi (kalan adet üzerinden); mt siparis.html tarafından yazılır */
+function lineM(ln, l) {
+  const e = (ln.mt || {})[l.id]; if (!e) return null;
+  const R = (ln.qty || 0) - (ln.done || 0); let [ac, len] = e;
+  if (!ac) return Math.round(R * len * 10) / 10;
+  if (l.width === 140 && ac === 2 && hitOf(ln, l) === 1) ac = 1;
+  return Math.round(Math.ceil(R / ac) * len * 10) / 10;
+}
+const fits = (ln, l) => { const n = wingsOf(l).length, h = hitOf(ln, l); return h === n || (h > 0 && !ln.full); };
+function ordItems(l) {
+  const asg = [], pos = [];
+  Object.values(ordersData).forEach(o => arr(o?.lines).forEach(ln => {
+    const r = (ln.qty || 0) - (ln.done || 0); if (r <= 0) return;
+    const it = { o, ln, r };
+    if (ln.asg && ln.asg[l.id] !== undefined) asg.push(it);
+    else if (!ln.comp && arr(ln.ok).includes(l.id) && fits(ln, l)) pos.push(it);
+  }));
+  pos.sort((a, b) => hitOf(b.ln, l) - hitOf(a.ln, l));
+  return { asg, pos };
+}
+const ordCount = l => { const x = ordItems(l); return x.asg.length + x.pos.length; };
+function itemHtml(it, l, assigned) {
+  const { o, ln, r } = it, w = wingsOf(l), hit = hitOf(ln, l), notes = [], mtr = ln.comp ? null : lineM(ln, l);
+  if (!ln.comp && hit > 0 && hit < w.length && !ln.full) notes.push(`<div class="os mid">◐ Diğer kanat ${esc(w.find(c => c !== ln.color))}: müşteri onu da alır</div>`);
+  if (assigned && ln.asg[l.id] !== w.join("|")) notes.push('<div class="os warn">⚠ Atandığından beri renk değişti</div>');
+  if (assigned && !fits(ln, l)) notes.push('<div class="os bad">Şu an bu renk takılı değil</div>');
+  const others = Object.keys(ln.asg || {}).filter(k => k !== l.id);
+  return `<div class="oi"><div class="oh"><span class="dot" style="background:${hexOf(ln.color)};width:14px;height:14px"></span>
+    <b>${esc(o.cust)}</b><small>Kalan: ${r}</small></div>
+    <small>${esc(ln.pn || ln.k)} · ${esc(ln.color)}${mtr != null ? ` · ≈ ${mtr} m` : ""}</small>${ln.comp ? "<small>↳ Eşlik eden satır (diğer kanat)</small>" : ""}${notes.join("")}
+    ${others.length ? `<small>📌 Ayrıca atandı: ${others.map(esc).join(", ")}</small>` : ""}</div>`;
+}
+function renderOrd() {
+  const l = looms[ordId]; if (!l) return;
+  $("ordTitle").textContent = `${l.id} Siparişleri`;
+  const { asg, pos } = ordItems(l);
+  /* eşlik eden satır aynı tezgahta aynı anda üretilir: metraja tekrar eklenmez */
+  const mts = asg.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null);
+  const asgTotal = mts.length ? Math.round(mts.reduce((a, b) => a + b, 0) * 10) / 10 : null;
+  $("ordBody").innerHTML = (asg.length ? `<div class="osec">📌 Bu makineye atananlar (${asg.length})${asgTotal != null ? ` · toplam ≈ ${asgTotal} m` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
+    + (pos.length ? `<div class="osec">Şu anki renkle yapılabilir (${pos.length})</div>` + pos.map(i => itemHtml(i, l, false)).join("") : "")
+    || '<div class="empty">Şu anki renge uygun bekleyen sipariş yok.</div>';
+}
+function openOrd(id) { ordId = id; renderOrd(); $("ordModal").classList.add("open"); }
 
 function renderLooms() {
   const grid = $("grid");
@@ -332,9 +402,10 @@ function renderLooms() {
   if (!list.length) { grid.innerHTML = '<div class="empty">Sonuç bulunamadı. Aramayı veya filtreleri değiştirin.</div>'; return; }
   const frag = document.createDocumentFragment();
   list.forEach(l => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "card"; b.innerHTML = cardHtml(l);
-    b.onclick = () => openLoom(l.id);
+    const b = document.createElement("div");
+    b.setAttribute("role", "button"); b.tabIndex = 0; b.className = "card"; b.innerHTML = cardHtml(l);
+    b.onclick = e => e.target.closest(".obtn") ? openOrd(l.id) : openLoom(l.id);
+    b.onkeydown = e => { if (e.key === "Enter" && e.target === b) openLoom(l.id); };
     frag.appendChild(b);
   });
   grid.appendChild(frag);
@@ -456,11 +527,12 @@ function initUi() {
   };
   $("closeBtn").onclick = () => $("editModal").classList.remove("open");
   $("saveBtn").onclick = saveLoom;
+  $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
   $("pinCancel").onclick = closePin;
   $("pinOk").onclick = verifyPin;
   $("pinInput").addEventListener("keydown", e => { if (e.key === "Enter") verifyPin(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); closePin(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); $("ordModal").classList.remove("open"); closePin(); } });
 }
 
 /* ---------- PIN ---------- */
@@ -564,7 +636,9 @@ function printReport() {
   window.print();
 }
 
-/* ---------- Firebase ---------- */
+/* ---------- Firebase ----------
+   Bu sayfa YAZAR: kale_dokuma_live_v2 (makineler), kale_customers_pool_v2 (müşteriler)
+   Bu sayfa sadece OKUR: kale_siparis_v1 (siparişler) */
 function setSync(ok, text) { $("sync").classList.toggle("off", !ok); $("syncText").textContent = text; }
 
 function initFirebase() {
@@ -582,6 +656,8 @@ function initFirebase() {
     const db = firebase.database();
     loomsRef = db.ref("kale_dokuma_live_v2");
     custRef = db.ref("kale_customers_pool_v2");
+    ordRef = db.ref("kale_siparis_v1/orders");
+    ordRef.on("value", s => { ordersData = s.val() || {}; renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, () => {});
 
     /* Bağlantı durumu */
     db.ref(".info/connected").on("value", s => setSync(!!s.val(), s.val() ? "Canlı Bağlantı" : "Çevrimdışı"));
@@ -616,4 +692,3 @@ initUi(); refresh(); updateCustList(); initFirebase();
 </script>
 </body>
 </html>
- 
