@@ -104,7 +104,8 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .cm-item button{background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:.85rem}
 .cm-item button.del{color:var(--stop);border-color:rgba(248,113,113,.3)}
 .pin{background:var(--card);width:90%;max-width:320px;border-radius:16px;padding:22px;text-align:center;border:1px solid var(--ac)}
-.pin input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--ac);font-size:1.3rem;text-align:center;letter-spacing:6px;font-weight:700;margin:14px 0}
+.pin input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--tx);font-size:1rem;text-align:left;font-weight:600;margin:6px 0;font-family:inherit}
+#login{z-index:400;background:var(--page)}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
 .obtn{width:100%;background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:8px;font-size:.78rem;font-weight:700;cursor:pointer}
 .oi{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;margin-bottom:7px;display:flex;flex-direction:column;gap:4px}
@@ -127,6 +128,7 @@ body *{visibility:hidden}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -136,6 +138,7 @@ body *{visibility:hidden}
     <div class="top-actions">
       <button type="button" class="pdf-btn" id="custBtn">👥 Müşteriler</button>
       <button type="button" class="pdf-btn" id="pdfBtn">🖨️ PDF / Yazdır</button>
+      <button type="button" class="pdf-btn" id="outBtn" title="Çıkış">🚪</button>
       <div class="sync off" id="sync"><span class="pulse"></span><span id="syncText">Bağlanıyor</span></div>
     </div>
   </div>
@@ -159,17 +162,15 @@ body *{visibility:hidden}
 <div id="printSection"></div>
 <div class="toast" id="toast"></div>
 
-<div class="overlay mid" id="pinModal">
-  <div class="pin">
-    <h3 style="font-size:1rem;margin-bottom:4px">🔒 Güvenlik Kilidi</h3>
-    <p style="color:var(--mu);font-size:.78rem">Düzenleme için şifreyi giriniz:</p>
-    <input type="password" id="pinInput" maxlength="8" placeholder="••••" inputmode="numeric" autocomplete="off">
-    <div id="pinErr" style="color:var(--stop);font-size:.78rem;display:none;margin-bottom:10px">Hatalı şifre! Tekrar deneyin.</div>
-    <div style="display:flex;gap:8px">
-      <button type="button" class="b-cancel" style="flex:1" id="pinCancel">Vazgeç</button>
-      <button type="button" class="b-save" style="flex:1" id="pinOk">Giriş</button>
-    </div>
-  </div>
+<div class="overlay mid open" id="login">
+  <form class="pin" id="loginForm" autocomplete="on">
+    <h3 style="font-size:1rem;margin-bottom:4px">🔒 Giriş</h3>
+    <p style="color:var(--mu);font-size:.78rem;margin-bottom:8px">Devam etmek için hesabınızla giriş yapın.</p>
+    <input type="email" id="loginEmail" placeholder="E-posta" autocomplete="username" inputmode="email" required>
+    <input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password" required>
+    <div id="loginErr" style="color:var(--stop);font-size:.78rem;display:none;margin:4px 0 8px"></div>
+    <button type="submit" class="b-save" style="width:100%;margin-top:8px" id="loginBtn">Giriş</button>
+  </form>
 </div>
 
 <div class="overlay" id="editModal">
@@ -225,18 +226,10 @@ body *{visibility:hidden}
 
 <script>
 /* ============================================================
-   GÜVENLİK NOTU: Bu PIN sadece arayüz kilididir. Gerçek koruma için
-   Firebase Console > Realtime Database > Rules bölümüne şunu yazın
-   ve Authentication ile giriş ekleyin:
-   {
-     "rules": {
-       ".read": true,
-       ".write": "auth != null"
-     }
-   }
-   PIN değiştirmek için yeni PIN'in SHA-256 değerini PIN_HASH'e yazın.
+   GÜVENLİK: Giriş Firebase Authentication (e-posta/şifre) ile yapılır.
+   Veritabanı kuralları sadece izinli UID'lere okuma/yazma verir
+   (Firebase Console > Realtime Database > Kurallar).
    ============================================================ */
-const PIN_HASH = "9113b98df80f877c7a2ee5d865a04c9514b4e9bf25a49d315b0b15f115d2f0d2";
 const CACHE_KEY = "kale_dokuma_local_v3";
 const CUST_KEY = "kale_customers_list_v3";
 const BRANCHES = { R: { name: "Rüya", count: 16 }, A: { name: "Acar", count: 4 }, Y: { name: "Y. Acar", count: 8 }, K: { name: "Karaman", count: 6 } };
@@ -292,8 +285,7 @@ const defaults = buildFactory();
 allIds().forEach(id => { looms[id] = normalize(cached?.[id] ?? defaults[id], id); });
 let customers = store.get(CUST_KEY, []);
 
-let isAuth = sessionStorage.getItem("kale_auth_ok") === "true";
-let pendingId = null, selectedId = null, selectedStatus = "running";
+let selectedId = null, selectedStatus = "running";
 let branch = "all", widthFilter = "all", query = "";
 let loomsRef = null, custRef = null, ordRef = null, ordersData = {}, ordId = null;
 
@@ -530,35 +522,12 @@ function initUi() {
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  $("pinCancel").onclick = closePin;
-  $("pinOk").onclick = verifyPin;
-  $("pinInput").addEventListener("keydown", e => { if (e.key === "Enter") verifyPin(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); $("ordModal").classList.remove("open"); closePin(); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
-/* ---------- PIN ---------- */
-async function sha256(s) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
+/* ---------- Giriş ---------- */
 const enter = id => id === "__cust__" ? openCust() : openModal(id);
-function openLoom(id) {
-  if (isAuth) return enter(id);
-  pendingId = id; $("pinInput").value = ""; $("pinErr").style.display = "none";
-  $("pinModal").classList.add("open"); setTimeout(() => $("pinInput").focus(), 100);
-}
-function closePin() { $("pinModal").classList.remove("open"); pendingId = null; }
-async function verifyPin() {
-  if (!crypto?.subtle) { $("pinErr").textContent = "Güvenli bağlantı (HTTPS) gerekli."; $("pinErr").style.display = "block"; return; }
-  if (await sha256($("pinInput").value.trim()) === PIN_HASH) {
-    isAuth = true; sessionStorage.setItem("kale_auth_ok", "true");
-    const id = pendingId; closePin(); if (id) enter(id);
-  } else {
-    $("pinErr").textContent = "Hatalı şifre! Tekrar deneyin.";
-    $("pinErr").style.display = "block"; $("pinInput").value = ""; $("pinInput").focus();
-  }
-}
-
+const openLoom = id => enter(id);
 /* ---------- Edit modal ---------- */
 function setStatus(st) {
   selectedStatus = st;
@@ -642,8 +611,38 @@ function printReport() {
    Bu sayfa sadece OKUR: kale_siparis_v1 (siparişler) */
 function setSync(ok, text) { $("sync").classList.toggle("off", !ok); $("syncText").textContent = text; }
 
+function authMsg(e) {
+  const c = (e && e.code) || "";
+  if (c === "auth/network-request-failed") return "Bağlantı yok. İnterneti kontrol edin.";
+  if (c === "auth/too-many-requests") return "Çok fazla deneme. Biraz bekleyip tekrar deneyin.";
+  if (c === "auth/user-disabled") return "Bu hesap devre dışı.";
+  if (c === "auth/invalid-email") return "E-posta adresi geçersiz.";
+  return "E-posta veya şifre hatalı.";
+}
+
+let dataStarted = false;
+function showLogin(msg) {
+  $("login").classList.add("open");
+  const e = $("loginErr"); e.textContent = msg || ""; e.style.display = msg ? "block" : "none";
+  $("loginBtn").disabled = false;
+}
+function signOut() {
+  const done = () => { try { localStorage.removeItem(CACHE_KEY); localStorage.removeItem(CUST_KEY); } catch {} location.reload(); };
+  if (typeof firebase !== "undefined" && firebase.apps.length) firebase.auth().signOut().then(done, done); else done();
+}
+const denied = e => { if (e && (e.code === "PERMISSION_DENIED" || /permission/i.test(e.message || ""))) { toast("Bu hesabın yetkisi yok"); setTimeout(signOut, 1800); } };
+
 function initFirebase() {
-  if (typeof firebase === "undefined") return setSync(false, "Yerel Mod");
+  $("loginForm").addEventListener("submit", ev => {
+    ev.preventDefault();
+    if (typeof firebase === "undefined" || !firebase.apps.length) return showLogin("Bağlantı kurulamadı. İnterneti kontrol edip sayfayı yenileyin.");
+    $("loginBtn").disabled = true;
+    firebase.auth().signInWithEmailAndPassword($("loginEmail").value.trim(), $("loginPass").value)
+      .then(() => { $("loginPass").value = ""; })
+      .catch(e => showLogin(authMsg(e)));
+  });
+  $("outBtn").onclick = signOut;
+  if (typeof firebase === "undefined") { setSync(false, "Bağlantı yok"); return showLogin("Firebase yüklenemedi. İnterneti kontrol edip sayfayı yenileyin."); }
   try {
     firebase.initializeApp({
       apiKey: "AIzaSyBWWp1Le6f3y__f7WWoFVvYw9MwdHwFYjc",
@@ -654,39 +653,48 @@ function initFirebase() {
       messagingSenderId: "208016312960",
       appId: "1:208016312960:web:db8531b655252e19ecf465"
     });
-    const db = firebase.database();
-    loomsRef = db.ref("kale_dokuma_live_v2");
-    custRef = db.ref("kale_customers_pool_v2");
-    ordRef = db.ref("kale_siparis_v1/orders");
-    ordRef.on("value", s => { ordersData = s.val() || {}; renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, () => {});
-
-    /* Bağlantı durumu */
-    db.ref(".info/connected").on("value", s => setSync(!!s.val(), s.val() ? "Canlı Bağlantı" : "Çevrimdışı"));
-
-    /* İlk yükleme: eksik makineleri tamamla (migrasyon), sonra tek tek değişiklikleri dinle */
-    loomsRef.once("value").then(snap => {
-      const remote = snap.val() || {};
-      allIds().forEach(id => {
-        if (remote[id]) looms[id] = normalize(remote[id], id);
-        else loomsRef.child(id).set(looms[id]).catch(() => {});
-      });
-      store.set(CACHE_KEY, looms); refresh();
-      const onLoom = s => {
-        if (!s.key || !(s.key in looms)) return;
-        looms[s.key] = normalize(s.val(), s.key);
-        store.set(CACHE_KEY, looms); refresh();
-      };
-      loomsRef.on("child_changed", onLoom);
-      loomsRef.on("child_added", onLoom);
-    }).catch(() => setSync(false, "Yerel Mod"));
-
-    custRef.on("value", s => {
-      const v = s.val();
-      customers = v ? Object.values(v).filter(Boolean) : []; store.set(CUST_KEY, customers); updateCustList();
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) { $("login").classList.remove("open"); startData(); }
+      else if (!dataStarted) showLogin();
+      else location.reload();
     });
   } catch (e) {
-    console.warn("Firebase kapalı:", e); setSync(false, "Yerel Mod");
+    console.warn("Firebase kapalı:", e); setSync(false, "Bağlantı yok"); showLogin("Firebase başlatılamadı.");
   }
+}
+
+function startData() {
+  if (dataStarted) return; dataStarted = true;
+  const db = firebase.database();
+  loomsRef = db.ref("kale_dokuma_live_v2");
+  custRef = db.ref("kale_customers_pool_v2");
+  ordRef = db.ref("kale_siparis_v1/orders");
+  ordRef.on("value", s => { ordersData = s.val() || {}; renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, denied);
+
+  /* Bağlantı durumu */
+  db.ref(".info/connected").on("value", s => setSync(!!s.val(), s.val() ? "Canlı Bağlantı" : "Çevrimdışı"));
+
+  /* İlk yükleme: eksik makineleri tamamla (migrasyon), sonra tek tek değişiklikleri dinle */
+  loomsRef.once("value").then(snap => {
+    const remote = snap.val() || {};
+    allIds().forEach(id => {
+      if (remote[id]) looms[id] = normalize(remote[id], id);
+      else loomsRef.child(id).set(looms[id]).catch(() => {});
+    });
+    store.set(CACHE_KEY, looms); refresh();
+    const onLoom = s => {
+      if (!s.key || !(s.key in looms)) return;
+      looms[s.key] = normalize(s.val(), s.key);
+      store.set(CACHE_KEY, looms); refresh();
+    };
+    loomsRef.on("child_changed", onLoom);
+    loomsRef.on("child_added", onLoom);
+  }).catch(e => { setSync(false, "Bağlantı yok"); denied(e); });
+
+  custRef.on("value", s => {
+    const v = s.val();
+    customers = v ? Object.values(v).filter(Boolean) : []; store.set(CUST_KEY, customers); updateCustList();
+  }, denied);
 }
 
 initUi(); refresh(); updateCustList(); initFirebase();

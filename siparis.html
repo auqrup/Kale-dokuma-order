@@ -25,8 +25,8 @@ a.nb{text-decoration:none;color:inherit;display:inline-block}
 #lock{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center}
 .lockbox{background:var(--card);border:1px solid var(--ac);border-radius:16px;padding:22px;width:90%;max-width:320px;text-align:center}
 .lockbox p{color:var(--mu);font-size:.8rem;margin-top:4px}
-.lockbox input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--ac);font-size:1.3rem;text-align:center;letter-spacing:6px;font-weight:700;margin:14px 0 8px}
-#pinErr{color:var(--stop);font-size:.78rem;display:none;margin-bottom:4px}
+.lockbox input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--tx);font-size:1rem;text-align:left;font-weight:600;margin:6px 0;font-family:inherit}
+#loginErr{color:var(--stop);font-size:.78rem;display:none;margin:4px 0}
 .nb.del{color:var(--stop);border-color:rgba(248,113,113,.3)}
 .crumbs{display:flex;flex-wrap:wrap;gap:5px}
 .crumbs:empty{display:none}
@@ -93,6 +93,7 @@ textarea.inp{font-size:.8rem;margin-top:6px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 <header>
@@ -104,13 +105,15 @@ textarea.inp{font-size:.8rem;margin-top:6px}
     <button class="nb" data-act="back">← Geri</button>
     <button class="nb" data-act="home">🏠 Ana sayfa</button>
     <a class="nb" href="https://auqrup.github.io/Kale-dokuma-order/">🧵 Makineler</a>
+    <button class="nb" id="outBtn" title="Çıkış">🚪 Çıkış</button>
   </div>
   <div class="crumbs" id="crumbs"></div>
 </header>
 <main id="app"></main>
-<div id="lock"><div class="lockbox"><h3>🔒 Güvenlik Kilidi</h3><p>Devam etmek için şifreyi giriniz:</p>
-<input type="password" id="pinInput" inputmode="numeric" maxlength="8" placeholder="••••" autocomplete="off">
-<div id="pinErr">Hatalı şifre! Tekrar deneyin.</div><button class="primary" id="pinOk" style="margin-top:6px">Giriş</button></div></div>
+<div id="lock"><form class="lockbox" id="loginForm" autocomplete="on"><h3>🔒 Giriş</h3><p>Devam etmek için hesabınızla giriş yapın.</p>
+<input type="email" id="loginEmail" placeholder="E-posta" autocomplete="username" inputmode="email" required>
+<input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password" required>
+<div id="loginErr"></div><button type="submit" class="primary" id="loginBtn" style="margin-top:6px">Giriş</button></form></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -496,8 +499,38 @@ document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id
    Bu sayfa YAZAR: kale_siparis_v1
    Bu sayfa sadece OKUR: kale_dokuma_live_v2 (makineler), kale_customers_pool_v2 (müşteriler) */
 function setSync(on, t) { $("sync").classList.toggle("on", on); $("sync").textContent = t; }
+function authMsg(e) {
+  const c = (e && e.code) || "";
+  if (c === "auth/network-request-failed") return "Bağlantı yok. İnterneti kontrol edin.";
+  if (c === "auth/too-many-requests") return "Çok fazla deneme. Biraz bekleyip tekrar deneyin.";
+  if (c === "auth/user-disabled") return "Bu hesap devre dışı.";
+  if (c === "auth/invalid-email") return "E-posta adresi geçersiz.";
+  return "E-posta veya şifre hatalı.";
+}
+
+let dataStarted = false;
+function showLogin(msg) {
+  $("lock").style.display = "flex";
+  const e = $("loginErr"); e.textContent = msg || ""; e.style.display = msg ? "block" : "none";
+  $("loginBtn").disabled = false;
+}
+function signOut() {
+  const done = () => { try { localStorage.removeItem("kale_dokuma_local_v3"); localStorage.removeItem("kale_customers_list_v3"); localStorage.removeItem(OKEY); } catch {} location.reload(); };
+  if (typeof firebase !== "undefined" && firebase.apps.length) firebase.auth().signOut().then(done, done); else done();
+}
+const denied = e => { if (e && (e.code === "PERMISSION_DENIED" || /permission/i.test(e.message || ""))) { toast("Bu hesabın yetkisi yok"); setTimeout(signOut, 1800); } };
+
 function initFb() {
-  if (typeof firebase === "undefined") return setSync(false, "Yerel veri");
+  $("loginForm").addEventListener("submit", ev => {
+    ev.preventDefault();
+    if (typeof firebase === "undefined" || !firebase.apps.length) return showLogin("Bağlantı kurulamadı. İnterneti kontrol edip sayfayı yenileyin.");
+    $("loginBtn").disabled = true;
+    firebase.auth().signInWithEmailAndPassword($("loginEmail").value.trim(), $("loginPass").value)
+      .then(() => { $("loginPass").value = ""; })
+      .catch(e => showLogin(authMsg(e)));
+  });
+  $("outBtn").onclick = signOut;
+  if (typeof firebase === "undefined") { setSync(false, "Bağlantı yok"); return showLogin("Firebase yüklenemedi. İnterneti kontrol edip sayfayı yenileyin."); }
   try {
     firebase.initializeApp({
       apiKey: "AIzaSyBWWp1Le6f3y__f7WWoFVvYw9MwdHwFYjc",
@@ -508,52 +541,44 @@ function initFb() {
       messagingSenderId: "208016312960",
       appId: "1:208016312960:web:db8531b655252e19ecf465"
     });
-    const db = firebase.database();
-    ordRef = db.ref("kale_siparis_v1/orders");
-    ordRef.on("value", s => {
-      const remote = Object.values(s.val() || {}).map(normOrder);
-      if (firstOrd) {
-        firstOrd = false;
-        const have = new Set(remote.map(o => o.id)), localOnly = orders.filter(o => !have.has(o.id));
-        orders = [...remote, ...localOnly];
-        const sig = o => JSON.stringify(o.lines.map(l => [l.ok, l.pn, l.full]));
-        orders.forEach(o => { const b = sig(o); prep(o); if (localOnly.includes(o) || sig(o) !== b) pushOrder(o); });
-      } else orders = remote;
-      cache();
-      if (S.order?.saved) {
-        const fnd = orders.find(o => o.id === S.order.id);
-        if (fnd) S.order = fnd; else { S.order = null; if (["order","res","color","prod"].includes(S.view)) S.view = "home"; }
-      }
-      if (["home","order","res"].includes(S.view)) render(true);
-    }, () => toast("Siparişler Firebase'den okunamadı"));
-    db.ref("kale_dokuma_live_v2").on("value", s => {
-      const r = s.val() || {};
-      ids.forEach(id => { if (r[id]) looms[id] = norm(r[id], id); });
-      setSync(true, "Canlı veri ✓");
-      if (S.view === "res") render(true); else drawChips();
-    }, () => setSync(false, "Yerel veri"));
-    db.ref("kale_customers_pool_v2").on("value", s => {
-      const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; drawChips();
-    }, () => {});
-  } catch { setSync(false, "Yerel veri"); }
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) { $("lock").style.display = "none"; startData(); }
+      else if (!dataStarted) showLogin();
+      else location.reload();
+    });
+  } catch { setSync(false, "Bağlantı yok"); showLogin("Firebase başlatılamadı."); }
 }
-/* ---------- PIN kilidi (sayfa herkese açık yayınlandığı için; sadece arayüz kilididir) ---------- */
-const PIN_HASH = "9113b98df80f877c7a2ee5d865a04c9514b4e9bf25a49d315b0b15f115d2f0d2";
-async function sha256(s) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+
+function startData() {
+  if (dataStarted) return; dataStarted = true;
+  const db = firebase.database();
+  ordRef = db.ref("kale_siparis_v1/orders");
+  ordRef.on("value", s => {
+    const remote = Object.values(s.val() || {}).map(normOrder);
+    if (firstOrd) {
+      firstOrd = false;
+      const have = new Set(remote.map(o => o.id)), localOnly = orders.filter(o => !have.has(o.id));
+      orders = [...remote, ...localOnly];
+      const sig = o => JSON.stringify(o.lines.map(l => [l.ok, l.pn, l.full]));
+      orders.forEach(o => { const b = sig(o); prep(o); if (localOnly.includes(o) || sig(o) !== b) pushOrder(o); });
+    } else orders = remote;
+    cache();
+    if (S.order?.saved) {
+      const fnd = orders.find(o => o.id === S.order.id);
+      if (fnd) S.order = fnd; else { S.order = null; if (["order","res","color","prod"].includes(S.view)) S.view = "home"; }
+    }
+    if (["home","order","res"].includes(S.view)) render(true);
+  }, e => { toast("Siparişler Firebase'den okunamadı"); denied(e); });
+  db.ref("kale_dokuma_live_v2").on("value", s => {
+    const r = s.val() || {};
+    ids.forEach(id => { if (r[id]) looms[id] = norm(r[id], id); });
+    setSync(true, "Canlı veri ✓");
+    if (S.view === "res") render(true); else drawChips();
+  }, e => { setSync(false, "Yerel veri"); denied(e); });
+  db.ref("kale_customers_pool_v2").on("value", s => {
+    const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; drawChips();
+  }, denied);
 }
-async function tryPin() {
-  const err = $("pinErr");
-  if (!crypto?.subtle) { err.textContent = "Güvenli bağlantı (HTTPS) gerekli."; err.style.display = "block"; return; }
-  if (await sha256($("pinInput").value.trim()) === PIN_HASH) {
-    sessionStorage.setItem("kale_auth_ok", "true"); $("lock").style.display = "none";
-  } else { err.textContent = "Hatalı şifre! Tekrar deneyin."; err.style.display = "block"; $("pinInput").value = ""; $("pinInput").focus(); }
-}
-if (sessionStorage.getItem("kale_auth_ok") === "true") $("lock").style.display = "none";
-else setTimeout(() => $("pinInput").focus(), 100);
-$("pinOk").onclick = tryPin;
-$("pinInput").addEventListener("keydown", e => { if (e.key === "Enter") tryPin(); });
 render(); initFb();
 </script>
 </body>
