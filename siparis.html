@@ -117,17 +117,62 @@ textarea.inp{font-size:.8rem;margin-top:6px}
 <div class="toast" id="toast"></div>
 
 <script>
+/* ============================================================
+   KALE DOKUMA - SIPARIS YONLENDIRME SAYFASI (siparis.html)  -- BELGE / DOCUMENTATION
+   Ayrintili belge icin README.md dosyasina bakin.
+
+   NE YAPAR: Musteri siparisi alir (musteri > urun/olcu > renk(ler) > sonuc) ve
+   siparisin hangi tezgahlara verilebilecegini onerir (suggest). Siparis satirlari
+   tezgaha atanabilir (pin), yapilan adet takip edilir.
+
+   VERI: YAZAR kale_siparis_v1/orders. OKUR kale_dokuma_live_v2 (tezgahlar) ve
+   kale_customers_pool_v2 (musteriler) - bu ikisini ASLA yazmaz.
+
+   TEMEL KURALLAR:
+   - P[] urun tablosu ve FULL140 / ONLY100 asagida duzenlenir.
+   - FULL140: 140 cm tezgahlardan sadece bunlar tam 140 cm genislikte uretir
+     (Karaman 1 = "K1"). Diger 140 cm tezgahlar 70 cm'lik iki kanatla calisir.
+   - ONLY100: 200 cm tezgahlardan sadece 100 cm genislikte halı yapan TEK tezgah.
+     = ["A3"] (Acar 3). 100 cm halilarda (100x200/300/400) 1 parca. Jakar ayari yuzunden 200 cm genislikte hali (200x300, 200x400), cemaat seccadesi 110x200 ve 60x80 URETMEZ; ama 200 cm genislikte KUMAS (rulo) uretir.
+   - Eslesme sadece ANA renk + genislige gore yapilir (alt renk/cozgu gorsel).
+   - 140 cm kanat kurali: renk sadece bir kanatta varsa diger kanat da kendi rengini
+     uretir; musteri o rengi de almak zorundadir. suggest() puani: 2 = iki kanat da
+     ayni renk, 1.5 = diger kanat rengi ayni siparisin baska satirinda var,
+     1 = diger kanat uyumsuz (uyari + zorunlu miktar), 0 = uyumsuz.
+   - ESLIK SATIR (comp:{of, m}): satir 140 cm kanatli tezgaha atanirsa ve diger kanatta
+     baska bir renk varsa, ayni musteri/ayni adet icin otomatik satir olusur. Asil
+     satir silinir/atama kalkarsa silinir; adet degisirse eslik de degisir.
+     "Yapilan" (done) ikisinde BAGIMSIZ tutulur (nihai karar bekliyor).
+   - Metraj: duz urunlerde satir sayisi x parca boyu; rulolarda rulo sayisi x rulo metresi
+     (140=40m, 160=35m, 200=30m; kumas rulo ADEDI ile siparis edilir, metre ile degil).
+     Halilar once kumas gibi ardisik uretilir, sonra elle kesilir (metre buna gore).
+   - Cemaat seccadesi 110x200: SADECE 200 cm tezgahlarda; parca boyu 110 cm (1,1 m/parca).
+   - 60x80 (Kadife hali grubu): 200 cm tezgahta 3 sutun 60+80+60; ortadaki parca dondurulmus.
+     480 cm'lik devirde 6+8+6 = 20 parca (cyc:4.8 m, ac:20) -> parca basina 0,24 m.
+     Kesirli devir yukari yuvarlanir; hesap yaklasiktir.
+   - 140 cm tezgahlar (kumas da dahil): iki kanat TEK 140 cm'lik kumas uretir, ortadan
+     kesilir. Kanatlar farkli renkteyse iki renk de cikar; musteri ikisini de kabul eder
+     ya da siparis reddedilir (esdeger satir mantigi bunu gosterir).
+
+   GIRIS: Firebase Authentication (e-posta/sifre). Giris yapilmadan veri dinlenmez.
+   ============================================================ */
 /* ============ AYARLAR (gerektiğinde burayı düzenleyin) ============ */
 const FULL140 = ["K1"];   // 140 cm TAM genişlikte halı/seccade yapabilen makineler
-const ONLY100 = [];       // 200'lük makineler içinde SADECE 100 cm halı yapanlar, örn: ["A2"]
+const ONLY100 = ["A3"];  // 200'lük makineler içinde SADECE 100 cm halı yapan tek makine: Acar 3
 
-/* Ürünler: w=en, l=boy (cm). opts: hangi makine eninde, yan yana kaç parça (ac) üretilir.
+/* Cemaat seccadesi 110×200: sadece 200 cm tezgahlarda, 200 cm tezgah eninde, parça boyu 110 cm (w=200, l=110).
+   60×80: 200 cm tezgahta 3 sütun (60 + 80 + 60); yan sütunlarda parça 60 en x 80 boy, ortada döndürülmüş (80 en x 60 boy).
+   480 cm'lik bir DEVİRDE 6 + 8 + 6 = 20 parça çıkar -> ac:20 parça/devir, cyc:4.8 m/devir (parça başı 0,24 m).
+   Ürünler: w=en, l=boy (cm). opts: hangi makine eninde, yan yana kaç parça (ac) üretilir.
    need:"full140" -> sadece FULL140 makineleri | no100:true -> ONLY100 makineleri hariç | ac100 -> ONLY100 makinesinde parça sayısı */
 const P = [
   { k:"s70", g:"Seccade", name:"70 × 110", w:70, l:110, opts:[{ mw:140, ac:2 }] },
   { k:"s80", g:"Seccade", name:"80 × 120", w:80, l:120, opts:[{ mw:160, ac:2 }] },
-  { k:"c110", g:"Cemaat seccadesi", name:"110 × 200", w:110, l:200, opts:[{ mw:140, ac:1, need:"full140" }, { mw:200, ac:1, no100:true }] },
+  { k:"c110", g:"Cemaat seccadesi", name:"110 × 200", w:200, l:110, opts:[{ mw:200, ac:1, no100:true }] },
+  { k:"h60x80", g:"Kadife halı", name:"60 × 80", w:60, l:80, opts:[{ mw:200, ac:20, cyc:4.8, note:"6+8+6", no100:true }] },
   { k:"h100", g:"Kadife halı", name:"100 × 200", w:100, l:200, opts:[{ mw:200, ac:2, ac100:1 }] },
+  { k:"h100x300", g:"Kadife halı", name:"100 × 300", w:100, l:300, opts:[{ mw:200, ac:2, ac100:1 }] },
+  { k:"h100x400", g:"Kadife halı", name:"100 × 400", w:100, l:400, opts:[{ mw:200, ac:2, ac100:1 }] },
   { k:"h140", g:"Kadife halı", name:"140 × 200", w:140, l:200, opts:[{ mw:140, ac:1, need:"full140" }] },
   { k:"h160", g:"Kadife halı", name:"160 × 250", w:160, l:250, opts:[{ mw:160, ac:1 }] },
   { k:"h200x300", g:"Kadife halı", name:"200 × 300", w:200, l:300, opts:[{ mw:200, ac:1, no100:true }] },
@@ -194,10 +239,10 @@ function prep(o) {
   o.lines.forEach(l => {
     const p = prodOf(l.k); if (!p) return;
     l.pn = pname(p);
-    l.mt = {};  /* makine -> [yan yana parça, parça başına metre]; rulo için [0, rulo metresi] */
+    l.mt = {};  /* makine -> [yan yana parça (devirli üründe devir başına parça), parça başına metre (devirli üründe devir metresi)]; rulo için [0, rulo metresi] */
     Object.values(looms).forEach(m => {
       const o = eligible(p, m); if (!o) return;
-      l.mt[m.id] = p.roll ? [0, o.len] : [(ONLY100.includes(m.id) && o.ac100) ? o.ac100 : o.ac, p.l / 100];
+      l.mt[m.id] = p.roll ? [0, o.len] : [(ONLY100.includes(m.id) && o.ac100) ? o.ac100 : o.ac, o.cyc || p.l / 100];
     });
     l.ok = Object.keys(l.mt);
     l.full = !p.roll && p.opts.some(x => x.mw === 140 && x.ac === 1);
@@ -254,7 +299,7 @@ function suggest(line, order) {
       else { r.match = 1; r.notes.push(["warn", `⚠ Diğer kanat ${other}: müşteri bu rengi de almak zorunda${p.roll ? "" : ` (${R} adet fazladan ${other})`}`]); }
     } else r.match = 0;
     if (p.roll) { r.len = o.len; r.rows = rows; r.total = rows * o.len; r.pref = WIDTHS.indexOf(l.width); }
-    else { r.rows = rows; r.meters = Math.round(rows * p.l) / 100; r.waste = Math.max(0, Math.round((1 - ac * p.w / l.width) * 100)); }
+    else { r.rows = rows; r.meters = Math.round(rows * (o.cyc ? o.cyc * 100 : p.l)) / 100; r.waste = o.cyc ? 0 : Math.max(0, Math.round((1 - ac * p.w / l.width) * 100)); r.cyc = !!o.cyc; r.note = o.note || ""; }
     res.push(r);
   });
   const key = r => (2 - r.match) * 1e6 + (r.maint ? 5e5 : 0) + (r.busy ? 1e5 : 0) + r.waste * 1e3 + r.pref * 100 + r.l.num;
@@ -283,6 +328,7 @@ function resHtml(r, i, p, line) {
   const cur = (l.currentCustomer || "").trim(), nxt = (l.nextCustomer || "").trim();
   const busy = cur ? `<span class="mid">Şu an: <b>${esc(cur)}</b>${nxt ? ` → Sıradaki: <b>${esc(nxt)}</b>` : ""}</span>` : `<span class="ok">Boşta (müşteri yok)</span>`;
   const prod = p.roll ? `${r.rows} rulo × ${r.len} m = <b>${r.total} m</b>`
+    : r.cyc ? `${r.ac} parça / devir (${esc(r.note)}) · ${r.rows} devir · <b>${r.meters} m</b> tezgah boyu`
     : `${r.ac} parça yan yana · ${r.rows} sıra · <b>${r.meters} m</b> tezgah boyu${r.waste ? ` · %${r.waste} boşluk` : ""}`;
   return `<div class="res${i === 0 && r.match > 0 ? " best" : ""}">
     <div class="rh"><b>${esc(l.id)}</b><span class="br">${esc(BRANCHES[l.branch].name)}</span>
@@ -559,7 +605,7 @@ function startData() {
       firstOrd = false;
       const have = new Set(remote.map(o => o.id)), localOnly = orders.filter(o => !have.has(o.id));
       orders = [...remote, ...localOnly];
-      const sig = o => JSON.stringify(o.lines.map(l => [l.ok, l.pn, l.full]));
+      const sig = o => JSON.stringify(o.lines.map(l => [l.ok, l.pn, l.full, Object.keys(l.mt || {}).sort().map(k => [k, l.mt[k]])]));
       orders.forEach(o => { const b = sig(o); prep(o); if (localOnly.includes(o) || sig(o) !== b) pushOrder(o); });
     } else orders = remote;
     cache();

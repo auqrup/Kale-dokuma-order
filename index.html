@@ -226,6 +226,35 @@ body *{visibility:hidden}
 
 <script>
 /* ============================================================
+   KALE DOKUMA - MAKINE TAKIP SAYFASI (index.html)  -- BELGE / DOCUMENTATION
+   Ayrintili belge icin README.md dosyasina bakin.
+
+   NE YAPAR: Fabrikadaki 34 tezgahin (R1-16, A1-4, Y1-8, K1-6) canli durumunu
+   gosterir ve duzenletir: durum, mevcut/gelecek musteri, ana+alt renkler, cozgu.
+   Siparis sayfasi (siparis.html) bu verileri OKUR; bu sayfa siparisleri sadece OKUR.
+
+   VERI (Firebase Realtime Database, proje fabrika-e9b49):
+     YAZAR : kale_dokuma_live_v2/<makineId>   (tezgahlar)
+             kale_customers_pool_v2           (musteri havuzu)
+     OKUR  : kale_siparis_v1/orders           (siparis sayfasinin yazdigi siparisler)
+   Bu ayrim sadece kodda uygulanan bir kuraldir (veritabani kurallari yazmayi
+   UID bazinda kisitlar ama yol bazinda degil). Yeni kod bu ayrima uymali.
+
+   TEZGAH MODELI (normalize/buildLoom): {id, branch, num, width(140|160|200), status,
+     currentCustomer, nextCustomer, colors[], warps[2], lastModified}
+     - 140 cm tezgahlar IKI KANATLI: colors[0..2]=1. kanat (ana+2 alt),
+       colors[3..5]=2. kanat. 160/200 cm tezgahlarda 4 renk (colors[0]=ana renk).
+     - "0" = iplik yok / renk yok.
+   Siparis metrajlari siparis.html'in yazdigi ln.mt=[ac,len] alanindan okunur:
+   metre = ceil(kalan / ac) * len (60x80 gibi devirli urunlerde ac=devir basina parca,
+   len=devir metresi). Bu sayfa metrajin formulune dokunmaz.
+   Siparis eslestirmesinde SADECE ana renk (colors[0], 140'ta ayrica colors[3]) ve
+   genislik kullanilir. Alt renkler ve cozgu yalnizca gorsel bilgidir.
+
+   GIRIS: Firebase Authentication (e-posta/sifre). Giris yapilmadan veri dinlenmez
+   (startData sadece onAuthStateChanged kullanici dondurunce calisir).
+   ============================================================ */
+/* ============================================================
    GÜVENLİK: Giriş Firebase Authentication (e-posta/şifre) ile yapılır.
    Veritabanı kuralları sadece izinli UID'lere okuma/yazma verir
    (Firebase Console > Realtime Database > Kurallar).
