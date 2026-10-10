@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
 <title>KALE DOKUMA TAKİP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0d1014;--card:#171b22;--card2:#1e232c;--bd:#2a313c;--tx:#f3efe6;--mu:#9aa3b0;--ac:#f0c674;--ac-d:#1a1405;--run:#34d399;--stop:#f87171;--mnt:#c4a3ff;--yarn:#ff9a4d;--ff:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+:root{--page:#061314;--bg:#0d1014;--card:#171b22;--card2:#1e232c;--bd:#2a313c;--tx:#f3efe6;--mu:#9aa3b0;--ac:#f0c674;--ac-d:#1a1405;--run:#34d399;--stop:#f87171;--mnt:#c4a3ff;--yarn:#ff9a4d;--ff:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0;font-family:var(--ff)}
-html,body{width:100%;overflow-x:hidden;background:var(--bg);color:var(--tx);padding-bottom:40px;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+html,body{width:100%;overflow-x:hidden;background:var(--page);color:var(--tx);padding-bottom:40px;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 button{font:inherit}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 header{background:rgba(13,16,20,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:12px 10px;position:sticky;top:0;z-index:50;display:flex;flex-direction:column;gap:10px}
@@ -36,13 +37,13 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .controls{display:flex;gap:5px;overflow-x:auto}
 .search{flex:1;min-width:120px;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:9px 11px;border-radius:8px;font-size:.84rem}
 .search::placeholder{color:var(--mu)}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:10px;width:100%}
-@media(min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:14px;max-width:1400px;margin:0 auto}}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;width:100%}
+@media(min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:18px;max-width:1400px;margin:0 auto}}
 .empty{grid-column:1/-1;text-align:center;color:var(--mu);padding:30px 0;font-size:.9rem}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .card:active{transform:scale(.97)}
-.stripe{height:10px;flex-shrink:0}
-.stripe.bot{box-shadow:inset 0 1px 0 rgba(255,255,255,.22);margin-top:auto}
+.stripe{height:15px;flex-shrink:0}
+.stripe.bot{height:5px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);margin-top:auto}
 .body{padding:9px;display:flex;flex-direction:column;gap:7px;min-width:0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:5px;min-width:0}
 .id{font-weight:800;font-size:1.12rem;color:var(--ac)}
