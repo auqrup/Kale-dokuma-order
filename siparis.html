@@ -52,6 +52,7 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .cbtn.avl .an{display:flex;flex-direction:column;gap:5px;min-width:0;white-space:normal;overflow:visible}
 .cbtn.avl .an b{font-size:.92rem;font-weight:800}
 .mch{display:inline-block;font-size:.7rem;color:var(--mu);font-weight:600;background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:2px 6px;margin:0 4px 3px 0}
+.mch .wd{width:9px;height:9px;margin:0 2px 0 5px;vertical-align:-1px;border-width:1px}
 .mch.free{color:var(--run);border-color:rgba(52,211,153,.35)}
 .dot{width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.45);flex-shrink:0;display:inline-block}
 .dot.s{width:14px;height:14px}
@@ -131,7 +132,7 @@ textarea.inp{font-size:.8rem;margin-top:6px}
    tezgaha atanabilir (pin), yapilan adet takip edilir.
 
    VERI: YAZAR kale_siparis_v1/orders. OKUR kale_dokuma_live_v2 (tezgahlar),
-   kale_customers_pool_v2 (musteriler) ve kale_colors_v1 (sonradan eklenen renkler) - bunlari ASLA yazmaz.
+   kale_customers_pool_v2 (musteriler) ve kale_colors_v2 (renk listesi) - bunlari ASLA yazmaz.
 
    TEMEL KURALLAR:
    - P[] urun tablosu ve FULL140 / ONLY100 asagida duzenlenir.
@@ -190,28 +191,35 @@ const P = [
 ];
 /* ================================================================== */
 
+/* SABİT RENK LİSTESİ (index.html ile AYNI olmalı; "0" burada yok). Ek renkler Firebase kale_colors_v2'den gelir. */
 const COLORS = {
-  "PETROL":"#0ea5e9","KOYU BORDO":"#4a0404","LACİVERT":"#1e3a8a","AÇIK BORDO":"#9f1239",
-  "AÇIK GRİ":"#d1d5db","PAST GRAY":"#f1f5f9","SP GREY":"#94a3b8","KOYU GRİ":"#334155","SİYAH":"#0f172a",
-  "SİLKY(SARIBEJ)":"#f59e0b","SARIBEJ":"#d4a373","ŞEKER LT":"#fef9c3","IVORY":"#fffff0","ŞEKER AYM":"#fef3c7",
-  "VİZON":"#b08968","KOYU KAHVE":"#38220f","MARON":"#722f37","ZÜMRÜT":"#0e4d64","Z-blue":"#0284c7",
-  "FOWN (AÇIK BAL)":"#e6ccb2","NEFTİ":"#14532d","FISTIK YEŞİL":"#84cc16"
+  "PETROL":"#084a68","ÖZBEK BORDO":"#300303","LACİVERT":"#090835",
+  "AÇIK BORDO":"#ff2e2e","AÇIK GRİ":"#949ca8","PAST GRAY":"#c3c5c6",
+  "SP GREY":"#323e3e","KOYU GRİ":"#1e1e1f","SİYAH":"#000000",
+  "SİLKY(SARIBEJ)":"#d99b45","SARIBEJ":"#f1bf79","ŞEKER LT":"#fff2c2",
+  "IVORY":"#f6f6ef","ŞEKER AYM":"#e9e3ce","VİZON":"#684f2c",
+  "KOYU KAHVE":"#24160a","MARON":"#5b010b","ZÜMRÜT":"#073f74",
+  "Z-BLUE":"#145090","FOWN (AÇIK BAL)":"#e4d79b","NEFTİ":"#082b16",
+  "FISTIK YEŞİL":"#15b300","KREM":"#f5ebd1","GÜL":"#692b49",
+  "B.GREEN":"#3a644c","CAM GÖBEĞİ":"#009e7e","SAXMAVİ":"#1100ff",
+  "SOĞAN(ALTIN)":"#947400"
 };
 const hexOf = n => COLORS[n] || "#475569";
-/* Ek renkler: Firebase kale_colors_v1 (index.html yazar, bu sayfa sadece OKUR). Ham makine renkleri saklanır ki ek renkler sonradan gelirse yeniden doğrulanabilsin. */
-const BASE_COLOR_NAMES = new Set(Object.keys(COLORS));
-const CCOL_KEY = "kale_colors_cache_v1";
+/* Ek renkler: Firebase kale_colors_v2 = { v:2, list:[{name,hex}] } (index.html yazar, bu sayfa sadece OKUR). Sabit liste yukarıdaki COLORS'tur.
+   Ham makine renkleri saklanır ki ek renkler sonradan gelirse/değişirse yeniden doğrulanabilsin. */
+const FIXED_COLOR_NAMES = new Set(Object.keys(COLORS));
+const CCOL_KEY = "kale_colors_extra_cache";
 const rawColors = {};
-function applyCustomColors(list) {
-  Object.keys(COLORS).forEach(k => { if (!BASE_COLOR_NAMES.has(k)) delete COLORS[k]; });
+function applyExtraColors(list) {
+  Object.keys(COLORS).forEach(k => { if (!FIXED_COLOR_NAMES.has(k)) delete COLORS[k]; });
   const arr = Array.isArray(list) ? list : Object.values(list || {});
   const kept = [];
   arr.forEach(c => {
-    if (c && typeof c.name === "string" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) { COLORS[c.name] = c.hex.toLowerCase(); kept.push({ name: c.name, hex: c.hex.toLowerCase() }); }
+    if (c && typeof c.name === "string" && c.name !== "0" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) { COLORS[c.name] = c.hex.toLowerCase(); kept.push({ name: c.name, hex: c.hex.toLowerCase() }); }
   });
   try { localStorage.setItem(CCOL_KEY, JSON.stringify(kept)); } catch {}
 }
-try { applyCustomColors(JSON.parse(localStorage.getItem(CCOL_KEY) || "[]")); } catch {}
+try { applyExtraColors(JSON.parse(localStorage.getItem(CCOL_KEY) || localStorage.getItem("kale_colors_cache_v2") || "[]")); } catch {}
 const WARPS = { "SİYAH":"#0f172a", "BEYAZ":"#ffffff", "SARI":"#eab308" };
 const WARP_DEF = ["BEYAZ", "SİYAH"];
 const BRANCHES = { R:{ name:"Rüya", count:16 }, A:{ name:"Acar", count:4 }, Y:{ name:"Y. Acar", count:8 }, K:{ name:"Karaman", count:6 } };
@@ -466,9 +474,12 @@ function availColors(k) {
   });
   return res.sort((a, b) => b.rs.filter(r => !r.busy).length - a.rs.filter(r => !r.busy).length || b.rs.length - a.rs.length);
 }
+const lowTr = w => String(w || "").replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
 function chipHtml(r) {
-  const cur = (r.l.currentCustomer || "").trim();
-  return `<span class="mch${r.busy ? "" : " free"}">${esc(r.l.id)}${r.maint ? " ⚠" : ""}${r.match < 2 ? " ◐" : ""} · ${r.busy ? esc(cur.slice(0, 14)) : "boşta"}</span>`;
+  const cur = (r.l.currentCustomer || "").trim(), w = (r.l.warps || [])[0];
+  /* Çözgü 1: küçük renk noktası + kısa ad (sadece bilgi, eşleştirmeye girmez) */
+  const wp = w ? ` <i class="dot s wd" style="background:${WARPS[w] || "#475569"}"></i>${esc(lowTr(w))}` : "";
+  return `<span class="mch${r.busy ? "" : " free"}" title="Çözgü 1: ${esc(w || "-")}">${esc(r.l.id)}${r.maint ? " ⚠" : ""}${r.match < 2 ? " ◐" : ""} · ${r.busy ? esc(cur.slice(0, 14)) : "boşta"}${wp}</span>`;
 }
 function drawSel() {
   const b = $("selbox"); if (!b) return;
@@ -654,8 +665,9 @@ function startData() {
     setSync(true, "Canlı veri ✓");
     if (S.view === "res") render(true); else drawChips();
   }, e => { setSync(false, "Yerel veri"); denied(e); });
-  db.ref("kale_colors_v1").on("value", s => {
-    applyCustomColors(s.val());
+  db.ref("kale_colors_v2").on("value", s => {
+    const v = s.val(); if (v === null) return;
+    applyExtraColors(v.list);
     ids.forEach(id => { if (rawColors[id]) looms[id].colors = norm({ ...looms[id], colors: rawColors[id] }, id).colors; });
     if (["color", "res", "order"].includes(S.view)) render(true); else drawChips();
   }, denied);

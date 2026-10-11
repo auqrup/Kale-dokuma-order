@@ -43,7 +43,6 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .card:active{transform:scale(.97)}
 .stripe{height:15px;flex-shrink:0}
-.xtag{text-align:center;font-size:.74rem;font-weight:800;color:var(--ac);background:rgba(240,198,116,.12);border:1px solid rgba(240,198,116,.35);border-radius:6px;padding:3px 6px}
 .stripe.bot{height:5px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);margin-top:auto}
 .body{padding:9px;display:flex;flex-direction:column;gap:7px;min-width:0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:5px;min-width:0}
@@ -168,7 +167,7 @@ body *{visibility:hidden}
     <div class="stat"><b id="sMnt" style="color:var(--mnt)">0</b><span>Bakımda</span></div>
   </div>
   <div class="controls">
-    <input type="search" id="search" class="search" placeholder="Müşteri veya Makine Ara..." aria-label="Ara">
+    <input type="search" id="search" class="search" placeholder="Müşteri, makine veya renk ara..." aria-label="Ara">
     <button class="filter-btn active" data-filter="all">Tüm Boylar</button>
     <button class="filter-btn" data-filter="140">140 cm</button>
     <button class="filter-btn" data-filter="160">160 cm</button>
@@ -277,7 +276,7 @@ body *{visibility:hidden}
    VERI (Firebase Realtime Database, proje fabrika-e9b49):
      YAZAR : kale_dokuma_live_v2/<makineId>   (tezgahlar)
              kale_customers_pool_v2           (musteri havuzu)
-     YAZAR : kale_colors_v1                   (sonradan eklenen renkler [{name,hex}]; siparis.html okur)
+     YAZAR : kale_colors_v2                   (sadece EK renkler {v:2,list:[{name,hex}]}; sabit liste kodda; siparis.html okur)
      OKUR  : kale_siparis_v1/orders           (siparis sayfasinin yazdigi siparisler)
    Bu ayrim sadece kodda uygulanan bir kuraldir (veritabani kurallari yazmayi
    UID bazinda kisitlar ama yol bazinda degil). Yeni kod bu ayrima uymali.
@@ -307,12 +306,18 @@ const BRANCHES = { R: { name: "Rüya", count: 16 }, A: { name: "Acar", count: 4 
 const TOTAL = Object.values(BRANCHES).reduce((s, b) => s + b.count, 0);
 const WIDTHS = [140, 160, 200];
 
+/* SABİT RENK LİSTESİ (sahibi tarafından kesinleştirildi; siparis.html ile AYNI olmalı). Değiştirilemez, silinemez. Sadece yeni (ek) renk eklenebilir. */
 const COLORS = {
-  "0":"#475569","PETROL":"#0ea5e9","KOYU BORDO":"#4a0404","LACİVERT":"#1e3a8a","AÇIK BORDO":"#9f1239",
-  "AÇIK GRİ":"#d1d5db","PAST GRAY":"#f1f5f9","SP GREY":"#94a3b8","KOYU GRİ":"#334155","SİYAH":"#0f172a",
-  "SİLKY(SARIBEJ)":"#f59e0b","SARIBEJ":"#d4a373","ŞEKER LT":"#fef9c3","IVORY":"#fffff0","ŞEKER AYM":"#fef3c7",
-  "VİZON":"#b08968","KOYU KAHVE":"#38220f","MARON":"#722f37","ZÜMRÜT":"#0e4d64","Z-blue":"#0284c7",
-  "FOWN (AÇIK BAL)":"#e6ccb2","NEFTİ":"#14532d","FISTIK YEŞİL":"#84cc16"
+  "0":"#475569","PETROL":"#084a68","ÖZBEK BORDO":"#300303",
+  "LACİVERT":"#090835","AÇIK BORDO":"#ff2e2e","AÇIK GRİ":"#949ca8",
+  "PAST GRAY":"#c3c5c6","SP GREY":"#323e3e","KOYU GRİ":"#1e1e1f",
+  "SİYAH":"#000000","SİLKY(SARIBEJ)":"#d99b45","SARIBEJ":"#f1bf79",
+  "ŞEKER LT":"#fff2c2","IVORY":"#f6f6ef","ŞEKER AYM":"#e9e3ce",
+  "VİZON":"#684f2c","KOYU KAHVE":"#24160a","MARON":"#5b010b",
+  "ZÜMRÜT":"#073f74","Z-BLUE":"#145090","FOWN (AÇIK BAL)":"#e4d79b",
+  "NEFTİ":"#082b16","FISTIK YEŞİL":"#15b300","KREM":"#f5ebd1",
+  "GÜL":"#692b49","B.GREEN":"#3a644c","CAM GÖBEĞİ":"#009e7e",
+  "SAXMAVİ":"#1100ff","SOĞAN(ALTIN)":"#947400"
 };
 const WARPS = { "SİYAH":"#0f172a", "BEYAZ":"#ffffff", "SARI":"#eab308" };
 const STATUS_COLOR = { running:"var(--run)", stopped:"var(--stop)", yarn:"var(--yarn)", maint:"var(--mnt)" };
@@ -332,24 +337,26 @@ const store = {
 const names = o => Array.isArray(o) ? o.map(x => x?.name ?? x) : [];
 const colorCount = w => Number(w) === 140 ? 6 : 4;
 const optsHtml = o => Object.keys(o).map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
-/* ---------- Ek renkler (Firebase: kale_colors_v1, sadece bu sayfa YAZAR; siparis.html okur) ----------
-   Sabit paletteki renkler silinmez. Eklenen renkler [{name, hex}] listesi olarak saklanır. */
-const BASE_COLOR_NAMES = new Set(Object.keys(COLORS));
-const CCOL_KEY = "kale_colors_cache_v1";
-let customColors = [], colorsRef = null, colSel = null;
+/* ---------- Renkler ----------
+   SABİT liste: yukarıdaki COLORS (kodda sabit; düzenlenemez, silinemez, adı değiştirilemez).
+   EK renkler: sadece YENİ renk eklenebilir. Firebase: kale_colors_v2 = { v:2, list:[{name,hex}] } (sadece bu sayfa YAZAR; siparis.html okur).
+   Ek renkler silinebilir (yanlış eklenmişse). Sabit adlarla çakışan eski kayıtlar yükleme sırasında otomatik temizlenir. */
+const FIXED_COLOR_NAMES = new Set(Object.keys(COLORS).filter(k => k !== "0"));
+const CCOL_KEY = "kale_colors_extra_cache";
+let extraColors = [], colorsRef = null, dbRoot = null, colSel = null;
 const rawColors = {};   /* makine -> Firebase'den gelen ham renk listesi (ek renkler sonradan yüklenirse yeniden doğrulamak için) */
-function applyCustomColors(list) {
-  Object.keys(COLORS).forEach(k => { if (!BASE_COLOR_NAMES.has(k)) delete COLORS[k]; });
+function applyExtraColors(list) {
+  Object.keys(COLORS).forEach(k => { if (k !== "0" && !FIXED_COLOR_NAMES.has(k)) delete COLORS[k]; });
   const arr = Array.isArray(list) ? list : Object.values(list || {});
-  customColors = [];
+  extraColors = [];
   arr.forEach(c => {
-    if (c && typeof c.name === "string" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) {
-      COLORS[c.name] = c.hex.toLowerCase(); customColors.push({ name: c.name, hex: c.hex.toLowerCase() });
+    if (c && typeof c.name === "string" && c.name !== "0" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) {
+      COLORS[c.name] = c.hex.toLowerCase(); extraColors.push({ name: c.name, hex: c.hex.toLowerCase() });
     }
   });
-  store.set(CCOL_KEY, customColors);
+  store.set(CCOL_KEY, extraColors);
 }
-applyCustomColors(store.get(CCOL_KEY, []));
+applyExtraColors(store.get(CCOL_KEY, null) || store.get("kale_colors_cache_v2", []));
 
 /* Makine özelliği (sadece düzenleme penceresinde görünür): "spingel" | "simli" | "" - biri seçilince diğeri kalkar */
 const EXTRAS = ["spingel", "simli"];
@@ -396,8 +403,11 @@ function visible(l) {
   if (branch !== "all" && l.branch !== branch) return false;
   if (widthFilter !== "all" && String(l.width) !== widthFilter) return false;
   if (query) {
-    const q = query.toLowerCase();
-    return [l.currentCustomer, l.nextCustomer, l.id].some(v => (v || "").toLowerCase().includes(q));
+    /* Arama: müşteri, makine no, ANA renk ve ilk ALT renk (140'lıkta iki kanat için: 0,1 ve 3,4). Harfler gevşek eşleşir (ş=s, ı=i...). */
+    const fold = t => String(t || "").replace(/[İIı]/g, "i").toLowerCase().replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u");
+    const q = fold(query.trim());
+    const cols = (l.width === 140 ? [0, 1, 3, 4] : [0, 1]).map(i => l.colors[i]).filter(c => c && c !== "0");
+    return [l.currentCustomer, l.nextCustomer, l.id, ...cols].some(v => fold(v).includes(q));
   }
   return true;
 }
@@ -436,7 +446,6 @@ function cardHtml(l) {
       <div class="row"><small>GELECEK:</small><span>${esc(nxt)}</span></div>
     </div>
     <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}</button>
-    ${l.extra ? `<div class="xtag">✅ ${l.extra === "spingel" ? "ŞPİNGEL" : "SİMLİ"}</div>` : ""}
   </div>
   <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
 }
@@ -578,10 +587,10 @@ function renderColManager() {
   const list = Object.keys(COLORS).filter(k => k !== "0").sort(trCompare);
   const chips = (arr, cls) => arr.map(x => `<span class="lchip ${cls}">${esc(x.id)}${x.wing ? ` <i>· ${x.wing}</i>` : ""}</span>`).join("");
   $("colList").innerHTML = list.map(n => {
-    const u = colorUsage(n), open = colSel === n, custom = !BASE_COLOR_NAMES.has(n);
-    let h = `<div class="col-item${open ? " open" : ""}" data-n="${esc(n)}"><span class="dot" style="background:${hexOf(n)};width:22px;height:22px"></span><b title="${esc(n)}">${esc(n)}</b><small>ana ${u.main.length} · alt ${u.sub.length}</small>${custom ? `<button type="button" class="del" data-a="del" data-n="${esc(n)}" aria-label="Sil">🗑</button>` : ""}</div>`;
+    const u = colorUsage(n), open = colSel === n, extra = !FIXED_COLOR_NAMES.has(n);
+    let h = `<div class="col-item${open ? " open" : ""}" data-n="${esc(n)}"><span class="dot" style="background:${hexOf(n)};width:22px;height:22px"></span><b title="${esc(n)}">${esc(n)}</b><small>ana ${u.main.length} · alt ${u.sub.length}</small>${extra ? `<button type="button" class="del" data-a="del" data-n="${esc(n)}" aria-label="Sil">🗑</button>` : ""}</div>`;
     if (open) {
-      h += `<div class="col-det">` +
+      h += `<div class="col-det"><div class="lab">${extra ? "➕ Eklenen renk (silinebilir)" : "🔒 Sabit renk (değiştirilemez)"}</div>` +
         (u.main.length ? `<div><div class="lab">● ANA RENK OLARAK (${u.main.length})</div><div class="chips">${chips(u.main, "m")}</div></div>` : "") +
         (u.sub.length ? `<div><div class="lab">○ ALT RENK OLARAK (${u.sub.length})</div><div class="chips">${chips(u.sub, "")}</div></div>` : "") +
         (!u.main.length && !u.sub.length ? `<div class="lab">Hiçbir makinede kullanılmıyor.</div>` : "") + `</div>`;
@@ -594,33 +603,42 @@ function afterColorsChanged() {
   if ($("colModal").classList.contains("open")) renderColManager();
   if ($("editModal").classList.contains("open")) { try { buildColorRows($("fWidth").value, readColors()); } catch {} }
 }
-function renormColors() {   /* ek renkler sonradan geldiyse makine renklerini ham veriden yeniden doğrula */
+function renormColors() {   /* renk listesi sonradan geldiyse / değiştiyse makine renklerini ham veriden yeniden doğrula */
   Object.keys(rawColors).forEach(id => { if (looms[id]) looms[id].colors = normalize({ ...looms[id], colors: rawColors[id] }, id).colors; });
 }
 const trUpper = n => n.replace(/i/g, "İ").replace(/ı/g, "I").toUpperCase();
-function saveColors() { store.set(CCOL_KEY, customColors); colorsRef?.set(customColors).catch(() => toast("Renkler kaydedilemedi: yetkiniz yok veya bağlantı yok")); }
+const orderLinesUsing = name => Object.values(ordersData || {}).reduce((t, o) => t + Object.values(o?.lines || {}).filter(l => l && l.color === name).length, 0);
+/* Ek renk listesi + (varsa) makine renk güncellemeleri TEK atomik yazımda gider; böylece diğer cihazlar tutarsız ara durum görmez. */
+function writeColors(extra) {
+  store.set(CCOL_KEY, extraColors);
+  const payload = { kale_colors_v2: { v: 2, list: extraColors }, ...(extra || {}) };
+  return (dbRoot ? dbRoot.update(payload) : Promise.resolve()).catch(() => toast("Renkler kaydedilemedi: yetkiniz yok veya bağlantı yok"));
+}
+function loomColorPatch(fn, extra, t) {   /* her makinenin renk listesini fn ile dönüştür, bellekte ve atomik yazımda güncelle */
+  Object.values(looms).forEach(l => {
+    const nc = l.colors.map(fn);
+    if (nc.every((c, i) => c === l.colors[i])) return;
+    l.colors = nc; l.lastModified = t; rawColors[l.id] = nc;
+    extra[`kale_dokuma_live_v2/${l.id}/colors`] = nc; extra[`kale_dokuma_live_v2/${l.id}/lastModified`] = t;
+  });
+}
 function addColor() {
   const name = trUpper($("colName").value.trim().replace(/\s+/g, " ")), hex = $("colHex").value;
   if (!name) return toast("Renk adını yazın");
   if (name === "0" || name === "-") return toast("Bu ad kullanılamaz");
   if (Object.keys(COLORS).some(k => lc(k) === lc(name))) return toast("Bu renk zaten var");
-  applyCustomColors([...customColors, { name, hex }]); saveColors();
+  applyExtraColors([...extraColors, { name, hex }]); writeColors();
   $("colName").value = ""; colSel = name; afterColorsChanged(); toast("Renk eklendi ✓");
 }
 function delColor(name) {
-  const u = colorUsage(name), n = u.main.length + u.sub.length;
-  const ordN = Object.values(ordersData || {}).reduce((t, o) => t + Object.values(o?.lines || {}).filter(l => l && l.color === name).length, 0);
-  const msg = (n || ordN) ? `"${name}" ${n} makine yerinde ve ${ordN} sipariş satırında kullanılıyor. Silinirse makine kartlarında "Yok (0)" olur. Silinsin mi?` : `"${name}" silinsin mi?`;
+  if (FIXED_COLOR_NAMES.has(name)) return toast("Sabit renk silinemez");
+  const u = colorUsage(name), n = u.main.length + u.sub.length, ordN = orderLinesUsing(name);
+  const msg = (n || ordN) ? `"${name}" ${n} makine yerinde ve ${ordN} sipariş satırında kullanılıyor. Silinirse makine kartlarında "Yok (0)" olur, sipariş satırları gri görünür. Silinsin mi?` : `"${name}" silinsin mi?`;
   if (!confirm(msg)) return;
-  const t = Date.now();
-  Object.values(looms).forEach(l => {
-    if (!l.colors.includes(name)) return;
-    l.colors = l.colors.map(c => c === name ? "0" : c); l.lastModified = t; rawColors[l.id] = l.colors;
-    loomsRef?.child(l.id).update({ colors: l.colors, lastModified: t }).catch(() => {});
-  });
-  applyCustomColors(customColors.filter(c => c.name !== name)); saveColors();
+  applyExtraColors(extraColors.filter(c => c.name !== name));
+  const extra = {}; loomColorPatch(c => c === name ? "0" : c, extra, Date.now());
   if (colSel === name) colSel = null;
-  store.set(CACHE_KEY, looms); afterColorsChanged();
+  store.set(CACHE_KEY, looms); writeColors(extra); afterColorsChanged();
 }
 function openCust() { $("cmNew").value = ""; renderCustManager(); $("custModal").classList.add("open"); }
 function changeCustomer(old, neu) {
@@ -857,9 +875,14 @@ function startData() {
   const db = firebase.database();
   loomsRef = db.ref("kale_dokuma_live_v2");
   custRef = db.ref("kale_customers_pool_v2");
-  colorsRef = db.ref("kale_colors_v1");
+  colorsRef = db.ref("kale_colors_v2"); dbRoot = db.ref();
   /* Ek renkler MAKİNELERDEN ÖNCE yüklenir; yoksa ek renkli makineler "0" sanılır */
-  const colorsReady = colorsRef.once("value").then(sn => applyCustomColors(sn.val())).catch(() => {});
+  const colorsReady = colorsRef.once("value").then(sn => {
+    const v = sn.val(); if (v === null) return;
+    const raw = Array.isArray(v.list) ? v.list : Object.values(v.list || {});
+    applyExtraColors(raw);
+    if (raw.length !== extraColors.length) return colorsRef.set({ v: 2, list: extraColors });   /* sabit renklerle çakışan eski kayıtları temizle */
+  }).catch(() => {});
   ordRef = db.ref("kale_siparis_v1/orders");
   ordRef.on("value", s => { ordersData = s.val() || {}; renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, denied);
 
@@ -881,7 +904,7 @@ function startData() {
     };
     loomsRef.on("child_changed", onLoom);
     loomsRef.on("child_added", onLoom);
-    colorsRef.on("value", sn => { applyCustomColors(sn.val()); renormColors(); afterColorsChanged(); }, denied);
+    colorsRef.on("value", sn => { const v = sn.val(); if (v === null) return; applyExtraColors(v.list); renormColors(); afterColorsChanged(); }, denied);
   }).catch(e => { setSync(false, "Bağlantı yok"); denied(e); });
 
   custRef.on("value", s => {
