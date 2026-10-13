@@ -38,6 +38,11 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
 .chip{background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:8px 14px;font-size:.88rem;font-weight:700;cursor:pointer}
 .primary{width:100%;background:var(--ac);color:var(--ac-d);border:0;border-radius:12px;padding:14px;font-size:1rem;font-weight:800;cursor:pointer;margin-top:10px}
+.cm-add{display:flex;gap:8px;margin-bottom:12px}
+.cm-add .inp{flex:1}
+.cm-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.cm-row b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}
+.cm-row small{color:var(--mu);font-size:.72rem;flex-shrink:0}
 .second{width:100%;background:var(--card2);border:1px solid var(--bd);border-radius:12px;padding:13px;font-size:.95rem;font-weight:800;cursor:pointer;margin-top:10px}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pcard{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer}
@@ -96,6 +101,31 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .bkrow{display:flex;gap:6px;margin-bottom:8px}
 textarea.inp{font-size:.8rem;margin-top:6px}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
+.rep{background:#fff;color:#111;border-radius:10px;padding:14px;overflow-x:auto;font-size:.8rem;line-height:1.4}
+.rep h1{font-size:1.05rem;margin:0;color:#111}
+.rep h2{font-size:.9rem;margin:16px 0 6px;color:#111;border-bottom:2px solid #111;padding-bottom:3px}
+.rep p{margin:2px 0;color:#333}
+.rhead{display:flex;justify-content:space-between;gap:10px;border-bottom:3px solid #111;padding-bottom:8px}
+.rdate{font-size:.74rem;color:#444;white-space:nowrap}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+.kpi{border:1px solid #bbb;border-radius:6px;padding:6px 4px;text-align:center;font-size:.7rem;color:#444}
+.kpi b{display:block;font-size:1.05rem;color:#111}
+.rpt{width:100%;border-collapse:collapse;margin:6px 0 10px}
+.rpt th,.rpt td{border:1px solid #bbb;padding:5px 7px;text-align:left;font-size:.76rem;vertical-align:top}
+.rpt th{background:#eef2f7}
+.rpt tr.oh td{background:#f6f0dc}
+.rep .bad{color:#b91c1c;font-weight:700}
+.rep .okc{color:#15803d;font-weight:700}
+.alist{margin:4px 0 0 18px;padding:0}
+.rfoot{margin-top:14px;font-size:.7rem;color:#555}
+#printSection{display:none}
+@media print{
+body *{visibility:hidden}
+#printSection,#printSection *{visibility:visible}
+#printSection{display:block!important;position:absolute;left:0;top:0;width:100%;background:#fff!important;color:#000!important;padding:12px}
+#printSection .rep{font-size:9.5pt;padding:0;border-radius:0}
+#printSection .rpt tr{page-break-inside:avoid}
+}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -116,6 +146,7 @@ textarea.inp{font-size:.8rem;margin-top:6px}
   <div class="crumbs" id="crumbs"></div>
 </header>
 <main id="app"></main>
+<div id="printSection"></div>
 <div id="lock"><form class="lockbox" id="loginForm" autocomplete="on"><h3>🔒 Giriş</h3><p>Devam etmek için hesabınızla giriş yapın.</p>
 <input type="email" id="loginEmail" placeholder="E-posta" autocomplete="username" inputmode="email" required>
 <input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password" required>
@@ -131,8 +162,8 @@ textarea.inp{font-size:.8rem;margin-top:6px}
    siparisin hangi tezgahlara verilebilecegini onerir (suggest). Siparis satirlari
    tezgaha atanabilir (pin), yapilan adet takip edilir.
 
-   VERI: YAZAR kale_siparis_v1/orders. OKUR kale_dokuma_live_v2 (tezgahlar),
-   kale_customers_pool_v2 (musteriler) ve kale_colors_v2 (renk listesi) - bunlari ASLA yazmaz.
+   VERI: YAZAR kale_siparis_v1/orders ve kale_customers_pool_v2 (musteri listesi; musteri ekleme/silme SADECE bu sayfada).
+   OKUR kale_dokuma_live_v2 (tezgahlar) ve kale_colors_v2 (renk listesi) - bunlari ASLA yazmaz.
 
    TEMEL KURALLAR:
    - P[] urun tablosu ve FULL140 / ONLY100 asagida duzenlenir.
@@ -175,6 +206,7 @@ const ONLY100 = ["A3"];  // 200'lük makineler içinde SADECE 100 cm halı yapan
 const P = [
   { k:"s70", g:"Seccade", name:"70 × 110", w:70, l:110, opts:[{ mw:140, ac:2 }] },
   { k:"s80", g:"Seccade", name:"80 × 120", w:80, l:120, opts:[{ mw:160, ac:2 }] },
+  { k:"mini", g:"Mini seccade", name:"70 × 30", w:70, l:30, opts:[{ mw:140, ac:2 }] },
   { k:"c110", g:"Cemaat seccadesi", name:"110 × 200", w:200, l:110, opts:[{ mw:200, ac:1, no100:true }] },
   { k:"h60x80", g:"Kadife halı", name:"60 × 80", w:60, l:80, opts:[{ mw:200, ac:20, cyc:4.8, note:"6+8+6", no100:true }] },
   { k:"h100", g:"Kadife halı", name:"100 × 200", w:100, l:200, opts:[{ mw:200, ac:2, ac100:1 }] },
@@ -242,7 +274,7 @@ function norm(l, id) {
   m.warps = [0, 1].map(i => (w[i] in WARPS ? w[i] : WARP_DEF[i]));
   return m;
 }
-let looms = {}, customers = [], orders = [], ordRef = null, firstOrd = true;
+let looms = {}, customers = [], orders = [], ordRef = null, custRef = null, firstOrd = true;
 try {
   const c = JSON.parse(localStorage.getItem("kale_dokuma_local_v3") || "null");
   ids.forEach(id => looms[id] = norm(c?.[id], id));
@@ -252,6 +284,13 @@ try { orders = JSON.parse(localStorage.getItem(OKEY) || "[]"); } catch { orders 
 const cache = () => { try { localStorage.setItem(OKEY, JSON.stringify(orders)); } catch {} };
 const wingSig = m => (m.width === 140 ? [m.colors[0], m.colors[3]] : [m.colors[0]]).join("|");
 /* Satırın bu makinede tahmini tezgah metresi (kalan adet üzerinden) */
+/* Üretim süresi tahmini: günlük üretim (tezgah boyu, m/gün; yaklaşık) - index.html ile AYNI olmalı.
+   200 cm: 240 · 140 cm: SİMLİ 210 / ŞPİNGEL 370 · 160 cm: SİMLİ 210 / ŞPİNGEL 350. Özellik seçilmemişse SİMLİ varsayılır. */
+const DAILY = { 200: { simli: 240, spingel: 240 }, 140: { simli: 210, spingel: 370 }, 160: { simli: 210, spingel: 350 } };
+const dailyRate = l => (DAILY[l.width] || DAILY[200])[l.extra === "spingel" ? "spingel" : "simli"];
+const unsetExtra = l => l.width !== 200 && l.extra !== "spingel" && l.extra !== "simli";
+const fmtDays = d => `${String(Math.max(0.1, Math.round(d * 10) / 10)).replace(".", ",")} gün`;
+const daysTxt = (l, m) => `≈ ${fmtDays(m / dailyRate(l))}${unsetExtra(l) ? " (simli varsayıldı)" : ""}`;
 function lineM(ln, m) {
   const e = (ln.mt || {})[m?.id]; if (!e) return null;
   const R = rem(ln); let [ac, len] = e;
@@ -339,6 +378,83 @@ function suggest(line, order) {
   return res.sort((a, b) => key(a) - key(b));
 }
 
+/* ---------- Müşteri listesi (kale_customers_pool_v2: SADECE bu sayfa YAZAR; index.html okur) ----------
+   Yazma işlemleri TRANSACTION ile yapılır: liste henüz yüklenmeden / başka cihaz aynı anda yazarken eski listeyle ÜZERİNE yazılmaz. */
+const cleanName = raw => String(raw || "").trim().replace(/\s+/g, " ");
+function poolWrite(fn) {
+  if (!custRef) return Promise.resolve();
+  return custRef.transaction(cur => fn(arr(cur).filter(Boolean))).catch(() => toast("Müşteri listesi kaydedilemedi: yetkiniz yok veya bağlantı yok"));
+}
+function addCustomer(raw) {   /* varsa mevcut yazımı döndürür; listede yoksa listeye ekler */
+  const name = cleanName(raw);
+  if (!name || name === "-") return null;
+  const ex = allCust().find(n => lc(n) === lc(name)) || name;
+  if (!customers.some(c => lc(c) === lc(ex))) {
+    customers = [...customers, ex];
+    poolWrite(a => a.some(c => lc(c) === lc(ex)) ? undefined : [...a, ex]);
+  }
+  return ex;
+}
+function custUse(n) {
+  return { ord: orders.filter(o => lc(o.cust || "") === lc(n)).length,
+           loom: Object.values(looms).filter(l => lc(l.currentCustomer || "") === lc(n) || lc(l.nextCustomer || "") === lc(n)).length };
+}
+function delCustomer(n) {
+  const u = custUse(n);
+  if (u.ord || u.loom) return alert(`"${n}" silinemez: ${u.ord} siparişi ve ${u.loom} makinede kaydı var.`);
+  if (!confirm(`"${n}" silinsin mi?`)) return;
+  customers = customers.filter(c => lc(c) !== lc(n));
+  poolWrite(a => a.filter(c => lc(c) !== lc(n)));
+  toast("Silindi"); render(true);
+}
+
+/* ---------- Rapor ---------- */
+const todayMid = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const dueDays = o => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(o.due || ""); return m ? Math.round((new Date(+m[1], +m[2] - 1, +m[3]) - todayMid()) / 864e5) : null; };
+function reportHtml() {
+  const now = new Date(), date = now.toLocaleDateString("tr-TR") + " " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const remO = o => o.lines.reduce((s, l) => s + rem(l), 0);
+  const open = orders.filter(o => remO(o) > 0).sort((a, b) => ((dueDays(a) ?? 1e9) - (dueDays(b) ?? 1e9)) || (a.created - b.created));
+  const doneO = orders.filter(o => o.lines.length && remO(o) === 0);
+  const load = {}, late = [], changed = [];
+  let unassigned = 0;
+  const prog = o => { const L = o.lines.filter(l => !l.comp), q = L.reduce((s, l) => s + (l.qty || 0), 0), d = L.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0); return q ? Math.round(d * 100 / q) : 0; };
+  const orderRows = open.map(o => {
+    const dd = dueDays(o); if (dd !== null && dd < 0) late.push(`${o.cust} (${Math.abs(dd)} gün gecikti)`);
+    const dueTxt = o.due ? `${fmtDue(o.due)} <span class="${dd < 0 ? "bad" : ""}">(${dd < 0 ? Math.abs(dd) + " gün gecikti" : dd === 0 ? "bugün" : dd + " gün kaldı"})</span>` : "belirtilmedi";
+    let h = `<tr class="oh"><td colspan="5"><b>${esc(o.cust)}</b> · Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")} · Teslim: ${dueTxt} · İlerleme: %${prog(o)}</td></tr>`;
+    o.lines.filter(l => rem(l) > 0).forEach(l => {
+      const p = prodOf(l.k), ms = Object.keys(l.asg || {});
+      let mach;
+      if (!ms.length) { if (!l.comp) unassigned++; mach = '<span class="bad">atanmadı</span>'; }
+      else mach = ms.map(m => {
+        const lm = looms[m], t = (l.comp || !lm) ? null : lineM(l, lm);
+        if (lm && !l.comp) {
+          const e = load[m] = load[m] || { n: 0, m: 0 }; e.n++; e.m += t || 0;
+          if (l.asg[m] !== wingSig(lm)) changed.push(`${o.cust}: ${p ? pname(p) : l.k} · ${l.color} → ${m}`);
+        }
+        return esc(m) + (t != null ? ` · ≈${t} m · ${daysTxt(lm, t)}` : "");
+      }).join("<br>");
+      h += `<tr><td>${l.comp ? "↳ " : ""}${esc(p ? pname(p) : l.k)} · ${esc(l.color)}</td><td>${l.qty}</td><td>${l.done || 0}</td><td><b>${rem(l)}</b></td><td>${mach}</td></tr>`;
+    });
+    return h;
+  }).join("");
+  const totalM = Math.round(Object.values(load).reduce((s, e) => s + e.m, 0));
+  const kpi = (v, lab, cls) => `<div class="kpi"><b class="${cls || ""}">${v}</b>${lab}</div>`;
+  const loadRows = Object.entries(load).map(([m, e]) => ({ m, e, lm: looms[m], d: e.m / dailyRate(looms[m]) })).sort((a, b) => b.d - a.d).map(({ m, e, lm, d }) =>
+    `<tr><td><b>${esc(m)}</b></td><td>${lm.width} cm</td><td>${lm.extra === "spingel" ? "ŞPİNGEL" : lm.extra === "simli" ? "SİMLİ" : lm.width === 200 ? "—" : "seçilmedi"}</td><td>${dailyRate(lm)} m/gün</td><td>${e.n}</td><td>≈ ${Math.round(e.m * 10) / 10} m</td><td><b>≈ ${fmtDays(d)}</b></td></tr>`).join("");
+  const attn = [late.length ? `<li><span class="bad">Geciken siparişler:</span> ${late.map(esc).join(", ")}</li>` : "",
+    unassigned ? `<li><span class="bad">Makineye atanmamış satır:</span> ${unassigned}</li>` : "",
+    changed.length ? `<li><span class="bad">Renk değişimi gereken atamalar:</span> ${changed.map(esc).join("; ")}</li>` : ""].join("");
+  return `<div class="rhead"><div><h1>🧵 KALE DOKUMA – SİPARİŞ RAPORU</h1><p>Mevcut sipariş durumu ve tahmini üretim süreleri</p></div><div class="rdate">${esc(date)}</div></div>
+    <div class="kpis">${kpi(open.length, "Açık sipariş")}${kpi(open.reduce((s, o) => s + remO(o), 0), "Toplam kalan adet")}${kpi("≈ " + totalM + " m", "Atanan toplam metraj")}${kpi(unassigned, "Atanmamış satır", unassigned ? "bad" : "")}${kpi(late.length, "Geciken sipariş", late.length ? "bad" : "")}${kpi(doneO.length, "Tamamlanan sipariş")}</div>
+    <h2>Dikkat gerektirenler</h2>${attn ? `<ul class="alist">${attn}</ul>` : '<p class="okc">Dikkat gerektiren durum yok ✓</p>'}
+    <h2>Açık siparişler</h2>${open.length ? `<table class="rpt"><thead><tr><th>Ürün · Renk</th><th>Sipariş</th><th>Yapılan</th><th>Kalan</th><th>Makine · ≈ metre · ≈ süre</th></tr></thead><tbody>${orderRows}</tbody></table>` : "<p>Açık sipariş yok.</p>"}
+    <h2>Makine iş yükü (atanmış açık satırlar)</h2>${loadRows ? `<table class="rpt"><thead><tr><th>Makine</th><th>En</th><th>Özellik</th><th>Günlük hız</th><th>Satır</th><th>Toplam metraj</th><th>Tahmini süre</th></tr></thead><tbody>${loadRows}</tbody></table>` : "<p>Henüz makineye atanmış satır yok.</p>"}
+    <h2>Tamamlanan siparişler (${doneO.length})</h2><p>${doneO.length ? doneO.slice(0, 20).map(o => esc(o.cust)).join(", ") + (doneO.length > 20 ? " …" : "") : "—"}</p>
+    <p class="rfoot">Tahmini süre = ilgili tezgahın kalan metrajı ÷ günlük üretim (200 cm: 240 m · 140 cm: SİMLİ 210 / ŞPİNGEL 370 m · 160 cm: SİMLİ 210 / ŞPİNGEL 350 m). Değerler yaklaşıktır; özelliği seçilmemiş 140/160 cm tezgahlarda SİMLİ hızı varsayılmıştır. Eşlik eden satırlar aynı tezgahta aynı anda üretildiği için metraja tekrar eklenmez.</p>`;
+}
+
 /* ---------- Görünümler ---------- */
 /* Sadece GÖSTERİM: alt renkler ve çözgü (eşleştirmeye / sıralamaya girmez) */
 function extraHtml(l) {
@@ -360,9 +476,10 @@ function resHtml(r, i, p, line) {
     : `<span class="bad">Renk değişimi gerekir</span>`;
   const cur = (l.currentCustomer || "").trim(), nxt = (l.nextCustomer || "").trim();
   const busy = cur ? `<span class="mid">Şu an: <b>${esc(cur)}</b>${nxt ? ` → Sıradaki: <b>${esc(nxt)}</b>` : ""}</span>` : `<span class="ok">Boşta (müşteri yok)</span>`;
-  const prod = p.roll ? `${r.rows} rulo × ${r.len} m = <b>${r.total} m</b>`
+  const prod0 = p.roll ? `${r.rows} rulo × ${r.len} m = <b>${r.total} m</b>`
     : r.cyc ? `${r.ac} parça / devir (${esc(r.note)}) · ${r.rows} devir · <b>${r.meters} m</b> tezgah boyu`
     : `${r.ac} parça yan yana · ${r.rows} sıra · <b>${r.meters} m</b> tezgah boyu${r.waste ? ` · %${r.waste} boşluk` : ""}`;
+  const mt0 = p.roll ? r.total : r.meters, prod = prod0 + (mt0 ? ` · <b>${daysTxt(l, mt0)}</b>` : "");
   return `<div class="res${i === 0 && r.match > 0 ? " best" : ""}">
     <div class="rh"><b>${esc(l.id)}</b><span class="br">${esc(BRANCHES[l.branch].name)}</span>
       <span class="w w${l.width}">${l.width} cm</span><span class="st" style="background:${stc}"></span><span class="stl">${stl}</span>
@@ -385,7 +502,7 @@ function ocard(o) {
 function lineHtml(l) {
   const p = prodOf(l.k), r = rem(l);
   const am = Object.keys(l.asg || {}), chg = am.filter(m => looms[m] && l.asg[m] !== wingSig(looms[m]));
-  const asgLine = am.length ? `<div class="lq"><span>📌 ${am.map(m => { const t = l.comp ? null : lineM(l, looms[m]); return esc(m) + (t != null ? ` (≈${t} m)` : ""); }).join(", ")}</span>${chg.length ? `<span class="warn">⚠ renk değişti: ${chg.map(esc).join(", ")}</span>` : ""}</div>` : "";
+  const asgLine = am.length ? `<div class="lq"><span>📌 ${am.map(m => { const t = l.comp ? null : lineM(l, looms[m]); return esc(m) + (t != null ? ` (≈${t} m · ${daysTxt(looms[m], t)})` : ""); }).join(", ")}</span>${chg.length ? `<span class="warn">⚠ renk değişti: ${chg.map(esc).join(", ")}</span>` : ""}</div>` : "";
   return `<div class="line${r ? "" : " dn"}"><div class="lh"><span class="dot" style="background:${hexOf(l.color)}"></span>
     <b>${esc(p ? pname(p) : l.k)} · ${esc(l.color)}</b>${l.comp ? "" : `<button data-act="del-line" data-id="${l.id}" aria-label="Sil">✕</button>`}</div>${l.comp ? `<div class="lq"><span class="ok">↳ Eşlik eden satır (${esc(l.comp.m)} makinesinin diğer kanadı) · Yapılan asıl satırla birlikte değişir</span></div>` : ""}
     <div class="lq"><span>Sipariş: ${l.comp ? `<b>${l.qty}</b>` : `<input class="q-in" type="number" inputmode="numeric" min="1" value="${l.qty}" data-id="${l.id}">`}</span>
@@ -399,18 +516,29 @@ function render(keep) {
 
   if (V === "home") {
     const list = [...orders].sort((a, b) => b.created - a.created);
-    app.innerHTML = `<button class="primary" data-act="new" style="margin:0 0 16px">➕ Yeni sipariş</button>
+    app.innerHTML = `<button class="primary" data-act="new" style="margin:0 0 10px">➕ Yeni sipariş</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px"><button class="second" data-act="custmgr" style="margin:0">👥 Müşteri listesi</button><button class="second" data-act="report" style="margin:0">📊 Sipariş raporu</button></div>
       <h2>Kayıtlı siparişler (${list.length})</h2>` +
       (list.length ? list.map(ocard).join("") : '<div class="empty">Henüz kayıtlı sipariş yok.</div>') +
       `<h3>Yedek</h3>
       <div class="bkrow"><button class="nb" data-act="bk-out">📤 Yedek al</button><button class="nb" data-act="bk-in">📥 Geri yükle</button></div>` +
       (S.bk ? `<textarea id="bk" class="inp" rows="5" ${S.bk === "out" ? "readonly" : 'placeholder="Yedek metnini buraya yapıştırın"'}>${S.bk === "out" ? esc(JSON.stringify(orders)) : ""}</textarea>` +
         (S.bk === "in" ? '<button class="second" data-act="bk-apply">Uygula</button>' : "") : "");
+  } else if (V === "report") {
+    app.innerHTML = `<button class="second" data-act="rep-print" style="margin:0 0 12px">🖨️ PDF / Yazdır</button><div class="rep">${reportHtml()}</div>`;
+  } else if (V === "custmgr") {
+    const list = allCust();
+    app.innerHTML = `<h2>Müşteri listesi (${list.length})</h2>
+      <div class="cm-add"><input id="cmNew" class="inp" placeholder="Yeni müşteri adı..." maxlength="60" autocomplete="off"><button class="nb" data-act="cm-add">Ekle</button></div>` +
+      (list.length ? list.map(n => { const u = custUse(n); return `<div class="cm-row"><b title="${esc(n)}">${esc(n)}</b><small>${u.ord} sipariş · ${u.loom} makine</small><button class="nb" data-act="cm-del" data-v="${esc(n)}" aria-label="Sil">🗑</button></div>`; }).join("") : '<div class="empty">Henüz müşteri yok. Yukarıdan ekleyin.</div>') +
+      `<small class="hint">Sipariş veya makine kaydı olan müşteri silinemez. Müşteri adı değiştirilemez: yanlışsa doğrusunu ekleyip yanlışı silin.</small>`;
+    $("cmNew").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="cm-add"]').click(); } };
   } else if (V === "cust") {
     app.innerHTML = `<h2>Müşteri</h2>
       <input id="cin" class="inp" placeholder="Müşteri adını yazın..." value="${esc(S.cin)}" autocomplete="off">
       <div class="chips" id="chips"></div>
-      <button class="primary" data-act="cust-ok">Tamam</button>`;
+      <button class="primary" data-act="cust-ok">Tamam</button>
+      <button class="second" data-act="custmgr">👥 Müşteri listesini düzenle</button>`;
     $("cin").oninput = e => { S.cin = e.target.value; drawChips(); };
     drawChips();
   } else if (V === "prod") {
@@ -446,7 +574,7 @@ function render(keep) {
       (o.saved ? '<button class="second" data-act="delord" style="color:var(--stop)">🗑 Siparişi sil</button>' : "");
   } else {
     const open = o.lines.filter(l => rem(l) > 0 && prodOf(l.k) && !l.comp);
-    let h = `<h2>Uygun makineler</h2>`;
+    let h = `<h2>Uygun makineler</h2><small class="hint">Süre = metraj ÷ günlük üretim (yaklaşık).</small>`;
     if (!open.length) h += '<div class="empty">Bu siparişin tamamı bitmiş 🎉</div>';
     open.forEach(l => {
       const p = prodOf(l.k), list = suggest(l, o), asgIds = Object.keys(l.asg || {});
@@ -506,8 +634,17 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, o = S.order;
   if (a === "new") { S.order = null; S.cin = ""; go("cust"); }
-  else if (a === "pick-cust") startOrder(b.dataset.v);
-  else if (a === "cust-ok") { const v = S.cin.trim(); if (!v) return toast("Müşteri adı yazın"); startOrder(v); }
+  else if (a === "pick-cust") startOrder(addCustomer(b.dataset.v) || b.dataset.v);
+  else if (a === "cust-ok") { const v = addCustomer(S.cin); if (!v) return toast("Müşteri adı yazın"); startOrder(v); }
+  else if (a === "custmgr") go("custmgr");
+  else if (a === "report") go("report");
+  else if (a === "rep-print") { $("printSection").innerHTML = `<div class="rep">${reportHtml()}</div>`; window.print(); }
+  else if (a === "cm-add") {
+    const raw = $("cmNew").value, nm = cleanName(raw); if (!nm || nm === "-") return toast("Müşteri adı yazın");
+    const had = allCust().some(n => lc(n) === lc(nm)), n = addCustomer(raw);
+    toast(had ? "Bu müşteri zaten var" : "Eklendi ✓"); render(true); if (n) { const i = $("cmNew"); if (i) i.focus(); }
+  }
+  else if (a === "cm-del") delCustomer(b.dataset.v)
   else if (a === "prod") { S.pk = b.dataset.k; S.sel = {}; go("color"); }
   else if (a === "color") { const n = b.dataset.v; if (S.sel[n]) delete S.sel[n]; else S.sel[n] = 1; b.classList.toggle("sel", !!S.sel[n]); drawSel(); }
   else if (a === "addline") {
@@ -519,7 +656,7 @@ document.addEventListener("click", e => {
   else if (a === "addmore") go("prod");
   else if (a === "show") go("res");
   else if (a === "more") { S.all[b.dataset.id] = true; render(true); }
-  else if (a === "save") { o.saved = true; orders.push(o); pushOrder(o); toast("Kaydedildi ✓"); render(true); }
+  else if (a === "save") { o.saved = true; orders.push(o); pushOrder(o); S.order = null; go("home"); toast("Sipariş başarıyla eklendi ✓"); }
   else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; go("home"); } }
   else if (a === "del-line") { o.lines = o.lines.filter(l => l.id !== b.dataset.id && !(l.comp && l.comp.of === b.dataset.id)); persist(); render(true); }
   else if (a === "asg") {
@@ -547,7 +684,7 @@ document.addEventListener("click", e => {
     persist(); render(true);
   }
   else if (a === "back") {
-    const prev = { cust:"home", prod: o?.lines.length ? "order" : "cust", color:"prod", order:"home", res:"order" }[S.view];
+    const prev = { report:"home", custmgr:"home", cust:"home", prod: o?.lines.length ? "order" : "cust", color:"prod", order:"home", res:"order" }[S.view];
     if (!prev) return;
     if (prev === "home") goHome(); else go(prev);
   }
@@ -587,7 +724,7 @@ document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id
 
 /* ---------- Firebase ----------
    Bu sayfa YAZAR: kale_siparis_v1
-   Bu sayfa sadece OKUR: kale_dokuma_live_v2 (makineler), kale_customers_pool_v2 (müşteriler) */
+   Bu sayfa sadece OKUR: kale_dokuma_live_v2 (makineler), kale_colors_v2 (ek renkler) */
 function setSync(on, t) { $("sync").classList.toggle("on", on); $("sync").textContent = t; }
 function authMsg(e) {
   const c = (e && e.code) || "";
@@ -657,13 +794,13 @@ function startData() {
       const fnd = orders.find(o => o.id === S.order.id);
       if (fnd) S.order = fnd; else { S.order = null; if (["order","res","color","prod"].includes(S.view)) S.view = "home"; }
     }
-    if (["home","order","res"].includes(S.view)) render(true);
+    if (["home","order","res","report"].includes(S.view)) render(true);
   }, e => { toast("Siparişler Firebase'den okunamadı"); denied(e); });
   db.ref("kale_dokuma_live_v2").on("value", s => {
     const r = s.val() || {};
     ids.forEach(id => { if (r[id]) { rawColors[id] = r[id].colors; looms[id] = norm(r[id], id); } });
     setSync(true, "Canlı veri ✓");
-    if (S.view === "res") render(true); else drawChips();
+    if (S.view === "res" || S.view === "report") render(true); else drawChips();
   }, e => { setSync(false, "Yerel veri"); denied(e); });
   db.ref("kale_colors_v2").on("value", s => {
     const v = s.val(); if (v === null) return;
@@ -671,8 +808,9 @@ function startData() {
     ids.forEach(id => { if (rawColors[id]) looms[id].colors = norm({ ...looms[id], colors: rawColors[id] }, id).colors; });
     if (["color", "res", "order"].includes(S.view)) render(true); else drawChips();
   }, denied);
-  db.ref("kale_customers_pool_v2").on("value", s => {
-    const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; drawChips();
+  custRef = db.ref("kale_customers_pool_v2");
+  custRef.on("value", s => {
+    const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; if (S.view === "custmgr") render(true); else drawChips();
   }, denied);
 }
 render(); initFb();

@@ -111,14 +111,7 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .lchip{background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:.8rem;font-weight:800}
 .lchip i{font-style:normal;font-weight:600;color:var(--mu);font-size:.68rem}
 .lchip.m{border-color:var(--ac);color:var(--ac)}
-.cm-add{display:flex;gap:7px;margin-bottom:12px}
-.cm-add .inp{flex:1}
 .cm-list{display:flex;flex-direction:column;gap:6px}
-.cm-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
-.cm-item b{flex:1;min-width:0;font-size:.92rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cm-item small{color:var(--mu);font-size:.7rem;font-weight:600;flex-shrink:0}
-.cm-item button{background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:.85rem}
-.cm-item button.del{color:var(--stop);border-color:rgba(248,113,113,.3)}
 .pin{background:var(--card);width:90%;max-width:320px;border-radius:16px;padding:22px;text-align:center;border:1px solid var(--ac)}
 .pin input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--tx);font-size:1rem;text-align:left;font-weight:600;margin:6px 0;font-family:inherit}
 #login{z-index:400;background:var(--page)}
@@ -152,7 +145,6 @@ body *{visibility:hidden}
   <div class="top-bar">
     <h1>🧵 KALE DOKUMA TAKİP</h1>
     <div class="top-actions">
-      <button type="button" class="pdf-btn" id="custBtn">👥 Müşteriler</button>
       <button type="button" class="pdf-btn" id="colBtn">🎨 Renkler</button>
       <button type="button" class="pdf-btn" id="pdfBtn">🖨️ PDF / Yazdır</button>
       <button type="button" class="pdf-btn" id="outBtn" title="Çıkış">🚪</button>
@@ -206,33 +198,18 @@ body *{visibility:hidden}
       </div>
     </div>
     <div class="fg"><label for="fCur">Mevcut Müşteri</label><select class="inp" id="fCur"></select></div>
-    <div class="fg"><label for="fNext">Gelecek Müşteri</label><select class="inp" id="fNext"></select></div>
+    <div class="fg"><label for="fNext">Gelecek Müşteri</label><select class="inp" id="fNext"></select><small style="color:var(--mu);font-size:.7rem">Listede olmayan müşteri için önce Sipariş sayfasından ekleyin.</small></div>
     <div class="fg"><label for="fWidth">En (Genişlik)</label>
       <select id="fWidth" class="inp"><option value="140">140 cm</option><option value="160">160 cm</option><option value="200">200 cm (2 Metre)</option></select>
     </div>
+    <div class="fg"><label id="colLabel">Ana Renk (1) ve Alt Renkler (2, 3, 4)</label><div id="colRows"></div></div>
+    <div class="fg"><label>Çözgü Renkleri</label><div id="warpRows" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div></div>
     <div class="fg"><label>Özellik</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <button type="button" class="xbtn" id="xSpingel" data-x="spingel">⬜ ŞPİNGEL</button>
         <button type="button" class="xbtn" id="xSimli" data-x="simli">⬜ SİMLİ</button>
       </div>
     </div>
-    <div class="fg"><label id="colLabel">Ana Renk (1) ve Alt Renkler (2, 3, 4)</label><div id="colRows"></div></div>
-    <div class="fg"><label>Çözgü Renkleri</label><div id="warpRows" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div></div>
-  </div>
-</div>
-
-<div class="overlay" id="custModal">
-  <div class="sheet">
-    <div class="sheet-head">
-      <button type="button" class="b-cancel" id="custClose">✕ Kapat</button>
-      <h2>Müşteri Yönetimi</h2>
-      <span style="width:70px"></span>
-    </div>
-    <div class="cm-add">
-      <input class="inp" id="cmNew" placeholder="Yeni müşteri adı..." maxlength="60" autocomplete="off">
-      <button type="button" class="b-save" id="cmAdd">Ekle</button>
-    </div>
-    <div class="cm-list" id="cmList"></div>
   </div>
 </div>
 
@@ -275,9 +252,9 @@ body *{visibility:hidden}
 
    VERI (Firebase Realtime Database, proje fabrika-e9b49):
      YAZAR : kale_dokuma_live_v2/<makineId>   (tezgahlar)
-             kale_customers_pool_v2           (musteri havuzu)
      YAZAR : kale_colors_v2                   (sadece EK renkler {v:2,list:[{name,hex}]}; sabit liste kodda; siparis.html okur)
      OKUR  : kale_siparis_v1/orders           (siparis sayfasinin yazdigi siparisler)
+             kale_customers_pool_v2           (musteri listesi; SIPARIS sayfasi yazar, burada sadece secilir)
    Bu ayrim sadece kodda uygulanan bir kuraldir (veritabani kurallari yazmayi
    UID bazinda kisitlar ama yol bazinda degil). Yeni kod bu ayrima uymali.
 
@@ -456,6 +433,13 @@ const wingsOf = l => l.width === 140 ? [l.colors[0], l.colors[3]] : [l.colors[0]
 const hitOf = (ln, l) => wingsOf(l).filter(c => c === ln.color).length;
 /* Şu anki renkle yapılabilir mi? (140'ta tek kanat yeterli, tam-en ürünlerde iki kanat da aynı olmalı) */
 /* Satırın bu makinede tahmini tezgah metresi (kalan adet üzerinden); mt siparis.html tarafından yazılır */
+/* Üretim süresi tahmini: günlük üretim (tezgah boyu, m/gün; yaklaşık) - siparis.html ile AYNI olmalı.
+   200 cm: 240 · 140 cm: SİMLİ 210 / ŞPİNGEL 370 · 160 cm: SİMLİ 210 / ŞPİNGEL 350. Özellik seçilmemişse SİMLİ varsayılır. */
+const DAILY = { 200: { simli: 240, spingel: 240 }, 140: { simli: 210, spingel: 370 }, 160: { simli: 210, spingel: 350 } };
+const dailyRate = l => (DAILY[l.width] || DAILY[200])[l.extra === "spingel" ? "spingel" : "simli"];
+const unsetExtra = l => l.width !== 200 && l.extra !== "spingel" && l.extra !== "simli";
+const fmtDays = d => `${String(Math.max(0.1, Math.round(d * 10) / 10)).replace(".", ",")} gün`;
+const daysTxt = (l, m) => `≈ ${fmtDays(m / dailyRate(l))}${unsetExtra(l) ? " (simli varsayıldı)" : ""}`;
 function lineM(ln, l) {
   const e = (ln.mt || {})[l.id]; if (!e) return null;
   const R = (ln.qty || 0) - (ln.done || 0); let [ac, len] = e;
@@ -494,7 +478,7 @@ function renderOrd() {
   /* eşlik eden satır aynı tezgahta aynı anda üretilir: metraja tekrar eklenmez */
   const mts = asg.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null);
   const asgTotal = mts.length ? Math.round(mts.reduce((a, b) => a + b, 0) * 10) / 10 : null;
-  $("ordBody").innerHTML = (asg.length ? `<div class="osec">📌 Bu makineye atananlar (${asg.length})${asgTotal != null ? ` · toplam ≈ ${asgTotal} m` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
+  $("ordBody").innerHTML = (asg.length ? `<div class="osec">📌 Bu makineye atananlar (${asg.length})${asgTotal != null ? ` · toplam ≈ ${asgTotal} m · ${daysTxt(l, asgTotal)}` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
     + (pos.length ? `<div class="osec">Şu anki renkle yapılabilir (${pos.length})</div>` + pos.map(i => itemHtml(i, l, false)).join("") : "")
     || '<div class="empty">Şu anki renge uygun bekleyen sipariş yok.</div>';
 }
@@ -541,31 +525,15 @@ function allCustomers() {
   });
   return [...m.values()].sort(trCompare);
 }
+/* Müşteri listesi (kale_customers_pool_v2) bu sayfada SADECE OKUNUR; müşteri ekleme/silme Sipariş sayfasından yapılır. */
 function fillCustSelect(sel, cur) {
   const list = allCustomers();
   if (cur && !list.includes(cur)) { list.push(cur); list.sort(trCompare); }
-  sel.innerHTML = '<option value="">— Seçilmedi —</option>' + list.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") + '<option value="__new__">➕ Yeni müşteri ekle…</option>';
+  sel.innerHTML = '<option value="">— Seçilmedi —</option>' + list.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
   sel.value = cur || ""; sel.dataset.prev = sel.value;
 }
 function updateCustList() {
   [$("fCur"), $("fNext")].forEach(s => fillCustSelect(s, s.dataset.prev || ""));
-  if ($("custModal").classList.contains("open")) renderCustManager();
-}
-function saveCustomers() { store.set(CUST_KEY, customers); custRef?.set(customers).catch(() => {}); }
-function addCustomer(raw) {
-  const name = (raw || "").trim().replace(/\s+/g, " ");
-  if (!name || name === "-") return null;
-  const ex = allCustomers().find(n => lc(n) === lc(name));
-  if (ex) return ex;
-  customers = [...customers, name]; saveCustomers(); updateCustList();
-  return name;
-}
-function usage(n) { return Object.values(looms).filter(l => l.currentCustomer === n || l.nextCustomer === n).length; }
-function renderCustManager() {
-  const list = allCustomers();
-  $("cmList").innerHTML = list.length
-    ? list.map((n, i) => `<div class="cm-item"><b title="${esc(n)}">${esc(n)}</b><small>${usage(n)} makine</small><button type="button" data-a="ren" data-i="${i}" aria-label="Düzenle">✎</button><button type="button" class="del" data-a="del" data-i="${i}" aria-label="Sil">🗑</button></div>`).join("")
-    : '<div class="empty">Henüz müşteri yok. Yukarıdan ekleyin.</div>';
 }
 /* ---------- Renk yönetimi ---------- */
 function colorUsage(name) {
@@ -590,7 +558,7 @@ function renderColManager() {
     const u = colorUsage(n), open = colSel === n, extra = !FIXED_COLOR_NAMES.has(n);
     let h = `<div class="col-item${open ? " open" : ""}" data-n="${esc(n)}"><span class="dot" style="background:${hexOf(n)};width:22px;height:22px"></span><b title="${esc(n)}">${esc(n)}</b><small>ana ${u.main.length} · alt ${u.sub.length}</small>${extra ? `<button type="button" class="del" data-a="del" data-n="${esc(n)}" aria-label="Sil">🗑</button>` : ""}</div>`;
     if (open) {
-      h += `<div class="col-det"><div class="lab">${extra ? "➕ Eklenen renk (silinebilir)" : "🔒 Sabit renk (değiştirilemez)"}</div>` +
+      h += `<div class="col-det">${extra ? `<div class="lab">➕ Eklenen renk (silinebilir)</div>` : ""}` +
         (u.main.length ? `<div><div class="lab">● ANA RENK OLARAK (${u.main.length})</div><div class="chips">${chips(u.main, "m")}</div></div>` : "") +
         (u.sub.length ? `<div><div class="lab">○ ALT RENK OLARAK (${u.sub.length})</div><div class="chips">${chips(u.sub, "")}</div></div>` : "") +
         (!u.main.length && !u.sub.length ? `<div class="lab">Hiçbir makinede kullanılmıyor.</div>` : "") + `</div>`;
@@ -640,34 +608,6 @@ function delColor(name) {
   if (colSel === name) colSel = null;
   store.set(CACHE_KEY, looms); writeColors(extra); afterColorsChanged();
 }
-function openCust() { $("cmNew").value = ""; renderCustManager(); $("custModal").classList.add("open"); }
-function changeCustomer(old, neu) {
-  const t = Date.now();
-  Object.values(looms).forEach(l => {
-    const a = l.currentCustomer === old, b = l.nextCustomer === old;
-    if (!a && !b) return;
-    if (a) l.currentCustomer = neu;
-    if (b) l.nextCustomer = neu;
-    l.lastModified = t;
-    loomsRef?.child(l.id).update({ currentCustomer: l.currentCustomer, nextCustomer: l.nextCustomer, lastModified: t }).catch(() => {});
-  });
-  customers = customers.filter(c => c !== old && (!neu || lc(c) !== lc(neu)));
-  if (neu) customers.push(neu);
-  store.set(CACHE_KEY, looms); saveCustomers(); refresh(); updateCustList();
-}
-function renameCustomer(old) {
-  const raw = prompt("Müşteri adı:", old); if (raw === null) return;
-  const name = raw.trim().replace(/\s+/g, " ");
-  if (!name || name === old) return;
-  if (allCustomers().some(n => n !== old && lc(n) === lc(name))) return toast("Bu isimde müşteri zaten var");
-  changeCustomer(old, name); toast("Güncellendi ✓");
-}
-function deleteCustomer(n) {
-  const u = usage(n);
-  if (!confirm(`"${n}" silinsin mi?` + (u ? `\nBu müşteri ${u} makinede kayıtlı; oralardan da kaldırılacak.` : ""))) return;
-  changeCustomer(n, ""); toast("Silindi");
-}
-
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.style.display = "block";
   clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2200);
@@ -699,13 +639,7 @@ function initUi() {
   document.querySelectorAll(".sbtn").forEach(b => b.onclick = () => setStatus(b.dataset.val));
   $("fWidth").onchange = () => buildColorRows($("fWidth").value, readColors());
   document.querySelectorAll(".xbtn").forEach(b => b.onclick = () => setExtra(selectedExtra === b.dataset.x ? "" : b.dataset.x));
-  [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => {
-    if (sel.value !== "__new__") { sel.dataset.prev = sel.value; return; }
-    const n = addCustomer(prompt("Yeni müşteri adı:"));
-    fillCustSelect(sel, n || sel.dataset.prev || "");
-  });
-  $("custBtn").onclick = () => openLoom("__cust__");
-  $("custClose").onclick = () => $("custModal").classList.remove("open");
+  [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => { sel.dataset.prev = sel.value; });
   $("colBtn").onclick = () => { colSel = null; $("colName").value = ""; renderColManager(); $("colModal").classList.add("open"); };
   $("colClose").onclick = () => $("colModal").classList.remove("open");
   $("colAdd").onclick = addColor;
@@ -716,23 +650,15 @@ function initUi() {
     const it = e.target.closest(".col-item"); if (!it) return;
     colSel = colSel === it.dataset.n ? null : it.dataset.n; renderColManager();
   });
-  $("cmAdd").onclick = () => { const n = addCustomer($("cmNew").value); if (n) { $("cmNew").value = ""; renderCustManager(); toast("Kaydedildi ✓"); } };
-  $("cmNew").addEventListener("keydown", e => { if (e.key === "Enter") $("cmAdd").onclick(); });
-  $("cmList").onclick = e => {
-    const b = e.target.closest("button"); if (!b) return;
-    const n = allCustomers()[+b.dataset.i]; if (!n) return;
-    if (b.dataset.a === "ren") renameCustomer(n); else deleteCustomer(n);
-  };
   $("closeBtn").onclick = () => $("editModal").classList.remove("open");
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("custModal").classList.remove("open"); $("colModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
-const enter = id => id === "__cust__" ? openCust() : openModal(id);
-const openLoom = id => enter(id);
+const openLoom = id => openModal(id);
 /* ---------- Edit modal ---------- */
 function setStatus(st) {
   selectedStatus = st;
@@ -814,7 +740,7 @@ function printReport() {
 }
 
 /* ---------- Firebase ----------
-   Bu sayfa YAZAR: kale_dokuma_live_v2 (makineler), kale_customers_pool_v2 (müşteriler)
+   Bu sayfa YAZAR: kale_dokuma_live_v2 (makineler), kale_colors_v2 (ek renkler)
    Bu sayfa sadece OKUR: kale_siparis_v1 (siparişler) */
 function setSync(ok, text) { $("sync").classList.toggle("off", !ok); $("syncText").textContent = text; }
 
