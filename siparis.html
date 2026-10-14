@@ -595,20 +595,17 @@ function render(keep) {
 }
 
 /* Seçilen ürün için, şu an uygun makinelerde takılı olan renkler ve makineleri */
-/* Aynı ana renge sahip uygun makineler TAM renk dizilimine göre (ana + alt renkler; 140'ta iki kanat) gruplanır:
-   dizilimi birebir aynı olanlar TEK satırda, alt renkleri farklı olanlar AYRI satırlarda gösterilir. */
+/* Uygun makineler HER BİRİ AYRI satırda gösterilir (renk dizilimleri birebir aynı olsa bile): ana rengi seçilen renk olan her makine için bir kart.
+   Aynı renge ait kartlar yan yana listelenir; önce boştakiler, sonra makine sırasına göre. */
 function availColors(k) {
-  const groups = [], tot = {};
+  const items = [], tot = {};
   Object.keys(COLORS).forEach(c => {
     const rs = suggest({ id: "_", k, color: c, qty: 1, done: 0, asg: {} }, { lines: [] }).filter(r => r.match > 0);
-    const by = new Map();
-    rs.forEach(r => { const sig = r.l.colors.join("|"); if (!by.has(sig)) by.set(sig, { c, sig, rs: [], l: r.l }); by.get(sig).rs.push(r); });
-    by.forEach(g => { groups.push(g); const t = tot[c] = tot[c] || { f: 0, n: 0 }; t.f += g.rs.filter(r => !r.busy).length; t.n += g.rs.length; });
+    rs.forEach(r => { items.push({ c, rs: [r], l: r.l }); const t = tot[c] = tot[c] || { f: 0, n: 0 }; t.n++; if (!r.busy) t.f++; });
   });
-  const free = g => g.rs.filter(r => !r.busy).length;
-  return groups.sort((a, b) => (tot[b.c].f - tot[a.c].f) || (tot[b.c].n - tot[a.c].n) || (a.c < b.c ? -1 : a.c > b.c ? 1 : 0) || (free(b) - free(a)) || (b.rs.length - a.rs.length));
+  return items.sort((a, b) => (tot[b.c].f - tot[a.c].f) || (tot[b.c].n - tot[a.c].n) || (a.c < b.c ? -1 : a.c > b.c ? 1 : 0) || ((a.rs[0].busy ? 1 : 0) - (b.rs[0].busy ? 1 : 0)) || (ids.indexOf(a.l.id) - ids.indexOf(b.l.id)));
 }
-/* Gruptaki makinelerin (ortak) renk dizilimi: gösterim için; 140'ta iki kanat K1/K2 (ana renk kalın) */
+/* Makinenin renk dizilimi (kartta gösterim için); 140'ta iki kanat K1/K2 (ana renk kalın) */
 function sigHtml(l, roll) {
   const c = l.colors, dot = n => `<i class="dot s" style="background:${hexOf(n)}"></i>`;
   const one = ([n, main]) => n === "0" ? "" : `<span class="sc">${dot(n)}${main ? `<b>${esc(n)}</b>` : esc(n)}</span>`;

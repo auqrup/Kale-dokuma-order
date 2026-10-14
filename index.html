@@ -313,7 +313,9 @@ const store = {
 
 const names = o => Array.isArray(o) ? o.map(x => x?.name ?? x) : [];
 const colorCount = w => Number(w) === 140 ? 6 : 4;
-const optsHtml = o => Object.keys(o).map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
+/* Renk açılır listeleri: "0 (İplik Yok)" en üstte, diğerleri Türkçe alfabe sırasıyla (a b c ç d e f g ğ h ı i ...) */
+const optsHtml = o => Object.keys(o).sort((a, b) => (a === "0" ? -1 : b === "0" ? 1 : trCompare(a, b)))
+  .map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
 /* ---------- Renkler ----------
    SABİT liste: yukarıdaki COLORS (kodda sabit; düzenlenemez, silinemez, adı değiştirilemez).
    EK renkler: sadece YENİ renk eklenebilir. Firebase: kale_colors_v2 = { v:2, list:[{name,hex}] } (sadece bu sayfa YAZAR; siparis.html okur).
@@ -619,7 +621,7 @@ function initUi() {
     `<button class="branch-btn active" data-branch="all">Tümü (${TOTAL})</button>` +
     Object.entries(BRANCHES).map(([k, b]) => `<button class="branch-btn" data-branch="${k}">${esc(b.name)} (${b.count})</button>`).join("");
 
-  const opts = o => Object.keys(o).map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
+  const opts = optsHtml;
   $("warpRows").innerHTML = [1,2].map(i => `
     <div class="csel"><i>${i}:</i><span class="ind" id="wd${i}"></span>
     <select id="ws${i}" class="inp" data-i="${i}" aria-label="Çözgü ${i}">${opts(WARPS)}</select></div>`).join("");
