@@ -94,6 +94,7 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .ok{color:var(--run)}.mid{color:var(--yarn)}.bad{color:var(--mu)}.warn{color:var(--stop)}
 .selrow{margin-bottom:8px}.selrow b{flex:1;font-size:.9rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.selrow .inp.sq{width:90px}
 .rl .nb{padding:5px 10px}
+.avx{display:flex;flex-wrap:wrap;gap:2px 4px}
 .xt{font-size:.76rem;color:var(--mu);font-weight:600}.xl{font-weight:800;margin-right:6px}
 .sc{display:inline-flex;align-items:center;gap:4px;margin-right:8px}.sg{display:inline-flex;align-items:center;gap:4px;margin-right:10px}
 .chg{color:var(--mu);font-size:.82rem;font-weight:600;padding:2px 4px 12px;line-height:1.5}
@@ -554,7 +555,7 @@ function render(keep) {
     const btn = n => `<button class="cbtn${S.sel[n] ? " sel" : ""}" data-act="color" data-v="${esc(n)}"><span class="dot" style="background:${hexOf(n)}"></span><span>${esc(n)}</span></button>`;
     app.innerHTML = `<h2>Renkler (birden fazla seçebilirsiniz)</h2>
       <h3>Şu an makinelerde takılı renkler (${av.length})</h3>
-      ${av.length ? `<div class="avl-list">${av.map(a => `<button class="cbtn avl${S.sel[a.c] ? " sel" : ""}" data-act="color" data-v="${esc(a.c)}"><span class="dot" style="background:${hexOf(a.c)}"></span><span class="an"><b>${esc(a.c)}</b><span>${a.rs.map(chipHtml).join("")}</span></span></button>`).join("")}</div>`
+      ${av.length ? `<div class="avl-list">${av.map(a => `<button class="cbtn avl${S.sel[a.c] ? " sel" : ""}" data-act="color" data-v="${esc(a.c)}"><span class="dot" style="background:${hexOf(a.c)}"></span><span class="an"><b>${esc(a.c)}</b>${sigHtml(a.l, roll)}<span>${a.rs.map(chipHtml).join("")}</span></span></button>`).join("")}</div>`
         : '<div class="hint">Bu ürün için uygun makinelerde şu an takılı renk yok.</div>'}
       <h3>Diğer renkler (makinede takılı değil)</h3>
       <div class="cgrid">${Object.keys(COLORS).filter(n => !avSet.has(n)).map(btn).join("")}</div>
@@ -594,13 +595,26 @@ function render(keep) {
 }
 
 /* Seçilen ürün için, şu an uygun makinelerde takılı olan renkler ve makineleri */
+/* Aynı ana renge sahip uygun makineler TAM renk dizilimine göre (ana + alt renkler; 140'ta iki kanat) gruplanır:
+   dizilimi birebir aynı olanlar TEK satırda, alt renkleri farklı olanlar AYRI satırlarda gösterilir. */
 function availColors(k) {
-  const res = [];
+  const groups = [], tot = {};
   Object.keys(COLORS).forEach(c => {
     const rs = suggest({ id: "_", k, color: c, qty: 1, done: 0, asg: {} }, { lines: [] }).filter(r => r.match > 0);
-    if (rs.length) res.push({ c, rs });
+    const by = new Map();
+    rs.forEach(r => { const sig = r.l.colors.join("|"); if (!by.has(sig)) by.set(sig, { c, sig, rs: [], l: r.l }); by.get(sig).rs.push(r); });
+    by.forEach(g => { groups.push(g); const t = tot[c] = tot[c] || { f: 0, n: 0 }; t.f += g.rs.filter(r => !r.busy).length; t.n += g.rs.length; });
   });
-  return res.sort((a, b) => b.rs.filter(r => !r.busy).length - a.rs.filter(r => !r.busy).length || b.rs.length - a.rs.length);
+  const free = g => g.rs.filter(r => !r.busy).length;
+  return groups.sort((a, b) => (tot[b.c].f - tot[a.c].f) || (tot[b.c].n - tot[a.c].n) || (a.c < b.c ? -1 : a.c > b.c ? 1 : 0) || (free(b) - free(a)) || (b.rs.length - a.rs.length));
+}
+/* Gruptaki makinelerin (ortak) renk dizilimi: gösterim için; 140'ta iki kanat K1/K2 (ana renk kalın) */
+function sigHtml(l, roll) {
+  const c = l.colors, dot = n => `<i class="dot s" style="background:${hexOf(n)}"></i>`;
+  const one = ([n, main]) => n === "0" ? "" : `<span class="sc">${dot(n)}${main ? `<b>${esc(n)}</b>` : esc(n)}</span>`;
+  const grp = (lab, a) => { const h = a.map(one).join(""); return h ? `<span class="sg">${lab}${h}</span>` : ""; };
+  const h = l.width === 140 ? grp("K1:", [[c[0], 1], [c[1], 0], [c[2], 0]]) + grp("K2:", [[c[3], 1], [c[4], 0], [c[5], 0]]) : grp("Alt:", [[c[1], 0], [c[2], 0], [c[3], 0]]);
+  return `<span class="xt avx">${roll ? `<span class="sg"><b>${l.width} cm</b></span>` : ""}${h || '<span class="sg">Alt: —</span>'}</span>`;
 }
 const lowTr = w => String(w || "").replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
 function chipHtml(r) {
