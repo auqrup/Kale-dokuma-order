@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#061314">
+<title>KALE DOKUMA · ATÖLYE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--page:#061314;--bg:#0d1014;--card:#141a20;--card2:#1b222b;--bd:#27303a;--tx:#f3efe6;--mu:#93a0ae;--ac:#f0c674;--run:#34d399;--stop:#f87171;--mnt:#c4a3ff;--yarn:#ff9a4d;--ff:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--ff);color:var(--tx);min-height:100vh;background:radial-gradient(1100px 560px at 8% -8%,#0e3b3d 0%,transparent 60%),radial-gradient(900px 500px at 100% 0%,#13263b 0%,transparent 55%),var(--page);background-attachment:fixed;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;background:rgba(6,19,20,.8);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.07)}
+.brand small{display:block;font-size:.6rem;letter-spacing:.3em;color:var(--ac);font-weight:800}
+.brand h1{font-size:1.2rem;font-weight:800;letter-spacing:.02em}
+.acts{display:flex;align-items:center;gap:8px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;color:var(--run);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);padding:5px 10px;border-radius:999px}
+.live i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pl 2s infinite}
+.live.off{color:var(--yarn);background:rgba(255,154,77,.12);border-color:rgba(255,154,77,.3)}
+.live.off i{animation:none}
+@keyframes pl{0%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+.btn{font-family:inherit;font-size:.82rem;font-weight:800;color:var(--tx);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:8px 13px;border-radius:11px;cursor:pointer}
+.btn.pri{background:linear-gradient(180deg,#f6d58d,#e5b45a);color:#1a1405;border-color:#f0c674}
+.btn.ic{padding:8px 10px}
+.wrap{padding:18px 16px 0;max-width:1560px;margin:0 auto}
+.sec{margin:4px 0 26px}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sh h2{font-size:.78rem;letter-spacing:.24em;text-transform:uppercase;color:var(--mu);font-weight:800}
+.sh .n{font-size:.72rem;font-weight:800;color:var(--ac);background:rgba(240,198,116,.12);border:1px solid rgba(240,198,116,.3);border-radius:999px;padding:2px 9px}
+.sh i{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.16),transparent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:16px}}
+.m{position:relative;display:flex;flex-direction:column;min-height:158px;border-radius:16px;background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--bd);overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.38)}
+.m[data-s=stopped]{border-color:rgba(248,113,113,.5)}
+.m[data-s=yarn]{border-color:rgba(255,154,77,.5)}
+.m[data-s=maint]{border-color:rgba(196,163,255,.5)}
+.m .bar{display:flex;height:7px;flex-shrink:0}
+.m .bar span{flex:1}
+.m .hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 0}
+.m .id{font-weight:800;font-size:.82rem;letter-spacing:.06em;color:var(--ac);background:rgba(240,198,116,.1);border:1px solid rgba(240,198,116,.28);border-radius:8px;padding:2px 9px}
+.m .st{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+.m .cu{flex:1;display:flex;align-items:center;padding:8px 12px}
+.m .cu b{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-weight:800;line-height:1.1;text-transform:uppercase;font-size:clamp(1.05rem,4.8vw,1.45rem);overflow-wrap:anywhere}
+@media(min-width:700px){.m .cu b{font-size:1.55rem}}
+.m.idle .cu b{color:#566170;font-weight:700;font-size:1rem;letter-spacing:.12em}
+.m .ft{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px 12px;border-top:1px solid rgba(255,255,255,.07);font-size:.74rem;color:var(--mu);font-weight:700}
+.cl{display:flex;flex-wrap:wrap;gap:4px 10px;min-width:0}
+.cl span{display:inline-flex;align-items:center;gap:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.5);flex-shrink:0}
+.w{flex-shrink:0;font-weight:800;color:var(--tx);background:rgba(255,255,255,.08);border-radius:7px;padding:2px 8px}
+.load{text-align:center;color:var(--mu);padding:60px 0;font-weight:700}
+/* rapor */
+.overlay{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:60}
+.overlay.open{display:flex}
+.sheet{width:100%;max-width:860px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:22px 22px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+@media(min-width:700px){.overlay{align-items:center}.sheet{border-radius:22px}}
+.sbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;position:sticky;top:-16px;background:var(--card);padding:6px 0;z-index:2}
+.rh{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;border-bottom:2px solid var(--ac);padding-bottom:10px;margin-bottom:14px}
+.rh h3{font-size:1.15rem;font-weight:800;letter-spacing:.02em}
+.rh small{display:block;font-size:.62rem;letter-spacing:.28em;color:var(--ac);font-weight:800;margin-bottom:2px}
+.rh .dt{font-size:.74rem;color:var(--mu);font-weight:700;white-space:nowrap}
+.rk{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+@media(max-width:560px){.rk{grid-template-columns:repeat(2,1fr)}}
+.k{background:var(--card2);border:1px solid var(--bd);border-radius:12px;padding:10px 6px;text-align:center}
+.k b{display:block;font-size:1.55rem;font-weight:800;line-height:1.1}
+.k span{font-size:.62rem;color:var(--mu);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.rt{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mu);font-weight:800;margin:16px 0 8px}
+.rc{border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:9px;background:linear-gradient(160deg,var(--card2),var(--card))}
+.rc .t{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rc .t b{font-size:1.08rem;font-weight:800;text-transform:uppercase;overflow-wrap:anywhere}
+.rc .t .cnt{flex-shrink:0;font-size:.74rem;font-weight:800;color:var(--ac);background:rgba(240,198,116,.12);border:1px solid rgba(240,198,116,.3);border-radius:999px;padding:2px 10px}
+.rc .row{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:8px;font-size:.78rem;font-weight:700;color:var(--mu);align-items:center}
+.ch{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:800;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:3px 8px}
+.ch i{width:8px;height:8px;border-radius:50%}
+.cc{display:inline-flex;align-items:center;gap:5px;margin-right:6px;color:var(--tx)}
+.warn{color:var(--stop)}
+.nx{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.07);font-size:.82rem;font-weight:700}
+.nx b{text-transform:uppercase}
+.nx span{color:var(--mu)}
+.rf{margin-top:14px;font-size:.68rem;color:var(--mu)}
+/* giriş */
+#login{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:var(--page);padding:20px}
+#login.hide{display:none}
+.lb{width:100%;max-width:340px;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:22px}
+.lb h3{font-size:1.05rem;margin-bottom:4px}
+.lb p{color:var(--mu);font-size:.8rem;margin-bottom:10px}
+.lb input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--tx);font-size:1rem;font-weight:600;margin:6px 0;font-family:inherit}
+#loginErr{color:var(--stop);font-size:.78rem;display:none;margin:4px 0 8px}
+.lb button{width:100%;margin-top:8px;font-family:inherit;font-size:.95rem;font-weight:800;background:linear-gradient(180deg,#f6d58d,#e5b45a);color:#1a1405;border:0;padding:12px;border-radius:11px;cursor:pointer}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222a33;border:1px solid var(--bd);color:var(--tx);padding:10px 16px;border-radius:12px;font-weight:700;font-size:.85rem;display:none;z-index:400}
+#printSection{display:none}
+@media print{
+  body{background:#fff!important}
+  .top,#floor,.overlay,#login,#toast{display:none!important}
+  #printSection{display:block!important;color:#000;background:#fff;padding:10px;font-family:var(--ff)}
+  #printSection *{color:#000!important;border-color:#999!important;box-shadow:none!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printSection .rc,#printSection .k{background:#fff!important;break-inside:avoid}
+  #printSection .ch,#printSection .nx{background:#fff!important}
+  #printSection .warn{color:#b91c1c!important}
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><small>KALE DOKUMA</small><h1>Atölye</h1></div>
+  <div class="acts">
+    <span class="live off" id="live"><i></i><span id="liveTx">Bağlanıyor</span></span>
+    <button type="button" class="btn pri" id="repBtn">📊 Rapor</button>
+    <button type="button" class="btn ic" id="fsBtn" title="Tam ekran">⛶</button>
+    <button type="button" class="btn ic" id="outBtn" title="Çıkış">🚪</button>
+  </div>
+</header>
+<main class="wrap" id="floor"><div class="load">Yükleniyor…</div></main>
+
+<div class="overlay" id="rep">
+  <div class="sheet">
+    <div class="sbar">
+      <button type="button" class="btn" id="repClose">✕ Kapat</button>
+      <button type="button" class="btn pri" id="repPrint">🖨️ PDF / Yazdır</button>
+    </div>
+    <div id="repBody"></div>
+  </div>
+</div>
+
+<div id="login">
+  <form class="lb" id="loginForm" autocomplete="on">
+    <h3>🔒 Giriş</h3>
+    <p>Devam etmek için hesabınızla giriş yapın.</p>
+    <input type="email" id="loginEmail" placeholder="E-posta" autocomplete="username" inputmode="email" required>
+    <input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password" required>
+    <div id="loginErr"></div>
+    <button type="submit" id="loginBtn">Giriş</button>
+  </form>
+</div>
+<div id="toast"></div>
+<div id="printSection"></div>
+
+<script>
+/* ============================================================
+   KALE DOKUMA - ATÖLYE EKRANI (fabrika.html)  -- BELGE / DOCUMENTATION
+   Ayrintili belge icin README.md dosyasina bakin.
+
+   NE YAPAR: Fabrikadaki 34 tezgahi "atolye gorunumu"nde gosterir: her tezgah bir kart;
+   buyuk yazi = su an calisilan musteri, ustte tezgah no, altta ANA renk(ler) ve tezgah eni.
+   140 cm tezgahta iki kanat oldugu icin iki ana renk gosterilir. Ustte "Rapor" dugmesi:
+   hangi musteriler icin calisildigini kisa ve temiz ozetler (PDF / Yazdir destekli).
+
+   SADECE OKUR (hicbir sey YAZMAZ): kale_dokuma_live_v2 (tezgahlar) ve kale_colors_v2 (ek renkler).
+   Giris: Firebase Authentication (diger sayfalarla ayni hesap). Veriler canli guncellenir.
+   Renk listesi (COLORS) index.html ve siparis.html ile AYNI olmali.
+   ============================================================ */
+const COLORS = {
+  "0":"#475569","PETROL":"#084a68","ÖZBEK BORDO":"#300303",
+  "LACİVERT":"#090835","AÇIK BORDO":"#ff2e2e","AÇIK GRİ":"#949ca8",
+  "PAST GRAY":"#c3c5c6","SP GREY":"#323e3e","KOYU GRİ":"#1e1e1f",
+  "SİYAH":"#000000","SİLKY(SARIBEJ)":"#d99b45","SARIBEJ":"#f1bf79",
+  "ŞEKER LT":"#fff2c2","IVORY":"#f6f6ef","ŞEKER AYM":"#e9e3ce",
+  "VİZON":"#684f2c","KOYU KAHVE":"#24160a","MARON":"#5b010b",
+  "ZÜMRÜT":"#073f74","Z-BLUE":"#145090","FOWN (AÇIK BAL)":"#e4d79b",
+  "NEFTİ":"#082b16","FISTIK YEŞİL":"#15b300","KREM":"#f5ebd1",
+  "GÜL":"#692b49","B.GREEN":"#3a644c","CAM GÖBEĞİ":"#009e7e",
+  "SAXMAVİ":"#1100ff","SOĞAN(ALTIN)":"#947400"
+};
+
+const BRANCHES = { R: { name: "Rüya", count: 16 }, A: { name: "Acar", count: 4 }, Y: { name: "Y. Acar", count: 8 }, K: { name: "Karaman", count: 6 } };
+const BR_ORDER = ["R", "A", "Y", "K"];
+const WIDTHS = [140, 160, 200];
+const ST = { running: ["Çalışıyor", "var(--run)"], stopped: ["Duruş", "var(--stop)"], yarn: ["İplik Yok", "var(--yarn)"], maint: ["Bakımda", "var(--mnt)"] };
+const ids = BR_ORDER.flatMap(b => Array.from({ length: BRANCHES[b].count }, (_, i) => b + (i + 1)));
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const hexOf = n => COLORS[n] || "#475569";
+
+/* Ek renkler (kale_colors_v2: sadece OKUNUR). Sabit liste yukarıdaki COLORS'tur. */
+const FIXED_COLOR_NAMES = new Set(Object.keys(COLORS));
+function applyExtraColors(list) {
+  Object.keys(COLORS).forEach(k => { if (!FIXED_COLOR_NAMES.has(k)) delete COLORS[k]; });
+  const arr = Array.isArray(list) ? list : Object.values(list || {});
+  arr.forEach(c => { if (c && typeof c.name === "string" && c.name !== "0" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) COLORS[c.name] = c.hex.toLowerCase(); });
+}
+
+/* Tezgah verisi: Firebase'den gelen kaydı güvenli biçimde normalleştir (eski kayıtlarda renkler nesne olabilir) */
+const nm = c => (c && typeof c === "object") ? String(c.name ?? "0") : String(c ?? "0");
+function norm(raw, id) {
+  const num = +id.slice(1), w = +(raw && raw.width);
+  const width = WIDTHS.includes(w) ? w : WIDTHS[(num - 1) % 3];
+  const colors = (Array.isArray(raw?.colors) ? raw.colors : Object.values(raw?.colors || {})).map(nm);
+  while (colors.length < (width === 140 ? 6 : 4)) colors.push("0");
+  return { id, branch: id[0], num, width, status: ST[raw?.status] ? raw.status : "running",
+           currentCustomer: String(raw?.currentCustomer ?? "").trim(), nextCustomer: String(raw?.nextCustomer ?? "").trim(), colors };
+}
+const L = {}; ids.forEach(id => L[id] = norm(null, id));
+let loaded = false;
+
+/* Ana renk(ler): 140 cm = iki kanadın ana rengi (aynıysa tek); diğerleri = colors[0] */
+function mainColors(l) {
+  const a = l.width === 140 ? [l.colors[0], l.colors[3]] : [l.colors[0]];
+  return a.filter((c, i) => c && c !== "0" && a.indexOf(c) === i);
+}
+
+function card(l) {
+  const cu = l.currentCustomer, cols = mainColors(l), st = ST[l.status];
+  const bar = cols.length ? cols.map(c => `<span style="background:${hexOf(c)}"></span>`).join("") : `<span style="background:#2a313c"></span>`;
+  return `<article class="m${cu ? "" : " idle"}" data-s="${l.status}">
+    <div class="bar">${bar}</div>
+    <div class="hd"><span class="id">${esc(l.id)}</span><span class="st" style="background:${st[1]}" title="${st[0]}"></span></div>
+    <div class="cu"><b>${cu ? esc(cu) : "BOŞTA"}</b></div>
+    <div class="ft"><div class="cl">${cols.length ? cols.map(c => `<span title="${esc(c)}"><i class="dot" style="background:${hexOf(c)}"></i>${esc(c)}</span>`).join("") : "<span>—</span>"}</div><span class="w">${l.width} cm</span></div>
+  </article>`;
+}
+
+function render() {
+  if (!loaded) return;
+  $("floor").innerHTML = BR_ORDER.map(b => {
+    const ms = ids.filter(id => L[id].branch === b).map(id => L[id]);
+    return `<section class="sec"><div class="sh"><h2>${esc(BRANCHES[b].name)}</h2><span class="n">${ms.length}</span><i></i></div><div class="grid">${ms.map(card).join("")}</div></section>`;
+  }).join("");
+}
+
+/* ---------- Rapor: şu an hangi müşteriler için çalışılıyor ---------- */
+const keyOf = n => n.replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
+function reportHtml() {
+  const all = ids.map(id => L[id]), now = new Date();
+  const date = now.toLocaleDateString("tr-TR") + " " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const by = new Map(), nx = new Map(), idle = [];
+  all.forEach(l => {
+    if (l.currentCustomer) { const k = keyOf(l.currentCustomer); if (!by.has(k)) by.set(k, { name: l.currentCustomer, ms: [] }); by.get(k).ms.push(l); } else idle.push(l);
+    if (l.nextCustomer) { const k = keyOf(l.nextCustomer); if (!nx.has(k)) nx.set(k, { name: l.nextCustomer, ms: [] }); nx.get(k).ms.push(l); }
+  });
+  const custs = [...by.values()].sort((a, b) => b.ms.length - a.ms.length || a.name.localeCompare(b.name, "tr"));
+  const running = all.filter(l => l.status === "running").length, problem = all.length - running;
+  const chip = l => `<span class="ch"><i style="background:${ST[l.status][1]}"></i>${esc(l.id)}</span>`;
+  const kpi = (v, t) => `<div class="k"><b>${v}</b><span>${t}</span></div>`;
+  const rows = custs.map(c => {
+    const cols = []; c.ms.forEach(l => mainColors(l).forEach(x => { if (!cols.includes(x)) cols.push(x); }));
+    const w = {}; c.ms.forEach(l => w[l.width] = (w[l.width] || 0) + 1);
+    const bad = c.ms.filter(l => l.status !== "running").length;
+    return `<div class="rc"><div class="t"><b>${esc(c.name)}</b><span class="cnt">${c.ms.length} makine</span></div>
+      <div class="row">${c.ms.map(chip).join("")}</div>
+      <div class="row">${cols.map(x => `<span class="cc"><i class="dot" style="background:${hexOf(x)}"></i>${esc(x)}</span>`).join("") || "—"}</div>
+      <div class="row">${Object.keys(w).sort((a, b) => b - a).map(k => `${k} cm × ${w[k]}`).join(" · ")}${bad ? ` <span class="warn">· ⚠ ${bad} makine çalışmıyor</span>` : ""}</div></div>`;
+  }).join("");
+  const next = [...nx.values()].sort((a, b) => a.name.localeCompare(b.name, "tr")).map(c => `<div class="nx"><b>${esc(c.name)}</b><span>${c.ms.map(l => esc(l.id)).join(", ")}</span></div>`).join("");
+  return `<div class="rh"><div><small>KALE DOKUMA</small><h3>Atölye Raporu</h3></div><div class="dt">${esc(date)}</div></div>
+    <div class="rk">${kpi(by.size, "Aktif müşteri")}${kpi(all.length - idle.length, "Müşterili makine")}${kpi(running + "/" + all.length, "Çalışıyor")}${kpi(idle.length, "Boşta")}</div>
+    ${problem ? `<p class="warn" style="font-size:.8rem;font-weight:800;margin:-6px 0 12px">⚠ ${problem} makine çalışmıyor (duruş / iplik / bakım)</p>` : ""}
+    <div class="rt">Şu an çalışılan müşteriler</div>${rows || '<p style="color:var(--mu)">Şu an müşteri atanmış makine yok.</p>'}
+    ${next ? `<div class="rt">Sıradaki müşteriler</div>${next}` : ""}
+    ${idle.length ? `<div class="rt">Müşteri atanmamış makineler (${idle.length})</div><div class="row" style="display:flex;flex-wrap:wrap;gap:4px 6px">${idle.map(chip).join("")}</div>` : ""}
+    <p class="rf">Renkler: makinenin ANA rengi (140 cm tezgahta iki kanadın ana rengi). Nokta rengi: yeşil çalışıyor · kırmızı duruş · turuncu iplik yok · mor bakım.</p>`;
+}
+function openReport() { $("repBody").innerHTML = reportHtml(); $("rep").classList.add("open"); }
+function closeReport() { $("rep").classList.remove("open"); }
+
+/* ---------- Giriş / veri (SADECE OKUMA) ---------- */
+function toast(m) { const t = $("toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2600); }
+function authMsg(e) {
+  const c = (e && e.code) || "";
+  if (c === "auth/network-request-failed") return "Bağlantı yok. İnterneti kontrol edin.";
+  if (c === "auth/too-many-requests") return "Çok fazla deneme. Biraz bekleyip tekrar deneyin.";
+  if (c === "auth/user-disabled") return "Bu hesap devre dışı.";
+  if (c === "auth/invalid-email") return "E-posta adresi geçersiz.";
+  return "E-posta veya şifre hatalı.";
+}
+function showLogin(msg) {
+  $("login").classList.remove("hide");
+  const e = $("loginErr"); e.textContent = msg || ""; e.style.display = msg ? "block" : "none";
+  $("loginBtn").disabled = false;
+}
+function setLive(on, tx) { $("live").classList.toggle("off", !on); $("liveTx").textContent = tx; }
+function signOut() {
+  const done = () => location.reload();
+  if (typeof firebase !== "undefined" && firebase.apps.length) firebase.auth().signOut().then(done, done); else done();
+}
+const denied = e => { if (e && (e.code === "PERMISSION_DENIED" || /permission/i.test(e.message || ""))) { toast("Bu hesabın yetkisi yok"); setTimeout(signOut, 1800); } };
+let dataStarted = false;
+function startData() {
+  if (dataStarted) return; dataStarted = true;
+  const db = firebase.database();
+  db.ref(".info/connected").on("value", s => setLive(!!s.val(), s.val() ? "Canlı" : "Çevrimdışı"));
+  db.ref("kale_colors_v2").on("value", s => { const v = s.val(); applyExtraColors(v ? v.list : []); render(); if ($("rep").classList.contains("open")) openReport(); }, denied);
+  db.ref("kale_dokuma_live_v2").on("value", s => {
+    const r = s.val() || {};
+    ids.forEach(id => { L[id] = norm(r[id], id); });
+    loaded = true; render(); if ($("rep").classList.contains("open")) openReport();
+  }, e => { setLive(false, "Bağlantı yok"); denied(e); });
+}
+function init() {
+  $("repBtn").onclick = openReport; $("repClose").onclick = closeReport;
+  $("rep").addEventListener("click", e => { if (e.target === $("rep")) closeReport(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeReport(); });
+  $("repPrint").onclick = () => { $("printSection").innerHTML = reportHtml(); window.print(); };
+  $("fsBtn").onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch {} };
+  $("outBtn").onclick = signOut;
+  $("loginForm").addEventListener("submit", ev => {
+    ev.preventDefault();
+    if (typeof firebase === "undefined" || !firebase.apps.length) return showLogin("Bağlantı kurulamadı. İnterneti kontrol edip sayfayı yenileyin.");
+    $("loginBtn").disabled = true;
+    firebase.auth().signInWithEmailAndPassword($("loginEmail").value.trim(), $("loginPass").value).then(() => { $("loginPass").value = ""; }).catch(e => showLogin(authMsg(e)));
+  });
+  if (typeof firebase === "undefined") return showLogin("Firebase yüklenemedi. İnterneti kontrol edip sayfayı yenileyin.");
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyBWWp1Le6f3y__f7WWoFVvYw9MwdHwFYjc",
+      authDomain: "fabrika-e9b49.firebaseapp.com",
+      databaseURL: "https://fabrika-e9b49-default-rtdb.firebaseio.com",
+      projectId: "fabrika-e9b49",
+      storageBucket: "fabrika-e9b49.firebasestorage.app",
+      messagingSenderId: "208016312960",
+      appId: "1:208016312960:web:db8531b655252e19ecf465"
+    });
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) { $("login").classList.add("hide"); startData(); }
+      else if (!dataStarted) showLogin();
+      else location.reload();
+    });
+  } catch (e) { showLogin("Firebase başlatılamadı."); }
+}
+init();
+</script>
+</body>
+</html>
