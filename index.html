@@ -97,6 +97,14 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .csel .inp{border:0;padding:7px 4px}
 .subs.two{grid-template-columns:repeat(2,1fr)}
 .wing-h{font-size:.84rem;font-weight:800;color:var(--ac);margin:10px 0 6px}
+.bn{background:var(--stop);color:#fff;border-radius:999px;font-size:.62rem;font-weight:800;padding:1px 6px;margin-left:5px}
+.ev{display:flex;gap:10px;padding:10px 4px;border-bottom:1px solid var(--bd)}
+.ev .ei{font-size:1.15rem;flex-shrink:0}
+.ev .eb{min-width:0;font-size:.84rem;line-height:1.35;overflow-wrap:anywhere}
+.ev .eb b{font-weight:800;color:var(--ac);margin-right:4px}
+.ev .eb small{display:block;color:var(--mu);font-size:.7rem;margin-top:2px}
+.ev.new{background:rgba(240,198,116,.07)}
+.notice{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:max-content;max-width:92vw;background:var(--card2);border:1px solid var(--ac);color:var(--tx);padding:10px 14px;border-radius:12px;font-size:.84rem;font-weight:700;z-index:350;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow-wrap:anywhere}
 .col-add{display:flex;gap:7px;margin-bottom:12px;align-items:center}
 .col-add .inp{flex:1}
 .col-add input[type=color]{width:46px;height:42px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);cursor:pointer;flex-shrink:0}
@@ -145,6 +153,7 @@ body *{visibility:hidden}
   <div class="top-bar">
     <h1>🧵 KALE DOKUMA TAKİP</h1>
     <div class="top-actions">
+      <button type="button" class="pdf-btn" id="bellBtn" title="Bildirimler">🔔<b class="bn" id="bellN" style="display:none">0</b></button>
       <button type="button" class="pdf-btn" id="colBtn">🎨 Renkler</button>
       <button type="button" class="pdf-btn" id="pdfBtn">🖨️ PDF / Yazdır</button>
       <button type="button" class="pdf-btn" id="outBtn" title="Çıkış">🚪</button>
@@ -213,6 +222,20 @@ body *{visibility:hidden}
   </div>
 </div>
 
+<div class="overlay" id="notifModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="notifClose">✕ Kapat</button>
+      <h2>Bildirimler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div id="notifList"></div>
+    <p style="color:var(--mu);font-size:.72rem;margin-top:10px">Son 50 olay gösterilir: müşteri değişikliği, duruş, renk değişikliği ve yeni sipariş.</p>
+  </div>
+</div>
+
+<div class="notice" id="notice" style="display:none"></div>
+
 <div class="overlay" id="colModal">
   <div class="sheet">
     <div class="sheet-head">
@@ -252,6 +275,7 @@ body *{visibility:hidden}
 
    VERI (Firebase Realtime Database, proje fabrika-e9b49):
      YAZAR : kale_dokuma_live_v2/<makineId>   (tezgahlar)
+     YAZAR : kale_events_v1                   (bildirim gecmisi, son 50 olay; sadece bu sayfa yazar)
      YAZAR : kale_colors_v2                   (sadece EK renkler {v:2,list:[{name,hex}]}; sabit liste kodda; siparis.html okur)
      OKUR  : kale_siparis_v1/orders           (siparis sayfasinin yazdigi siparisler)
              kale_customers_pool_v2           (musteri listesi; SIPARIS sayfasi yazar, burada sadece secilir)
@@ -537,6 +561,81 @@ function fillCustSelect(sel, cur) {
 function updateCustList() {
   [$("fCur"), $("fNext")].forEach(s => fillCustSelect(s, s.dataset.prev || ""));
 }
+/* ---------- Bildirimler (Firebase: kale_events_v1 = son 50 olay; sadece bu sayfa YAZAR) ----------
+   Olay türleri: cust (mevcut müşteri), next (sıradaki müşteri), stop (duruş / iplik yok / bakım), color (renk), order (yeni sipariş).
+   Tezgah olaylarını DEĞİŞİKLİĞİ YAPAN kullanıcının sayfası yazar (saveLoom). Yeni sipariş: siparis sayfasına dokunulmaz; bu sayfa siparişleri
+   OKUYARAK fark eder ve deterministik anahtarla (ord_<id>) kaydeder, böylece birden çok cihaz aynı olayı yazsa bile tek kayıt kalır.
+   Okundu bilgisi cihazda tutulur (localStorage). Kendi yaptığınız değişiklik için bildirim/rozet çıkmaz. */
+const EV_MAX = 50, EV_READ = "kale_notif_read", EV_SEEN_ORD = "kale_seen_orders";
+const EV_ICON = { cust: "👤", next: "⏭️", stop: "⛔", color: "🎨", order: "📦" };
+const EV_STATUS = { stopped: "Duruş", yarn: "İplik yok", maint: "Arıza / Bakım" };
+let eventsRef = null, events = [], knownEv = null, evPruning = false, noticeT = null;
+const evUser = () => { try { return (firebase.auth().currentUser?.email || "").split("@")[0] || "?"; } catch { return "?"; } };
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+function emitEvents(list) {
+  if (!dbRoot || !list.length) return;
+  const up = {}; list.forEach(e => { up[`kale_events_v1/${e.key}`] = { t: e.t, u: e.u, k: e.k, m: e.m || "", x: e.x }; });
+  dbRoot.update(up).catch(() => {});
+}
+function loomEvents(old, nu) {
+  const t = Date.now(), u = evUser(), out = [], nz = v => v || "—", rnd = () => Math.random().toString(36).slice(2, 6);
+  const add = (k, x) => out.push({ key: `${t}_${rnd()}`, t, u, k, m: nu.id, x });
+  if ((old.currentCustomer || "") !== (nu.currentCustomer || "")) add("cust", `Mevcut müşteri: ${nz(old.currentCustomer)} → ${nz(nu.currentCustomer)}`);
+  if ((old.nextCustomer || "") !== (nu.nextCustomer || "")) add("next", `Sıradaki müşteri: ${nz(old.nextCustomer)} → ${nz(nu.nextCustomer)}`);
+  if (old.status !== nu.status && nu.status !== "running") add("stop", `Durdu: ${EV_STATUS[nu.status] || nu.status}`);
+  if (JSON.stringify(old.colors) !== JSON.stringify(nu.colors)) {
+    const mainStr = l => (l.width === 140 ? [l.colors[0], l.colors[3]] : [l.colors[0]]).map(c => !c || c === "0" ? "—" : c).join(" + ");
+    const a = mainStr(old), b = mainStr(nu);
+    add("color", a !== b ? `Ana renk: ${a} → ${b}` : "Alt renkler değişti");
+  }
+  return out;
+}
+function checkNewOrders() {   /* siparisleri sadece OKUR; yeni gorulenler icin olay yazar */
+  const idsNow = Object.keys(ordersData || {}), seen = lsGet(EV_SEEN_ORD, null);
+  if (!Array.isArray(seen)) { lsSet(EV_SEEN_ORD, idsNow); return; }   /* ilk çalıştırma: mevcut siparişler sessizce "görüldü" sayılır */
+  const S = new Set(seen), fresh = idsNow.filter(id => !S.has(id));
+  if (fresh.length) emitEvents(fresh.map(id => {
+    const o = ordersData[id] || {}, n = Object.values(o.lines || {}).length;
+    return { key: "ord_" + id, t: o.created || Date.now(), u: "", k: "order", m: "", x: `Yeni sipariş: ${o.cust || "?"} · ${n} satır` };
+  }));
+  lsSet(EV_SEEN_ORD, idsNow);
+}
+const unreadEv = () => { const r = new Set(lsGet(EV_READ, [])), me = evUser(); return events.filter(e => !r.has(e.key) && (!e.u || e.u !== me)); };
+function markRead() { lsSet(EV_READ, events.map(e => e.key).slice(0, 120)); updateBell(); }
+function updateBell() { const n = unreadEv().length, b = $("bellN"); if (!b) return; b.textContent = n > 99 ? "99+" : String(n); b.style.display = n ? "inline-block" : "none"; }
+function evWhen(t) {
+  const d = Date.now() - t, m = Math.floor(d / 6e4);
+  if (d < 6e4) return "şimdi"; if (m < 60) return `${m} dk önce`; if (m < 1440) return `${Math.floor(m / 60)} sa önce`;
+  return new Date(t).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+function renderNotif() {
+  const r = new Set(lsGet(EV_READ, []));
+  $("notifList").innerHTML = events.length ? events.map(e => `<div class="ev${!r.has(e.key) && e.u !== evUser() ? " new" : ""}"><span class="ei">${EV_ICON[e.k] || "🔔"}</span><div class="eb"><b>${e.m ? esc(e.m) : "Sipariş"}</b>${esc(e.x)}<small>${esc(evWhen(e.t))}${e.u ? " · " + esc(e.u) : ""}</small></div></div>`).join("")
+    : '<p style="color:var(--mu);padding:16px 4px">Henüz bildirim yok.</p>';
+}
+function openNotif() { renderNotif(); $("notifModal").classList.add("open"); markRead(); }
+function showNotice(list) {
+  const n = $("notice"), e = list[0];
+  n.textContent = list.length > 1 ? `🔔 ${list.length} yeni bildirim` : `${EV_ICON[e.k] || "🔔"} ${e.m ? e.m + ": " : ""}${e.x}${e.u ? " (" + e.u + ")" : ""}`;
+  n.style.display = "block"; clearTimeout(noticeT); noticeT = setTimeout(() => { n.style.display = "none"; }, 7000);
+}
+function onEvents(snap) {
+  const v = snap.val() || {};
+  const list = Object.entries(v).map(([key, e]) => ({ key, ...e })).filter(e => e && e.t).sort((a, b) => b.t - a.t);
+  const first = knownEv === null, me = evUser();
+  const fresh = first ? [] : list.filter(e => !knownEv.has(e.key) && (!e.u || e.u !== me));
+  knownEv = new Set(list.map(e => e.key)); events = list;
+  if (first && lsGet(EV_READ, null) === null) lsSet(EV_READ, list.map(e => e.key));   /* bu cihazda ilk kez: geçmiş "okunmuş" sayılır */
+  updateBell();
+  if ($("notifModal").classList.contains("open")) { renderNotif(); markRead(); }
+  if (fresh.length) showNotice(fresh);
+  if (list.length > EV_MAX && !evPruning && dbRoot) {   /* en eski olayları sil: sadece son 50 kalır */
+    evPruning = true; const up = {}; list.slice(EV_MAX).forEach(e => { up[`kale_events_v1/${e.key}`] = null; });
+    Promise.resolve(dbRoot.update(up)).catch(() => {}).then(() => { evPruning = false; });
+  }
+}
+
 /* ---------- Renk yönetimi ---------- */
 function colorUsage(name) {
   const main = [], sub = [], seen = new Set();
@@ -642,6 +741,9 @@ function initUi() {
   $("fWidth").onchange = () => buildColorRows($("fWidth").value, readColors());
   document.querySelectorAll(".xbtn").forEach(b => b.onclick = () => setExtra(selectedExtra === b.dataset.x ? "" : b.dataset.x));
   [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => { sel.dataset.prev = sel.value; });
+  $("bellBtn").onclick = openNotif;
+  $("notifClose").onclick = () => $("notifModal").classList.remove("open");
+  $("notice").onclick = () => { $("notice").style.display = "none"; openNotif(); };
   $("colBtn").onclick = () => { colSel = null; $("colName").value = ""; renderColManager(); $("colModal").classList.add("open"); };
   $("colClose").onclick = () => $("colModal").classList.remove("open");
   $("colAdd").onclick = addColor;
@@ -656,7 +758,7 @@ function initUi() {
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
@@ -706,9 +808,10 @@ function saveLoom() {
     extra: selectedExtra,
     lastModified: Date.now()
   };
+  const evs = loomEvents(looms[selectedId], data);   /* eski ve yeni halin farkı → bildirimler */
   looms[selectedId] = data; rawColors[selectedId] = data.colors; store.set(CACHE_KEY, looms); refresh();
   $("editModal").classList.remove("open");
-  if (loomsRef) loomsRef.child(selectedId).set(data).then(() => toast("Kaydedildi ✓")).catch(() => toast("Kaydedilemedi: yetkiniz yok veya bağlantı yok"));
+  if (loomsRef) loomsRef.child(selectedId).set(data).then(() => { toast("Kaydedildi ✓"); emitEvents(evs); }).catch(() => toast("Kaydedilemedi: yetkiniz yok veya bağlantı yok"));
   else toast("Yerel olarak kaydedildi");
 }
 
@@ -812,7 +915,9 @@ function startData() {
     if (raw.length !== extraColors.length) return colorsRef.set({ v: 2, list: extraColors });   /* sabit renklerle çakışan eski kayıtları temizle */
   }).catch(() => {});
   ordRef = db.ref("kale_siparis_v1/orders");
-  ordRef.on("value", s => { ordersData = s.val() || {}; renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, denied);
+  ordRef.on("value", s => { ordersData = s.val() || {}; checkNewOrders(); renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, denied);
+  eventsRef = db.ref("kale_events_v1");
+  eventsRef.on("value", onEvents, denied);
 
   /* Bağlantı durumu */
   db.ref(".info/connected").on("value", s => setSync(!!s.val(), s.val() ? "Canlı Bağlantı" : "Çevrimdışı"));
