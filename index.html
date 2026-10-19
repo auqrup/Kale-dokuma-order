@@ -97,6 +97,14 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .csel .inp{border:0;padding:7px 4px}
 .subs.two{grid-template-columns:repeat(2,1fr)}
 .wing-h{font-size:.84rem;font-weight:800;color:var(--ac);margin:10px 0 6px}
+.bk-p{color:var(--mu);font-size:.8rem;margin-bottom:12px;line-height:1.4}
+.bk-b{width:100%;margin-bottom:8px}
+.bk-d{margin-top:10px}
+.bk-d summary{cursor:pointer;color:var(--mu);font-size:.8rem;font-weight:700}
+.bk-d textarea{width:100%;margin:8px 0;font-size:.7rem;font-family:monospace}
+.bk-r{display:flex;gap:8px}
+.bk-note{color:var(--mu);font-size:.74rem;margin-top:10px}
+.evd{font-size:.72rem;font-weight:800;color:var(--mu);letter-spacing:.14em;text-transform:uppercase;padding:12px 4px 4px}
 .bn{background:var(--stop);color:#fff;border-radius:999px;font-size:.62rem;font-weight:800;padding:1px 6px;margin-left:5px}
 .ev{display:flex;gap:10px;padding:10px 4px;border-bottom:1px solid var(--bd)}
 .ev .ei{font-size:1.15rem;flex-shrink:0}
@@ -153,6 +161,7 @@ body *{visibility:hidden}
   <div class="top-bar">
     <h1>🧵 KALE DOKUMA TAKİP</h1>
     <div class="top-actions">
+      <button type="button" class="pdf-btn" id="bkBtn">💾 Yedek</button>
       <button type="button" class="pdf-btn" id="bellBtn" title="Bildirimler">🔔<b class="bn" id="bellN" style="display:none">0</b></button>
       <button type="button" class="pdf-btn" id="colBtn">🎨 Renkler</button>
       <button type="button" class="pdf-btn" id="pdfBtn">🖨️ PDF / Yazdır</button>
@@ -222,6 +231,26 @@ body *{visibility:hidden}
   </div>
 </div>
 
+<div class="overlay" id="bkModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="bkClose">✕ Kapat</button>
+      <h2>Yedek</h2>
+      <span style="width:70px"></span>
+    </div>
+    <p class="bk-p">Makineler (durum, müşteri, renkler, çözgü, özellik) ve eklediğiniz renkler için yedek alın veya geri yükleyin. Müşteri listesi, siparişler ve bildirimler yedeğe girmez.</p>
+    <button type="button" class="b-save bk-b" id="bkSave">📤 Yedek al (dosya indir)</button>
+    <button type="button" class="b-cancel bk-b" id="bkPick">📥 Geri yükle (dosya seç)</button>
+    <input type="file" id="bkFile" accept=".json,application/json" style="display:none">
+    <button type="button" class="b-cancel bk-b" id="bkUndo" style="display:none">↩️ Son geri yüklemeyi geri al</button>
+    <details class="bk-d"><summary>Dosya yerine metin kullan</summary>
+      <textarea id="bkText" class="inp" rows="5" placeholder="Yedek metni burada görünür / buraya yapıştırın..."></textarea>
+      <div class="bk-r"><button type="button" class="b-cancel" id="bkCopy">📋 Kopyala</button><button type="button" class="b-cancel" id="bkTextRestore">Metinden geri yükle</button></div>
+    </details>
+    <p class="bk-note" id="bkInfo"></p>
+  </div>
+</div>
+
 <div class="overlay" id="notifModal">
   <div class="sheet">
     <div class="sheet-head">
@@ -275,6 +304,7 @@ body *{visibility:hidden}
 
    VERI (Firebase Realtime Database, proje fabrika-e9b49):
      YAZAR : kale_dokuma_live_v2/<makineId>   (tezgahlar)
+     (Yedek: sadece makineler + ek renkler; musteriler/siparisler/bildirimler yedege girmez)
      YAZAR : kale_events_v1                   (bildirim gecmisi, son 50 olay; sadece bu sayfa yazar)
      YAZAR : kale_colors_v2                   (sadece EK renkler {v:2,list:[{name,hex}]}; sabit liste kodda; siparis.html okur)
      OKUR  : kale_siparis_v1/orders           (siparis sayfasinin yazdigi siparisler)
@@ -567,7 +597,7 @@ function updateCustList() {
    OKUYARAK fark eder ve deterministik anahtarla (ord_<id>) kaydeder, böylece birden çok cihaz aynı olayı yazsa bile tek kayıt kalır.
    Okundu bilgisi cihazda tutulur (localStorage). Kendi yaptığınız değişiklik için bildirim/rozet çıkmaz. */
 const EV_MAX = 50, EV_READ = "kale_notif_read", EV_SEEN_ORD = "kale_seen_orders";
-const EV_ICON = { cust: "👤", next: "⏭️", stop: "⛔", color: "🎨", order: "📦" };
+const EV_ICON = { cust: "👤", next: "⏭️", stop: "⛔", color: "🎨", order: "📦", restore: "💾" };
 const EV_STATUS = { stopped: "Duruş", yarn: "İplik yok", maint: "Arıza / Bakım" };
 let eventsRef = null, events = [], knownEv = null, evPruning = false, noticeT = null;
 const evUser = () => { try { return (firebase.auth().currentUser?.email || "").split("@")[0] || "?"; } catch { return "?"; } };
@@ -604,15 +634,18 @@ function checkNewOrders() {   /* siparisleri sadece OKUR; yeni gorulenler icin o
 const unreadEv = () => { const r = new Set(lsGet(EV_READ, [])), me = evUser(); return events.filter(e => !r.has(e.key) && (!e.u || e.u !== me)); };
 function markRead() { lsSet(EV_READ, events.map(e => e.key).slice(0, 120)); updateBell(); }
 function updateBell() { const n = unreadEv().length, b = $("bellN"); if (!b) return; b.textContent = n > 99 ? "99+" : String(n); b.style.display = n ? "inline-block" : "none"; }
-function evWhen(t) {
-  const d = Date.now() - t, m = Math.floor(d / 6e4);
-  if (d < 6e4) return "şimdi"; if (m < 60) return `${m} dk önce`; if (m < 1440) return `${Math.floor(m / 60)} sa önce`;
-  return new Date(t).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const dayKey = t => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+function dayLabel(t) {
+  const k = dayKey(t), now = Date.now();
+  return k === dayKey(now) ? "Bugün" : k === dayKey(now - 864e5) ? "Dün" : new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
+const hhmm = t => new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 function renderNotif() {
-  const r = new Set(lsGet(EV_READ, []));
-  $("notifList").innerHTML = events.length ? events.map(e => `<div class="ev${!r.has(e.key) && e.u !== evUser() ? " new" : ""}"><span class="ei">${EV_ICON[e.k] || "🔔"}</span><div class="eb"><b>${e.m ? esc(e.m) : "Sipariş"}</b>${esc(e.x)}<small>${esc(evWhen(e.t))}${e.u ? " · " + esc(e.u) : ""}</small></div></div>`).join("")
-    : '<p style="color:var(--mu);padding:16px 4px">Henüz bildirim yok.</p>';
+  const r = new Set(lsGet(EV_READ, [])), me = evUser(); let last = null;
+  $("notifList").innerHTML = events.length ? events.map(e => {
+    const k = dayKey(e.t), head = k !== last ? `<div class="evd">${esc(dayLabel(e.t))}</div>` : ""; last = k;
+    return head + `<div class="ev${!r.has(e.key) && e.u !== me ? " new" : ""}"><span class="ei">${EV_ICON[e.k] || "🔔"}</span><div class="eb"><b>${e.m ? esc(e.m) : (e.k === "order" ? "Sipariş" : "")}</b>${esc(e.x)}<small>${esc(hhmm(e.t))}${e.u ? " · " + esc(e.u) : ""}</small></div></div>`;
+  }).join("") : '<p style="color:var(--mu);padding:16px 4px">Henüz bildirim yok.</p>';
 }
 function openNotif() { renderNotif(); $("notifModal").classList.add("open"); markRead(); }
 function showNotice(list) {
@@ -635,6 +668,65 @@ function onEvents(snap) {
     Promise.resolve(dbRoot.update(up)).catch(() => {}).then(() => { evPruning = false; });
   }
 }
+
+/* ---------- Yedek: SADECE makineler + ek renkler (müşteri listesi, siparişler, bildirimler yedeğe girmez) ----------
+   Dosya: { app:"kale-makineler", v:1, created, looms:{id:{...}}, colors:[{name,hex}] }.
+   Geri yükleme TEK atomik yazımdır (makineler + ek renkler + "restore" bildirimi); önce mevcut hal bu cihaza saklanır (geri alınabilir). */
+const BK_APP = "kale-makineler", PRE_KEY = "kale_prerestore_backup", LASTBK_KEY = "kale_last_backup";
+function buildBackup() {
+  const lm = {}; allIds().forEach(id => { lm[id] = JSON.parse(JSON.stringify(looms[id])); });
+  return { app: BK_APP, v: 1, created: Date.now(), looms: lm, colors: extraColors.map(c => ({ name: c.name, hex: c.hex })) };
+}
+function parseBackup(text) {
+  let b; try { b = JSON.parse(text); } catch { throw new Error("Dosya okunamadı: geçerli bir yedek değil."); }
+  if (!b || b.app !== BK_APP || !b.looms || typeof b.looms !== "object") throw new Error("Bu dosya bir makine yedeği değil.");
+  const missing = allIds().filter(id => !b.looms[id] || typeof b.looms[id] !== "object");
+  if (missing.length) throw new Error(`Yedekte ${missing.length} makine eksik (${missing.slice(0, 4).join(", ")}…). Geri yükleme yapılmadı.`);
+  return b;
+}
+const stampTxt = t => new Date(t).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const fileStamp = t => { const d = new Date(t), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; };
+function downloadText(name, text) {
+  try {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch {} }, 1500);
+  } catch {}
+}
+function bkInfoRefresh() {
+  const last = lsGet(LASTBK_KEY, null), pre = lsGet(PRE_KEY, null);
+  $("bkInfo").textContent = last ? `Bu cihazda son yedek: ${stampTxt(last)}` : "Bu cihazda henüz yedek alınmadı.";
+  $("bkUndo").style.display = pre ? "block" : "none";
+  if (pre) $("bkUndo").textContent = `↩️ Son geri yüklemeyi geri al (${stampTxt(pre.created)} hali)`;
+}
+function takeBackup() {
+  const b = buildBackup(), txt = JSON.stringify(b, null, 1);
+  $("bkText").value = txt; downloadText(`makineler-yedek-${fileStamp(b.created)}.json`, txt);
+  lsSet(LASTBK_KEY, b.created); bkInfoRefresh(); toast("Yedek alındı ✓");
+}
+function unknownColorCells(b, extras) {   /* yedekte olup listede bulunmayan renkler "0" olarak yüklenir */
+  const known = new Set(["0", ...Object.keys(COLORS).filter(k => FIXED_COLOR_NAMES.has(k)), ...extras.map(c => c.name)]);
+  let n = 0; allIds().forEach(id => { const cs = b.looms[id].colors; (Array.isArray(cs) ? cs : Object.values(cs || {})).forEach(c => { const nmn = (c && typeof c === "object") ? c.name : c; if (nmn != null && !known.has(String(nmn))) n++; }); });
+  return n;
+}
+async function restoreBackup(b) {
+  if (!dbRoot || $("sync").classList.contains("off")) return toast("Bağlantı yok: geri yükleme yapılamadı");   /* çevrimdışıyken yazma kuyruğa girip sonradan habersiz uygulanmasın */
+  const bkColors = (Array.isArray(b.colors) ? b.colors : Object.values(b.colors || {})).filter(c => c && c.name);
+  const merged = [...bkColors, ...extraColors.filter(c => !bkColors.some(x => x.name === c.name))];   /* mevcut ek renkler silinmez */
+  const unk = unknownColorCells(b, merged), when = stampTxt(b.created || 0);
+  if (!confirm(`${when} tarihli yedek geri yüklensin mi?\n\nBu işlem TÜM kullanıcılar için makineleri o yedekteki hale getirir. Şu anki hal bu cihaza otomatik saklanır; "Son geri yüklemeyi geri al" ile dönebilirsiniz.${unk ? `\n\nUyarı: ${unk} renk hücresi listede olmayan bir renk içeriyor ve "Yok (0)" olarak yüklenecek.` : ""}`)) return;
+  const prevExtras = extraColors.map(c => ({ ...c })), pre = buildBackup();
+  applyExtraColors(merged);   /* ad doğrulaması normalize'dan ÖNCE geçerli olsun */
+  const t = Date.now(), up = {}, nl = {};
+  allIds().forEach(id => { const n = normalize(b.looms[id], id); n.lastModified = t; nl[id] = n; up[`kale_dokuma_live_v2/${id}`] = n; });
+  up.kale_colors_v2 = { v: 2, list: extraColors };
+  const key = `${t}_rst`; up[`kale_events_v1/${key}`] = { t, u: evUser(), k: "restore", m: "", x: `Yedekten geri yüklendi (yedek: ${when})` };
+  try { await dbRoot.update(up); }
+  catch { applyExtraColors(prevExtras); return toast("Geri yüklenemedi: yetkiniz yok veya bağlantı yok"); }
+  lsSet(PRE_KEY, pre);
+  Object.keys(nl).forEach(id => { looms[id] = nl[id]; rawColors[id] = nl[id].colors; });
+  store.set(CACHE_KEY, looms); refresh(); afterColorsChanged(); bkInfoRefresh(); toast("Geri yüklendi ✓");
+}
+function openBk() { bkInfoRefresh(); $("bkModal").classList.add("open"); }
 
 /* ---------- Renk yönetimi ---------- */
 function colorUsage(name) {
@@ -741,6 +833,22 @@ function initUi() {
   $("fWidth").onchange = () => buildColorRows($("fWidth").value, readColors());
   document.querySelectorAll(".xbtn").forEach(b => b.onclick = () => setExtra(selectedExtra === b.dataset.x ? "" : b.dataset.x));
   [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => { sel.dataset.prev = sel.value; });
+  $("bkBtn").onclick = openBk;
+  $("bkClose").onclick = () => $("bkModal").classList.remove("open");
+  $("bkSave").onclick = takeBackup;
+  $("bkPick").onclick = () => $("bkFile").click();
+  $("bkFile").onchange = e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { try { restoreBackup(parseBackup(String(rd.result))); } catch (err) { alert(err.message); } };
+    rd.readAsText(f); e.target.value = "";
+  };
+  $("bkTextRestore").onclick = () => { try { restoreBackup(parseBackup($("bkText").value)); } catch (err) { alert(err.message); } };
+  $("bkUndo").onclick = () => { const pre = lsGet(PRE_KEY, null); if (pre) { try { restoreBackup(parseBackup(JSON.stringify(pre))); } catch (err) { alert(err.message); } } };
+  $("bkCopy").onclick = () => {
+    const t = $("bkText"); if (!t.value) takeBackup();
+    try { navigator.clipboard.writeText(t.value).then(() => toast("Kopyalandı ✓"), () => { t.select(); document.execCommand("copy"); toast("Kopyalandı ✓"); }); } catch { t.select(); try { document.execCommand("copy"); toast("Kopyalandı ✓"); } catch {} }
+  };
   $("bellBtn").onclick = openNotif;
   $("notifClose").onclick = () => $("notifModal").classList.remove("open");
   $("notice").onclick = () => { $("notice").style.display = "none"; openNotif(); };
@@ -758,7 +866,7 @@ function initUi() {
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
