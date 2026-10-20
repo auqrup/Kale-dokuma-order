@@ -14,10 +14,24 @@
 html,body{width:100%;overflow-x:hidden;background:var(--page);color:var(--tx);padding-bottom:40px;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 button{font:inherit}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-header{background:rgba(13,16,20,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:12px 10px;position:sticky;top:0;z-index:50;display:flex;flex-direction:column;gap:10px}
-.top-bar,.top-actions{display:flex;align-items:center}
+header{padding:12px 10px 8px;display:flex;flex-direction:column;gap:10px}
+.stick{position:sticky;top:0;z-index:50;background:rgba(13,16,20,.95);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 10px;display:flex;flex-direction:column;gap:8px}
+.srow{display:flex;gap:8px;align-items:center}
+.ibtn{position:relative;flex-shrink:0;min-width:46px;height:44px;background:var(--card2);color:var(--tx);border:1px solid var(--bd);border-radius:11px;font-size:1.1rem;font-weight:700;cursor:pointer}
+.ibtn .bn{position:absolute;top:-6px;right:-5px;margin:0}
+.chips{display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:1px}
+.chips::-webkit-scrollbar{display:none}
+.csep{width:1px;align-self:stretch;background:var(--bd);flex-shrink:0;margin:4px 2px}
+.size-bar{display:flex;gap:6px}
+.mrow{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:13px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);text-align:left;cursor:pointer;margin-bottom:9px;font-family:inherit}
+.mrow .mi{font-size:1.5rem;flex-shrink:0}
+.mrow b{display:block;font-size:1rem;font-weight:800}
+.mrow small{display:block;color:var(--mu);font-size:.74rem;font-weight:600;margin-top:2px}
+.sheet-foot{position:sticky;bottom:0;margin:6px -18px -18px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd);display:grid;grid-template-columns:1fr 2fr;gap:10px;z-index:3}
+.sheet-foot .b-cancel,.sheet-foot .b-save{padding:14px 10px;font-size:1rem;border-radius:12px}
+@media(max-width:700px){input,select,textarea{font-size:16px!important}}
+.top-bar{display:flex;align-items:center}
 .top-bar{justify-content:space-between;flex-wrap:wrap;gap:8px}
-.top-actions{gap:8px}
 h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .pdf-btn{background:var(--card2);color:var(--tx);border:1px solid var(--bd);padding:6px 11px;border-radius:9px;font-size:.78rem;font-weight:700;cursor:pointer}
 .sync{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:600;color:var(--run);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.28);padding:4px 9px;border-radius:999px}
@@ -25,17 +39,16 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:p 1.5s infinite}
 @keyframes p{50%{opacity:.3}}
 @media (prefers-reduced-motion:reduce){.pulse{animation:none}}
-.branch-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.branch-bar{display:flex;gap:6px}
 .branch-btn,.filter-btn{background:var(--card);border:1px solid var(--bd);color:var(--mu);border-radius:8px;cursor:pointer;white-space:nowrap}
-.branch-btn{padding:8px 1px;font-size:.72rem;font-weight:700;overflow:hidden;text-overflow:ellipsis}
-.filter-btn{padding:7px 10px;font-size:.74rem;font-weight:600}
+.branch-btn{flex:0 0 auto;min-height:42px;padding:10px 14px;font-size:.82rem;font-weight:700}
+.filter-btn{flex:0 0 auto;min-height:42px;padding:10px 14px;font-size:.8rem;font-weight:600}
 .branch-btn.active,.filter-btn.active{background:var(--ac);color:var(--ac-d);border-color:var(--ac);font-weight:800}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .stat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:7px 2px;text-align:center}
 .stat b{display:block;font-size:1.2rem;font-weight:800;line-height:1.2}
 .stat span{font-size:.66rem;color:var(--mu);font-weight:600}
-.controls{display:flex;gap:5px;overflow-x:auto}
-.search{flex:1;min-width:120px;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:9px 11px;border-radius:8px;font-size:.84rem}
+.search{flex:1;min-width:0;min-height:44px;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:10px 13px;border-radius:11px;font-size:.9rem}
 .search::placeholder{color:var(--mu)}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;width:100%}
 @media(min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:18px;max-width:1400px;margin:0 auto}}
@@ -80,11 +93,11 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .sheet-head h2{font-size:1.05rem;color:var(--tx);text-align:center;font-weight:800}
 .b-cancel{background:rgba(248,113,113,.12);color:var(--stop);border:1px solid rgba(248,113,113,.3);padding:8px 13px;border-radius:9px;font-size:.84rem;font-weight:700;cursor:pointer}
 .b-save{background:var(--ac);color:var(--ac-d);border:1px solid var(--ac);padding:8px 17px;border-radius:9px;font-size:.88rem;font-weight:800;cursor:pointer}
-.fg{margin-bottom:14px}
-.fg label{display:block;font-size:.8rem;color:var(--mu);margin-bottom:6px;font-weight:700}
-.inp{width:100%;background:var(--bg);border:1px solid var(--bd);padding:10px 12px;border-radius:8px;color:var(--tx);font-size:.9rem}
+.fg{margin-bottom:18px}
+.fg label{display:block;font-size:.76rem;color:var(--mu);margin-bottom:7px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.inp{width:100%;min-height:46px;background:var(--bg);border:1px solid var(--bd);padding:10px 12px;border-radius:10px;color:var(--tx);font-size:.9rem}
 .stsel{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.sbtn{padding:10px;border-radius:8px;border:2px solid transparent;background:var(--bg);color:var(--tx);font-size:.84rem;font-weight:700;cursor:pointer}
+.sbtn{min-height:46px;padding:11px 10px;border-radius:10px;border:2px solid transparent;background:var(--bg);color:var(--tx);font-size:.84rem;font-weight:700;cursor:pointer}
 .xbtn{padding:10px;border-radius:8px;border:2px solid var(--bd);background:var(--bg);color:var(--tx);font-size:.84rem;font-weight:700;cursor:pointer}
 .xbtn.on{border-color:var(--ac);background:rgba(240,198,116,.14);color:var(--ac)}
 .sbtn.sel-running{border-color:var(--run);background:rgba(52,211,153,.14)}
@@ -94,7 +107,7 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .csel{background:var(--bg);padding:6px 8px;border-radius:8px;border:1px solid var(--bd);display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .csel .ind{width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.4);flex-shrink:0}
 .csel i{font-style:normal;font-weight:700;color:var(--mu);font-size:.8rem;min-width:38px}
-.csel .inp{border:0;padding:7px 4px}
+.csel .inp{border:0;padding:7px 4px;min-height:42px}
 .subs.two{grid-template-columns:repeat(2,1fr)}
 .wing-h{font-size:.84rem;font-weight:800;color:var(--ac);margin:10px 0 6px}
 .bk-p{color:var(--mu);font-size:.8rem;margin-bottom:12px;line-height:1.4}
@@ -160,30 +173,32 @@ body *{visibility:hidden}
 <header>
   <div class="top-bar">
     <h1>🧵 KALE DOKUMA TAKİP</h1>
-    <div class="top-actions">
-      <button type="button" class="pdf-btn" id="bkBtn">💾 Yedek</button>
-      <button type="button" class="pdf-btn" id="bellBtn" title="Bildirimler">🔔<b class="bn" id="bellN" style="display:none">0</b></button>
-      <button type="button" class="pdf-btn" id="colBtn">🎨 Renkler</button>
-      <button type="button" class="pdf-btn" id="pdfBtn">🖨️ PDF / Yazdır</button>
-      <button type="button" class="pdf-btn" id="outBtn" title="Çıkış">🚪</button>
-      <div class="sync off" id="sync"><span class="pulse"></span><span id="syncText">Bağlanıyor</span></div>
-    </div>
+    <div class="sync off" id="sync"><span class="pulse"></span><span id="syncText">Bağlanıyor</span></div>
   </div>
-  <div class="branch-bar" id="branchBar"></div>
   <div class="stats">
     <div class="stat"><b id="sRun" style="color:var(--run)">0</b><span>Çalışıyor</span></div>
     <div class="stat"><b id="sStop" style="color:var(--stop)">0</b><span>Duruş</span></div>
     <div class="stat"><b id="sYarn" style="color:var(--yarn)">0</b><span>İplik Yok</span></div>
     <div class="stat"><b id="sMnt" style="color:var(--mnt)">0</b><span>Bakımda</span></div>
   </div>
-  <div class="controls">
-    <input type="search" id="search" class="search" placeholder="Müşteri, makine veya renk ara..." aria-label="Ara">
-    <button class="filter-btn active" data-filter="all">Tüm Boylar</button>
-    <button class="filter-btn" data-filter="140">140 cm</button>
-    <button class="filter-btn" data-filter="160">160 cm</button>
-    <button class="filter-btn" data-filter="200">200 cm</button>
-  </div>
 </header>
+<div class="stick">
+  <div class="srow">
+    <input type="search" id="search" class="search" placeholder="Müşteri, makine veya renk ara..." aria-label="Ara">
+    <button type="button" class="ibtn" id="bellBtn" title="Bildirimler" aria-label="Bildirimler">🔔<b class="bn" id="bellN" style="display:none">0</b></button>
+    <button type="button" class="ibtn" id="menuBtn" title="Menü" aria-label="Menü">☰</button>
+  </div>
+  <div class="chips">
+    <div class="branch-bar" id="branchBar"></div>
+    <span class="csep"></span>
+    <div class="size-bar">
+      <button class="filter-btn active" data-filter="all">Tüm Boylar</button>
+      <button class="filter-btn" data-filter="140">140 cm</button>
+      <button class="filter-btn" data-filter="160">160 cm</button>
+      <button class="filter-btn" data-filter="200">200 cm</button>
+    </div>
+  </div>
+</div>
 
 <main class="grid" id="grid"></main>
 <div id="printSection"></div>
@@ -205,7 +220,7 @@ body *{visibility:hidden}
     <div class="sheet-head">
       <button type="button" class="b-cancel" id="closeBtn">✕ Kapat</button>
       <h2 id="mTitle">Makine Ayarı</h2>
-      <button type="button" class="b-save" id="saveBtn">✓ Kaydet</button>
+      <span style="width:70px"></span>
     </div>
     <div class="fg"><label>Makine Durumu</label>
       <div class="stsel">
@@ -228,6 +243,24 @@ body *{visibility:hidden}
         <button type="button" class="xbtn" id="xSimli" data-x="simli">⬜ SİMLİ</button>
       </div>
     </div>
+    <div class="sheet-foot">
+      <button type="button" class="b-cancel" id="closeBtn2">İptal</button>
+      <button type="button" class="b-save" id="saveBtn">✓ Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="menuModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="menuClose">✕ Kapat</button>
+      <h2>Menü</h2>
+      <span style="width:70px"></span>
+    </div>
+    <button type="button" class="mrow" id="bkBtn"><span class="mi">💾</span><span><b>Yedek</b><small>Makineleri dosyaya al / geri yükle</small></span></button>
+    <button type="button" class="mrow" id="colBtn"><span class="mi">🎨</span><span><b>Renkler</b><small>Renk listesi, renk ekle, hangi makinede?</small></span></button>
+    <button type="button" class="mrow" id="pdfBtn"><span class="mi">🖨️</span><span><b>PDF / Yazdır</b><small>Makine durum raporu</small></span></button>
+    <button type="button" class="mrow" id="outBtn"><span class="mi">🚪</span><span><b>Çıkış</b><small>Hesaptan çık</small></span></button>
   </div>
 </div>
 
@@ -862,11 +895,14 @@ function initUi() {
     const it = e.target.closest(".col-item"); if (!it) return;
     colSel = colSel === it.dataset.n ? null : it.dataset.n; renderColManager();
   });
-  $("closeBtn").onclick = () => $("editModal").classList.remove("open");
+  $("closeBtn").onclick = $("closeBtn2").onclick = () => $("editModal").classList.remove("open");
+  $("menuBtn").onclick = () => $("menuModal").classList.add("open");
+  $("menuClose").onclick = () => $("menuModal").classList.remove("open");
+  ["bkBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
