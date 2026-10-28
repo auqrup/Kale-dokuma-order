@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>KALE DOKUMA TAKİP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--page:#061314;--bg:#0d1014;--card:#171b22;--card2:#1e232c;--bd:#2a313c;--tx:#f3efe6;--mu:#9aa3b0;--ac:#f0c674;--ac-d:#1a1405;--run:#34d399;--stop:#f87171;--mnt:#c4a3ff;--yarn:#ff9a4d;--ff:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;font-family:var(--ff)}
+html,body{width:100%;overflow-x:hidden;background:var(--page);color:var(--tx);padding-bottom:40px;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+header{padding:12px 10px 8px;display:flex;flex-direction:column;gap:10px}
+.stick{position:sticky;top:0;z-index:50;background:rgba(13,16,20,.95);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 10px;display:flex;flex-direction:column;gap:8px}
+.srow{display:flex;gap:8px;align-items:center}
+.ibtn{position:relative;flex-shrink:0;min-width:46px;height:44px;background:var(--card2);color:var(--tx);border:1px solid var(--bd);border-radius:11px;font-size:1.1rem;font-weight:700;cursor:pointer}
+.ibtn .bn{position:absolute;top:-6px;right:-5px;margin:0}
+.chips{display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:1px}
+.chips::-webkit-scrollbar{display:none}
+.csep{width:1px;align-self:stretch;background:var(--bd);flex-shrink:0;margin:4px 2px}
+.size-bar{display:flex;gap:6px}
+.mrow{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:13px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);text-align:left;cursor:pointer;margin-bottom:9px;font-family:inherit}
+.mrow .mi{font-size:1.5rem;flex-shrink:0}
+.mrow b{display:block;font-size:1rem;font-weight:800}
+.mrow small{display:block;color:var(--mu);font-size:.74rem;font-weight:600;margin-top:2px}
+.sheet-foot{position:sticky;bottom:0;margin:6px -18px -18px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd);display:grid;grid-template-columns:1fr 2fr;gap:10px;z-index:3}
+.sheet-foot .b-cancel,.sheet-foot .b-save{padding:14px 10px;font-size:1rem;border-radius:12px}
+@media(max-width:700px){input,select,textarea{font-size:16px!important}}
+.top-bar{display:flex;align-items:center}
+.top-bar{justify-content:space-between;flex-wrap:wrap;gap:8px}
+h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
+.pdf-btn{background:var(--card2);color:var(--tx);border:1px solid var(--bd);padding:6px 11px;border-radius:9px;font-size:.78rem;font-weight:700;cursor:pointer}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:600;color:var(--run);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.28);padding:4px 9px;border-radius:999px}
+.sync.off{color:var(--yarn);background:rgba(255,154,77,.12);border-color:rgba(255,154,77,.3)}
+.pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:p 1.5s infinite}
+@keyframes p{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+.branch-bar{display:flex;gap:6px}
+.branch-btn,.filter-btn{background:var(--card);border:1px solid var(--bd);color:var(--mu);border-radius:8px;cursor:pointer;white-space:nowrap}
+.branch-btn{flex:0 0 auto;min-height:42px;padding:10px 14px;font-size:.82rem;font-weight:700}
+.filter-btn{flex:0 0 auto;min-height:42px;padding:10px 14px;font-size:.8rem;font-weight:600}
+.branch-btn.active,.filter-btn.active{background:var(--ac);color:var(--ac-d);border-color:var(--ac);font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.stat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:7px 2px;text-align:center}
+.stat b{display:block;font-size:1.2rem;font-weight:800;line-height:1.2}
+.stat span{font-size:.66rem;color:var(--mu);font-weight:600}
+button.stat{color:inherit;cursor:pointer;font:inherit}
+.stat.on{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+.shown{font-size:.72rem;color:var(--mu);font-weight:600;text-align:center}
+.search{flex:1;min-width:0;min-height:44px;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:10px 13px;border-radius:11px;font-size:.9rem}
+.search::placeholder{color:var(--mu)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;width:100%}
+@media(min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:18px;max-width:1400px;margin:0 auto}}
+.empty{grid-column:1/-1;text-align:center;color:var(--mu);padding:30px 0;font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.card:active{transform:scale(.97)}
+.card.s-stopped{border-color:var(--stop);background:linear-gradient(180deg,rgba(248,113,113,.16),var(--card) 65%)}
+.card.s-yarn{border-color:var(--yarn);background:linear-gradient(180deg,rgba(255,154,77,.16),var(--card) 65%)}
+.card.s-maint{border-color:var(--mnt);background:linear-gradient(180deg,rgba(196,163,255,.16),var(--card) 65%)}
+.stlab{font-size:.62rem;font-weight:800;letter-spacing:.04em;text-align:center;border-radius:5px;padding:2px 0}
+.stlab.stopped{color:var(--stop);background:rgba(248,113,113,.14)}
+.stlab.yarn{color:var(--yarn);background:rgba(255,154,77,.14)}
+.stlab.maint{color:var(--mnt);background:rgba(196,163,255,.14)}
+.stripe{height:15px;flex-shrink:0}
+.stripe.bot{height:5px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);margin-top:auto}
+.body{padding:9px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:5px;min-width:0}
+.id{font-weight:800;font-size:1.12rem;color:var(--ac)}
+.badge{flex:1;min-width:0;text-align:center;background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:4px 6px;font-size:.92rem;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w{font-size:.68rem;font-weight:800;padding:3px 6px;border-radius:5px;color:#fff}
+.w140{background:#2f7fb5}.w160{background:#7c5cc9}.w200{background:#c27a1e}
+.st{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.box{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.main{display:flex;align-items:center;gap:8px;background:var(--card2);padding:5px 7px;border-radius:6px;min-width:0}
+.dot{border-radius:50%;border:1px solid rgba(255,255,255,.45);flex-shrink:0}
+.main .dot{width:20px;height:20px;border-width:1.5px}
+.meta{display:flex;flex-direction:column;min-width:0}
+.meta small{font-size:.58rem;color:var(--mu);font-weight:700;letter-spacing:.02em}
+.meta span{font-size:.86rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.sub{background:var(--card2);border-radius:6px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.sub .dot{width:13px;height:13px}
+.sub span{font-size:.62rem;font-weight:700;color:#d6dae0;width:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cust,.warp{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:6px 7px;display:flex;flex-direction:column;gap:4px}
+.row{display:flex;justify-content:space-between;gap:6px;font-size:.8rem;min-width:0}
+.row small{color:var(--mu);font-size:.62rem;font-weight:700;flex-shrink:0;align-self:center}
+.row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#d6dae0}
+.row .cur{color:var(--run);font-weight:800}
+.warp small{font-size:.62rem;font-weight:700;color:var(--mu)}
+.warps{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wi{display:flex;align-items:center;gap:5px;min-width:0;font-size:.76rem;font-weight:700}
+.wi .dot{width:12px;height:12px}
+.wi span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.overlay{position:fixed;inset:0;background:rgba(5,7,10,.86);backdrop-filter:blur(6px);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.overlay.mid{align-items:center}
+.sheet{background:var(--card);width:100%;max-width:550px;border-radius:18px 18px 0 0;padding:18px;max-height:90vh;overflow-y:auto;border:1px solid var(--bd)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--bd);gap:8px}
+.sheet-head h2{font-size:1.05rem;color:var(--tx);text-align:center;font-weight:800}
+.b-cancel{background:rgba(248,113,113,.12);color:var(--stop);border:1px solid rgba(248,113,113,.3);padding:8px 13px;border-radius:9px;font-size:.84rem;font-weight:700;cursor:pointer}
+.b-save{background:var(--ac);color:var(--ac-d);border:1px solid var(--ac);padding:8px 17px;border-radius:9px;font-size:.88rem;font-weight:800;cursor:pointer}
+.fg{margin-bottom:18px}
+.fg label{display:block;font-size:.76rem;color:var(--mu);margin-bottom:7px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.inp{width:100%;min-height:46px;background:var(--bg);border:1px solid var(--bd);padding:10px 12px;border-radius:10px;color:var(--tx);font-size:.9rem}
+.stsel{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sbtn{min-height:46px;padding:11px 10px;border-radius:10px;border:2px solid transparent;background:var(--bg);color:var(--tx);font-size:.84rem;font-weight:700;cursor:pointer}
+.xbtn{padding:10px;border-radius:8px;border:2px solid var(--bd);background:var(--bg);color:var(--tx);font-size:.84rem;font-weight:700;cursor:pointer}
+.xbtn.on{border-color:var(--ac);background:rgba(240,198,116,.14);color:var(--ac)}
+.sbtn.sel-running{border-color:var(--run);background:rgba(52,211,153,.14)}
+.sbtn.sel-stopped{border-color:var(--stop);background:rgba(248,113,113,.14)}
+.sbtn.sel-yarn{border-color:var(--yarn);background:rgba(255,154,77,.14)}
+.sbtn.sel-maint{border-color:var(--mnt);background:rgba(196,163,255,.14)}
+.csel{background:var(--bg);padding:6px 8px;border-radius:8px;border:1px solid var(--bd);display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.csel .ind{width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.4);flex-shrink:0}
+.csel i{font-style:normal;font-weight:700;color:var(--mu);font-size:.8rem;min-width:38px}
+.csel .inp{border:0;padding:7px 4px;min-height:42px}
+.subs.two{grid-template-columns:repeat(2,1fr)}
+.wing-h{font-size:.84rem;font-weight:800;color:var(--ac);margin:10px 0 6px}
+.bk-p{color:var(--mu);font-size:.8rem;margin-bottom:12px;line-height:1.4}
+.bk-b{width:100%;margin-bottom:8px}
+.bk-d{margin-top:10px}
+.bk-d summary{cursor:pointer;color:var(--mu);font-size:.8rem;font-weight:700}
+.bk-d textarea{width:100%;margin:8px 0;font-size:.7rem;font-family:monospace}
+.bk-r{display:flex;gap:8px}
+.bk-note{color:var(--mu);font-size:.74rem;margin-top:10px}
+.evd{font-size:.72rem;font-weight:800;color:var(--mu);letter-spacing:.14em;text-transform:uppercase;padding:12px 4px 4px}
+.bn{background:var(--stop);color:#fff;border-radius:999px;font-size:.62rem;font-weight:800;padding:1px 6px;margin-left:5px}
+.ev{display:flex;gap:10px;padding:10px 4px;border-bottom:1px solid var(--bd)}
+.ev .ei{font-size:1.15rem;flex-shrink:0}
+.ev .eb{min-width:0;font-size:.84rem;line-height:1.35;overflow-wrap:anywhere}
+.ev .eb b{font-weight:800;color:var(--ac);margin-right:4px}
+.ev .eb small{display:block;color:var(--mu);font-size:.7rem;margin-top:2px}
+.ev.new{background:rgba(240,198,116,.07)}
+.notice{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:max-content;max-width:92vw;background:var(--card2);border:1px solid var(--ac);color:var(--tx);padding:10px 14px;border-radius:12px;font-size:.84rem;font-weight:700;z-index:350;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow-wrap:anywhere}
+.col-add{display:flex;gap:7px;margin-bottom:12px;align-items:center}
+.col-add .inp{flex:1}
+.col-add input[type=color]{width:46px;height:42px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);cursor:pointer;flex-shrink:0}
+.col-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;cursor:pointer}
+.col-item.open{border-color:var(--ac)}
+.col-item b{flex:1;min-width:0;font-size:.9rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.col-item small{color:var(--mu);font-size:.7rem;font-weight:600;flex-shrink:0}
+.col-item button.del{background:var(--card2);border:1px solid rgba(248,113,113,.3);color:var(--stop);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:.85rem}
+.col-det{background:var(--card2);border:1px solid var(--bd);border-radius:8px;padding:9px 10px;margin:-2px 0 4px;display:flex;flex-direction:column;gap:7px}
+.col-det .lab{font-size:.72rem;font-weight:800;color:var(--mu)}
+.col-det .chips{display:flex;flex-wrap:wrap;gap:5px}
+.lchip{background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:.8rem;font-weight:800}
+.lchip i{font-style:normal;font-weight:600;color:var(--mu);font-size:.68rem}
+.lchip.m{border-color:var(--ac);color:var(--ac)}
+.cm-list{display:flex;flex-direction:column;gap:6px}
+.pin{background:var(--card);width:90%;max-width:320px;border-radius:16px;padding:22px;text-align:center;border:1px solid var(--ac)}
+.pin input{width:100%;background:var(--bg);border:2px solid var(--bd);padding:12px;border-radius:10px;color:var(--tx);font-size:1rem;text-align:left;font-weight:600;margin:6px 0;font-family:inherit}
+#login{z-index:400;background:var(--page)}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
+.obtn{width:100%;background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:8px;font-size:.78rem;font-weight:700;cursor:pointer}
+.oi{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;margin-bottom:7px;display:flex;flex-direction:column;gap:4px}
+.oh{display:flex;align-items:center;gap:7px}
+.oh b{flex:1;font-size:.92rem;font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oi small{color:var(--mu);font-size:.76rem;font-weight:600}
+.oi .os{font-size:.8rem;font-weight:700}
+.oi .ok{color:var(--run)}.oi .mid{color:var(--yarn)}.oi .bad{color:var(--mu)}.oi .warn{color:var(--stop)}
+.osec{font-size:.8rem;font-weight:800;color:var(--ac);margin:12px 0 7px}
+#printSection{display:none}
+@media print{
+body *{visibility:hidden}
+#printSection,#printSection *{visibility:visible}
+#printSection{display:block!important;position:absolute;left:0;top:0;width:100%;background:#fff!important;color:#000!important;padding:15px}
+.pt{width:100%;border-collapse:collapse;margin-top:12px}
+.pt th,.pt td{border:1px solid #444;padding:6px 8px;text-align:left;font-size:9.5pt}
+.pt th{background:#f1f5f9}
+.pd{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;border:1px solid #888}
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="top-bar">
+    <h1>🧵 KALE DOKUMA TAKİP</h1>
+    <div class="sync off" id="sync"><span class="pulse"></span><span id="syncText">Bağlanıyor</span></div>
+  </div>
+  <div class="stats">
+    <button type="button" class="stat" data-st="running" aria-pressed="false"><b id="sRun" style="color:var(--run)">0</b><span>Çalışıyor</span></button>
+    <button type="button" class="stat" data-st="stopped" aria-pressed="false"><b id="sStop" style="color:var(--stop)">0</b><span>Duruş</span></button>
+    <button type="button" class="stat" data-st="yarn" aria-pressed="false"><b id="sYarn" style="color:var(--yarn)">0</b><span>İplik Yok</span></button>
+    <button type="button" class="stat" data-st="maint" aria-pressed="false"><b id="sMnt" style="color:var(--mnt)">0</b><span>Bakımda</span></button>
+  </div>
+  <div class="shown" id="shown" style="display:none"></div>
+</header>
+<div class="stick">
+  <div class="srow">
+    <input type="search" id="search" class="search" placeholder="Müşteri, makine veya renk ara..." aria-label="Ara">
+    <button type="button" class="ibtn" id="bellBtn" title="Bildirimler" aria-label="Bildirimler">🔔<b class="bn" id="bellN" style="display:none">0</b></button>
+    <button type="button" class="ibtn" id="menuBtn" title="Menü" aria-label="Menü">☰</button>
+  </div>
+  <div class="chips">
+    <div class="branch-bar" id="branchBar"></div>
+    <span class="csep"></span>
+    <div class="size-bar">
+      <button class="filter-btn active" data-filter="all">Tüm Boylar</button>
+      <button class="filter-btn" data-filter="140">140 cm</button>
+      <button class="filter-btn" data-filter="160">160 cm</button>
+      <button class="filter-btn" data-filter="200">200 cm</button>
+    </div>
+  </div>
+</div>
+
+<main class="grid" id="grid"></main>
+<div id="printSection"></div>
+<div class="toast" id="toast"></div>
+
+<div class="overlay mid open" id="login">
+  <form class="pin" id="loginForm" autocomplete="on">
+    <h3 style="font-size:1rem;margin-bottom:4px">🔒 Giriş</h3>
+    <p style="color:var(--mu);font-size:.78rem;margin-bottom:8px">Devam etmek için hesabınızla giriş yapın.</p>
+    <input type="email" id="loginEmail" placeholder="E-posta" autocomplete="username" inputmode="email" required>
+    <input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password" required>
+    <div id="loginErr" style="color:var(--stop);font-size:.78rem;display:none;margin:4px 0 8px"></div>
+    <button type="submit" class="b-save" style="width:100%;margin-top:8px" id="loginBtn">Giriş</button>
+  </form>
+</div>
+
+<div class="overlay" id="editModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="closeBtn">✕ Kapat</button>
+      <h2 id="mTitle">Makine Ayarı</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div class="fg"><label>Makine Durumu</label>
+      <div class="stsel">
+        <button type="button" class="sbtn" data-val="running">Çalışıyor</button>
+        <button type="button" class="sbtn" data-val="yarn">İplik Yok</button>
+        <button type="button" class="sbtn" data-val="stopped">Durduruldu</button>
+        <button type="button" class="sbtn" data-val="maint">Arıza / Bakım</button>
+      </div>
+    </div>
+    <div class="fg"><label for="fCur">Mevcut Müşteri</label><select class="inp" id="fCur"></select></div>
+    <div class="fg"><label for="fNext">Gelecek Müşteri</label><select class="inp" id="fNext"></select><button type="button" class="b-cancel" id="shiftBtn" style="width:100%;margin-top:8px;padding:10px;display:none">⏭ Sıradakini şimdiki yap</button><small style="color:var(--mu);font-size:.7rem">Listede olmayan müşteri için önce Sipariş sayfasından ekleyin.</small></div>
+    <div class="fg"><label for="fWidth">En (Genişlik)</label>
+      <select id="fWidth" class="inp"><option value="140">140 cm</option><option value="160">160 cm</option><option value="200">200 cm (2 Metre)</option></select>
+    </div>
+    <div class="fg"><label id="colLabel">Ana Renk (1) ve Alt Renkler (2, 3, 4)</label><div id="colRows"></div></div>
+    <div class="fg"><label>Çözgü Renkleri</label><div id="warpRows" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div></div>
+    <div class="fg"><label>Özellik</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button type="button" class="xbtn" id="xSpingel" data-x="spingel">⬜ ŞPİNGEL</button>
+        <button type="button" class="xbtn" id="xSimli" data-x="simli">⬜ SİMLİ</button>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="b-cancel" id="closeBtn2">İptal</button>
+      <button type="button" class="b-save" id="saveBtn">✓ Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="menuModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="menuClose">✕ Kapat</button>
+      <h2>Menü</h2>
+      <span style="width:70px"></span>
+    </div>
+    <button type="button" class="mrow" id="bkBtn"><span class="mi">💾</span><span><b>Yedek</b><small>Makineleri dosyaya al / geri yükle</small></span></button>
+    <button type="button" class="mrow" id="colBtn"><span class="mi">🎨</span><span><b>Renkler</b><small>Renk listesi, renk ekle, hangi makinede?</small></span></button>
+    <button type="button" class="mrow" id="pdfBtn"><span class="mi">🖨️</span><span><b>PDF / Yazdır</b><small>Makine durum raporu</small></span></button>
+    <button type="button" class="mrow" id="outBtn"><span class="mi">🚪</span><span><b>Çıkış</b><small>Hesaptan çık</small></span></button>
+  </div>
+</div>
+
+<div class="overlay" id="bkModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="bkClose">✕ Kapat</button>
+      <h2>Yedek</h2>
+      <span style="width:70px"></span>
+    </div>
+    <p class="bk-p">Makineler (durum, müşteri, renkler, çözgü, özellik) ve eklediğiniz renkler için yedek alın veya geri yükleyin. Müşteri listesi, siparişler ve bildirimler yedeğe girmez.</p>
+    <button type="button" class="b-save bk-b" id="bkSave">📤 Yedek al (dosya indir)</button>
+    <button type="button" class="b-cancel bk-b" id="bkPick">📥 Geri yükle (dosya seç)</button>
+    <input type="file" id="bkFile" accept=".json,application/json" style="display:none">
+    <button type="button" class="b-cancel bk-b" id="bkUndo" style="display:none">↩️ Son geri yüklemeyi geri al</button>
+    <details class="bk-d"><summary>Dosya yerine metin kullan</summary>
+      <textarea id="bkText" class="inp" rows="5" placeholder="Yedek metni burada görünür / buraya yapıştırın..."></textarea>
+      <div class="bk-r"><button type="button" class="b-cancel" id="bkCopy">📋 Kopyala</button><button type="button" class="b-cancel" id="bkTextRestore">Metinden geri yükle</button></div>
+    </details>
+    <p class="bk-note" id="bkInfo"></p>
+  </div>
+</div>
+
+<div class="overlay" id="notifModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="notifClose">✕ Kapat</button>
+      <h2>Bildirimler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div id="notifList"></div>
+    <p style="color:var(--mu);font-size:.72rem;margin-top:10px">Son 50 olay gösterilir: müşteri değişikliği, duruş, renk değişikliği ve yeni sipariş.</p>
+  </div>
+</div>
+
+<div class="notice" id="notice" style="display:none"></div>
+
+<div class="overlay" id="colModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="colClose">✕ Kapat</button>
+      <h2>Renkler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div class="col-add">
+      <input class="inp" id="colName" placeholder="Yeni renk adı..." maxlength="24" autocomplete="off">
+      <input type="color" id="colHex" value="#808080" aria-label="Renk seç">
+      <button type="button" class="b-save" id="colAdd">Ekle</button>
+    </div>
+    <p style="color:var(--mu);font-size:.74rem;margin-bottom:10px">Bir renge dokunun: hangi makinelerde ana / alt renk olduğunu görün.</p>
+    <div class="cm-list" id="colList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ordModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="ordClose">✕ Kapat</button>
+      <h2 id="ordTitle">Siparişler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div id="ordBody"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   KALE DOKUMA - MAKINE TAKIP SAYFASI (index.html)  -- BELGE / DOCUMENTATION
+   Ayrintili belge icin README.md dosyasina bakin.
+
+   NE YAPAR: Fabrikadaki 34 tezgahin (R1-16, A1-4, Y1-8, K1-6) canli durumunu
+   gosterir ve duzenletir: durum, mevcut/gelecek musteri, ana+alt renkler, cozgu.
+   Siparis sayfasi (siparis.html) bu verileri OKUR; bu sayfa siparisleri sadece OKUR.
+
+   VERI (Firebase Realtime Database, proje fabrika-e9b49):
+     YAZAR : kale_dokuma_live_v2/<makineId>   (tezgahlar)
+     (Yedek: sadece makineler + ek renkler; musteriler/siparisler/bildirimler yedege girmez)
+     YAZAR : kale_events_v1                   (bildirim gecmisi, son 50 olay; sadece bu sayfa yazar)
+     YAZAR : kale_colors_v2                   (sadece EK renkler {v:2,list:[{name,hex}]}; sabit liste kodda; siparis.html okur)
+     OKUR  : kale_siparis_v1/orders           (siparis sayfasinin yazdigi siparisler)
+             kale_customers_pool_v2           (musteri listesi; SIPARIS sayfasi yazar, burada sadece secilir)
+   Bu ayrim sadece kodda uygulanan bir kuraldir (veritabani kurallari yazmayi
+   UID bazinda kisitlar ama yol bazinda degil). Yeni kod bu ayrima uymali.
+
+   TEZGAH MODELI (normalize/buildLoom): {id, branch, num, width(140|160|200), status,
+     currentCustomer, nextCustomer, colors[], warps[2], extra("spingel"|"simli"|""), lastModified}
+     - 140 cm tezgahlar IKI KANATLI: colors[0..2]=1. kanat (ana+2 alt),
+       colors[3..5]=2. kanat. 160/200 cm tezgahlarda 4 renk (colors[0]=ana renk).
+     - "0" = iplik yok / renk yok.
+   Siparis metrajlari siparis.html'in yazdigi ln.mt=[ac,len] alanindan okunur:
+   metre = ceil(kalan / ac) * len (60x80 gibi devirli urunlerde ac=devir basina parca,
+   len=devir metresi). Bu sayfa metrajin formulune dokunmaz.
+   Siparis eslestirmesinde SADECE ana renk (colors[0], 140'ta ayrica colors[3]) ve
+   genislik kullanilir. Alt renkler ve cozgu yalnizca gorsel bilgidir.
+
+   GIRIS: Firebase Authentication (e-posta/sifre). Giris yapilmadan veri dinlenmez
+   (startData sadece onAuthStateChanged kullanici dondurunce calisir).
+   ============================================================ */
+/* ============================================================
+   GÜVENLİK: Giriş Firebase Authentication (e-posta/şifre) ile yapılır.
+   Veritabanı kuralları sadece izinli UID'lere okuma/yazma verir
+   (Firebase Console > Realtime Database > Kurallar).
+   ============================================================ */
+const CACHE_KEY = "kale_dokuma_local_v3";
+const CUST_KEY = "kale_customers_list_v3";
+const BRANCHES = { R: { name: "Rüya", count: 16 }, A: { name: "Acar", count: 4 }, Y: { name: "Y. Acar", count: 8 }, K: { name: "Karaman", count: 6 } };
+const TOTAL = Object.values(BRANCHES).reduce((s, b) => s + b.count, 0);
+const WIDTHS = [140, 160, 200];
+
+/* SABİT RENK LİSTESİ (sahibi tarafından kesinleştirildi; siparis.html ile AYNI olmalı). Değiştirilemez, silinemez. Sadece yeni (ek) renk eklenebilir. */
+const COLORS = {
+  "0":"#475569","PETROL":"#084a68","ÖZBEK BORDO":"#300303",
+  "LACİVERT":"#090835","AÇIK BORDO":"#ff2e2e","AÇIK GRİ":"#949ca8",
+  "PAST GRAY":"#c3c5c6","SP GREY":"#323e3e","KOYU GRİ":"#1e1e1f",
+  "SİYAH":"#000000","SİLKY(SARIBEJ)":"#d99b45","SARIBEJ":"#f1bf79",
+  "ŞEKER LT":"#fff2c2","IVORY":"#f6f6ef","ŞEKER AYM":"#e9e3ce",
+  "VİZON":"#684f2c","KOYU KAHVE":"#24160a","MARON":"#5b010b",
+  "ZÜMRÜT":"#073f74","Z-BLUE":"#145090","FOWN (AÇIK BAL)":"#e4d79b",
+  "NEFTİ":"#082b16","FISTIK YEŞİL":"#15b300","KREM":"#f5ebd1",
+  "GÜL":"#692b49","B.GREEN":"#3a644c","CAM GÖBEĞİ":"#009e7e",
+  "SAXMAVİ":"#1100ff","SOĞAN(ALTIN)":"#947400"
+};
+const WARPS = { "SİYAH":"#0f172a", "BEYAZ":"#ffffff", "SARI":"#eab308" };
+const STATUS_COLOR = { running:"var(--run)", stopped:"var(--stop)", yarn:"var(--yarn)", maint:"var(--mnt)" };
+const STATUS_LABEL = { stopped:"DURUŞ", yarn:"İPLİK YOK", maint:"BAKIM" };
+const hexOf = n => COLORS[n] || COLORS["0"];
+const warpHex = n => WARPS[n] || WARPS["SİYAH"];
+
+/* XSS koruması: kullanıcı metnini HTML'e koymadan önce temizle */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const $ = id => document.getElementById(id);
+
+/* Çevrimdışı / güvenli yerel depolama */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+const names = o => Array.isArray(o) ? o.map(x => x?.name ?? x) : [];
+const colorCount = w => Number(w) === 140 ? 6 : 4;
+/* Renk açılır listeleri: "0 (İplik Yok)" en üstte, diğerleri Türkçe alfabe sırasıyla (a b c ç d e f g ğ h ı i ...) */
+const optsHtml = o => Object.keys(o).sort((a, b) => (a === "0" ? -1 : b === "0" ? 1 : trCompare(a, b)))
+  .map(n => `<option value="${esc(n)}">${n === "0" ? "0 (İplik Yok)" : esc(n)}</option>`).join("");
+/* ---------- Renkler ----------
+   SABİT liste: yukarıdaki COLORS (kodda sabit; düzenlenemez, silinemez, adı değiştirilemez).
+   EK renkler: sadece YENİ renk eklenebilir. Firebase: kale_colors_v2 = { v:2, list:[{name,hex}] } (sadece bu sayfa YAZAR; siparis.html okur).
+   Ek renkler silinebilir (yanlış eklenmişse). Sabit adlarla çakışan eski kayıtlar yükleme sırasında otomatik temizlenir. */
+const FIXED_COLOR_NAMES = new Set(Object.keys(COLORS).filter(k => k !== "0"));
+const CCOL_KEY = "kale_colors_extra_cache";
+let extraColors = [], colorsRef = null, dbRoot = null, colSel = null;
+const rawColors = {};   /* makine -> Firebase'den gelen ham renk listesi (ek renkler sonradan yüklenirse yeniden doğrulamak için) */
+function applyExtraColors(list) {
+  Object.keys(COLORS).forEach(k => { if (k !== "0" && !FIXED_COLOR_NAMES.has(k)) delete COLORS[k]; });
+  const arr = Array.isArray(list) ? list : Object.values(list || {});
+  extraColors = [];
+  arr.forEach(c => {
+    if (c && typeof c.name === "string" && c.name !== "0" && /^#[0-9a-fA-F]{6}$/.test(c.hex || "") && !(c.name in COLORS)) {
+      COLORS[c.name] = c.hex.toLowerCase(); extraColors.push({ name: c.name, hex: c.hex.toLowerCase() });
+    }
+  });
+  store.set(CCOL_KEY, extraColors);
+}
+applyExtraColors(store.get(CCOL_KEY, null) || store.get("kale_colors_cache_v2", []));
+
+/* Makine özelliği (sadece düzenleme penceresinde görünür): "spingel" | "simli" | "" - biri seçilince diğeri kalkar */
+const EXTRAS = ["spingel", "simli"];
+let selectedExtra = "";
+function setExtra(x) {
+  selectedExtra = EXTRAS.includes(x) ? x : "";
+  document.querySelectorAll(".xbtn").forEach(b => {
+    const on = b.dataset.x === selectedExtra;
+    b.classList.toggle("on", on);
+    b.textContent = (on ? "✅ " : "⬜ ") + b.dataset.x.replace("spingel", "ŞPİNGEL").replace("simli", "SİMLİ");
+  });
+}
+function normalize(l, id) {
+  const base = buildLoom(id);
+  const cols = names(l?.colors), warps = names(l?.warps);
+  const m = { ...base, ...l, id };
+  m.width = Number(m.width) || base.width;
+  m.colors = Array.from({ length: colorCount(m.width) }, (_, i) => (cols[i] in COLORS ? cols[i] : "0"));
+  m.warps = [0,1].map(i => (warps[i] in WARPS ? warps[i] : base.warps[i]));
+  m.extra = EXTRAS.includes(m.extra) ? m.extra : "";
+  return m;
+}
+function buildLoom(id) {
+  const branch = id[0], num = parseInt(id.slice(1), 10);
+  return { id, num, branch, width: WIDTHS[(num - 1) % 3], status: "running", currentCustomer: "", nextCustomer: "", warps: ["BEYAZ","SİYAH"], colors: ["0","0","0","0"], extra: "", lastModified: 0 };
+}
+function allIds() {
+  return Object.entries(BRANCHES).flatMap(([b, o]) => Array.from({ length: o.count }, (_, i) => b + (i + 1)));
+}
+function buildFactory() { return Object.fromEntries(allIds().map(id => [id, buildLoom(id)])); }
+
+let looms = {};
+const cached = store.get(CACHE_KEY, null);
+const defaults = buildFactory();
+allIds().forEach(id => { looms[id] = normalize(cached?.[id] ?? defaults[id], id); });
+let customers = store.get(CUST_KEY, []);
+
+let selectedId = null, selectedStatus = "running";
+let branch = "all", widthFilter = "all", statusFilter = "all", query = "";
+let loomsRef = null, custRef = null, ordRef = null, ordersData = {}, ordId = null;
+
+/* ---------- Render ---------- */
+function visible(l, skipStatus) {
+  if (branch !== "all" && l.branch !== branch) return false;
+  if (widthFilter !== "all" && String(l.width) !== widthFilter) return false;
+  if (!skipStatus && statusFilter !== "all" && l.status !== statusFilter) return false;
+  if (query) {
+    /* Arama: müşteri, makine no, ANA renk ve ilk ALT renk (140'lıkta iki kanat için: 0,1 ve 3,4). Harfler gevşek eşleşir (ş=s, ı=i...). */
+    const fold = t => String(t || "").replace(/[İIı]/g, "i").toLowerCase().replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u");
+    const q = fold(query.trim());
+    const cols = (l.width === 140 ? [0, 1, 3, 4] : [0, 1]).map(i => l.colors[i]).filter(c => c && c !== "0");
+    return [l.currentCustomer, l.nextCustomer, l.id, ...cols].some(v => fold(v).includes(q));
+  }
+  return true;
+}
+const order = Object.keys(BRANCHES);
+const sorted = () => Object.values(looms).sort((a, b) => a.branch === b.branch ? a.num - b.num : order.indexOf(a.branch) - order.indexOf(b.branch));
+
+const subHtml = c => `<div class="sub"><span class="dot" style="background:${hexOf(c)}"></span><span>${esc(c)}</span></div>`;
+function mainHtml(label, c) {
+  return `<div class="main"><span class="dot" style="background:${hexOf(c)}"></span>
+        <div class="meta"><small>${label}</small><span>${c === "0" ? "0 (Yok)" : esc(c)}</span></div></div>`;
+}
+function colorsHtml(l) {
+  const c = l.colors;
+  if (l.width === 140) {
+    const wing = (k, a, b, d) => `<div class="box">${mainHtml(k + ". KANAT ANA RENK", a)}<div class="subs two">${subHtml(b)}${subHtml(d)}</div></div>`;
+    return wing(1, c[0], c[1], c[2]) + wing(2, c[3], c[4], c[5]);
+  }
+  return `<div class="box">${mainHtml("ANA RENK (1)", c[0])}<div class="subs">${[c[1], c[2], c[3]].map(subHtml).join("")}</div></div>`;
+}
+function cardHtml(l) {
+  const c = l.colors;
+  const cur = l.currentCustomer?.trim() || "-", nxt = l.nextCustomer?.trim() || "-";
+  const stripe = l.width === 140 ? `linear-gradient(90deg,${hexOf(c[0])} 50%,${hexOf(c[3])} 50%)` : hexOf(c[0]);
+  return `
+  <div class="stripe" style="background:${stripe}"></div>
+  <div class="body">
+    ${STATUS_LABEL[l.status] ? `<div class="stlab ${esc(l.status)}">${STATUS_LABEL[l.status]}</div>` : ""}
+    <div class="top">
+      <span class="id">${esc(l.id)}</span>
+      <span class="badge" title="${esc(cur)}">${esc(cur)}</span>
+      <span class="st" style="background:${STATUS_COLOR[l.status] || "var(--mu)"}"></span>
+      <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
+    </div>
+    ${colorsHtml(l)}
+    <div class="cust">
+      <div class="row"><small>ŞU ANKİ:</small><span class="cur">${esc(cur)}</span></div>
+      <div class="row"><small>GELECEK:</small><span>${esc(nxt)}</span></div>
+    </div>
+    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}</button>
+  </div>
+  <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
+}
+
+/* ---------- Siparişler (kale_siparis_v1: sadece OKUMA) ---------- */
+const arr = x => Array.isArray(x) ? x : Object.values(x || {});
+const wingsOf = l => l.width === 140 ? [l.colors[0], l.colors[3]] : [l.colors[0]];
+const hitOf = (ln, l) => wingsOf(l).filter(c => c === ln.color).length;
+/* Şu anki renkle yapılabilir mi? (140'ta tek kanat yeterli, tam-en ürünlerde iki kanat da aynı olmalı) */
+/* Satırın bu makinede tahmini tezgah metresi (kalan adet üzerinden); mt siparis.html tarafından yazılır */
+/* Üretim süresi tahmini: günlük üretim (tezgah boyu, m/gün; yaklaşık) - siparis.html ile AYNI olmalı.
+   200 cm: 240 · 140 cm: SİMLİ 210 / ŞPİNGEL 370 · 160 cm: SİMLİ 210 / ŞPİNGEL 350. Özellik seçilmemişse SİMLİ varsayılır. */
+const DAILY = { 200: { simli: 240, spingel: 240 }, 140: { simli: 210, spingel: 370 }, 160: { simli: 210, spingel: 350 } };
+const dailyRate = l => (DAILY[l.width] || DAILY[200])[l.extra === "spingel" ? "spingel" : "simli"];
+const unsetExtra = l => l.width !== 200 && l.extra !== "spingel" && l.extra !== "simli";
+const fmtDays = d => `${String(Math.max(0.1, Math.round(d * 10) / 10)).replace(".", ",")} gün`;
+const daysTxt = (l, m) => `≈ ${fmtDays(m / dailyRate(l))}${unsetExtra(l) ? " (simli varsayıldı)" : ""}`;
+function lineM(ln, l) {
+  const e = (ln.mt || {})[l.id]; if (!e) return null;
+  const R = (ln.qty || 0) - (ln.done || 0); let [ac, len] = e;
+  if (!ac) return Math.round(R * len * 10) / 10;
+  if (l.width === 140 && ac === 2 && hitOf(ln, l) === 1) ac = 1;
+  return Math.round(Math.ceil(R / ac) * len * 10) / 10;
+}
+const fits = (ln, l) => { const n = wingsOf(l).length, h = hitOf(ln, l); return h === n || (h > 0 && !ln.full); };
+function ordItems(l) {
+  const asg = [], pos = [];
+  Object.values(ordersData).forEach(o => arr(o?.lines).forEach(ln => {
+    const r = (ln.qty || 0) - (ln.done || 0); if (r <= 0) return;
+    const it = { o, ln, r };
+    if (ln.asg && ln.asg[l.id] !== undefined) asg.push(it);
+    else if (!ln.comp && arr(ln.ok).includes(l.id) && fits(ln, l)) pos.push(it);
+  }));
+  pos.sort((a, b) => hitOf(b.ln, l) - hitOf(a.ln, l));
+  return { asg, pos };
+}
+const ordCount = l => { const x = ordItems(l); return x.asg.length + x.pos.length; };
+function itemHtml(it, l, assigned) {
+  const { o, ln, r } = it, w = wingsOf(l), hit = hitOf(ln, l), notes = [], mtr = ln.comp ? null : lineM(ln, l);
+  if (!ln.comp && hit > 0 && hit < w.length && !ln.full) notes.push(`<div class="os mid">◐ Diğer kanat ${esc(w.find(c => c !== ln.color))}: müşteri onu da alır</div>`);
+  if (assigned && ln.asg[l.id] !== w.join("|")) notes.push('<div class="os warn">⚠ Atandığından beri renk değişti</div>');
+  if (assigned && !fits(ln, l)) notes.push('<div class="os bad">Şu an bu renk takılı değil</div>');
+  const others = Object.keys(ln.asg || {}).filter(k => k !== l.id);
+  return `<div class="oi"><div class="oh"><span class="dot" style="background:${hexOf(ln.color)};width:14px;height:14px"></span>
+    <b>${esc(o.cust)}</b><small>Kalan: ${r}</small></div>
+    <small>${esc(ln.pn || ln.k)} · ${esc(ln.color)}${mtr != null ? ` · ≈ ${mtr} m` : ""}</small>${ln.comp ? "<small>↳ Eşlik eden satır (diğer kanat)</small>" : ""}${notes.join("")}
+    ${others.length ? `<small>📌 Ayrıca atandı: ${others.map(esc).join(", ")}</small>` : ""}</div>`;
+}
+function renderOrd() {
+  const l = looms[ordId]; if (!l) return;
+  $("ordTitle").textContent = `${l.id} Siparişleri`;
+  const { asg, pos } = ordItems(l);
+  /* eşlik eden satır aynı tezgahta aynı anda üretilir: metraja tekrar eklenmez */
+  const mts = asg.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null);
+  const asgTotal = mts.length ? Math.round(mts.reduce((a, b) => a + b, 0) * 10) / 10 : null;
+  $("ordBody").innerHTML = (asg.length ? `<div class="osec">📌 Bu makineye atananlar (${asg.length})${asgTotal != null ? ` · toplam ≈ ${asgTotal} m · ${daysTxt(l, asgTotal)}` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
+    + (pos.length ? `<div class="osec">Şu anki renkle yapılabilir (${pos.length})</div>` + pos.map(i => itemHtml(i, l, false)).join("") : "")
+    || '<div class="empty">Şu anki renge uygun bekleyen sipariş yok.</div>';
+}
+function openOrd(id) { ordId = id; renderOrd(); $("ordModal").classList.add("open"); }
+
+function renderLooms() {
+  const grid = $("grid");
+  const list = sorted().filter(l => visible(l));
+  grid.innerHTML = "";
+  if (!list.length) { grid.innerHTML = '<div class="empty">Sonuç bulunamadı. Aramayı veya filtreleri değiştirin.</div>'; return; }
+  const frag = document.createDocumentFragment();
+  list.forEach(l => {
+    const b = document.createElement("div");
+    b.setAttribute("role", "button"); b.tabIndex = 0; b.className = "card" + (STATUS_LABEL[l.status] ? " s-" + l.status : ""); b.innerHTML = cardHtml(l);
+    b.onclick = e => e.target.closest(".obtn") ? openOrd(l.id) : openLoom(l.id);
+    b.onkeydown = e => { if (e.key === "Enter" && e.target === b) openLoom(l.id); };
+    frag.appendChild(b);
+  });
+  grid.appendChild(frag);
+}
+
+function updateStats() {
+  const c = { running: 0, stopped: 0, yarn: 0, maint: 0 };
+  Object.values(looms).forEach(l => { if (visible(l, true) && l.status in c) c[l.status]++; });
+  $("sRun").textContent = c.running; $("sStop").textContent = c.stopped; $("sYarn").textContent = c.yarn; $("sMnt").textContent = c.maint;
+  document.querySelectorAll(".stat").forEach(b => { const on = b.dataset.st === statusFilter; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+  const n = Object.values(looms).filter(l => visible(l)).length, sh = $("shown");
+  sh.textContent = `Gösterilen: ${n} / ${TOTAL}`; sh.style.display = n === TOTAL ? "none" : "block";
+}
+const refresh = () => { renderLooms(); updateStats(); };
+
+const lc = s => s.toLocaleLowerCase("tr");
+/* Türkçe alfabe sıralaması - tarayıcının dil desteğine BAĞLI DEĞİL (a b c ç d e f g ğ h ı i j k l m n o ö p q r s ş t u ü v w x y z) */
+const TR_IDX = {}; "abcçdefgğhıijklmnoöpqrsştuüvwxyz".split("").forEach((c, i) => TR_IDX[c] = i);
+const trKey = n => n.replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
+const trRank = c => c in TR_IDX ? 1000 + TR_IDX[c] : c.charCodeAt(0) < 128 ? c.charCodeAt(0) : 2000 + c.charCodeAt(0);
+function trCompare(a, b) {
+  const x = trKey(a), y = trKey(b), n = Math.min(x.length, y.length);
+  for (let i = 0; i < n; i++) { const d = trRank(x[i]) - trRank(y[i]); if (d) return d; }
+  return x.length - y.length || (a < b ? -1 : a > b ? 1 : 0);
+}
+function allCustomers() {
+  const m = new Map();
+  [...customers, ...Object.values(looms).flatMap(l => [l.currentCustomer, l.nextCustomer])].forEach(n => {
+    n = (n || "").trim();
+    if (n && n !== "-" && !m.has(lc(n))) m.set(lc(n), n);
+  });
+  return [...m.values()].sort(trCompare);
+}
+/* Müşteri listesi (kale_customers_pool_v2) bu sayfada SADECE OKUNUR; müşteri ekleme/silme Sipariş sayfasından yapılır. */
+function fillCustSelect(sel, cur) {
+  const list = allCustomers();
+  if (cur && !list.includes(cur)) { list.push(cur); list.sort(trCompare); }
+  sel.innerHTML = '<option value="">— Seçilmedi —</option>' + list.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  sel.value = cur || ""; sel.dataset.prev = sel.value;
+}
+function syncShift() { const b = $("shiftBtn"); if (b) b.style.display = $("fNext").value ? "block" : "none"; }
+function updateCustList() {
+  [$("fCur"), $("fNext")].forEach(s => fillCustSelect(s, s.dataset.prev || ""));
+  syncShift();
+}
+/* ---------- Bildirimler (Firebase: kale_events_v1 = son 50 olay; sadece bu sayfa YAZAR) ----------
+   Olay türleri: cust (mevcut müşteri), next (sıradaki müşteri), stop (duruş / iplik yok / bakım), color (renk), order (yeni sipariş).
+   Tezgah olaylarını DEĞİŞİKLİĞİ YAPAN kullanıcının sayfası yazar (saveLoom). Yeni sipariş: siparis sayfasına dokunulmaz; bu sayfa siparişleri
+   OKUYARAK fark eder ve deterministik anahtarla (ord_<id>) kaydeder, böylece birden çok cihaz aynı olayı yazsa bile tek kayıt kalır.
+   Okundu bilgisi cihazda tutulur (localStorage). Kendi yaptığınız değişiklik için bildirim/rozet çıkmaz. */
+const EV_MAX = 50, EV_READ = "kale_notif_read", EV_SEEN_ORD = "kale_seen_orders";
+const EV_ICON = { cust: "👤", next: "⏭️", stop: "⛔", color: "🎨", order: "📦", restore: "💾" };
+const EV_STATUS = { stopped: "Duruş", yarn: "İplik yok", maint: "Arıza / Bakım" };
+let eventsRef = null, events = [], knownEv = null, evPruning = false, noticeT = null;
+const evUser = () => { try { return (firebase.auth().currentUser?.email || "").split("@")[0] || "?"; } catch { return "?"; } };
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+function emitEvents(list) {
+  if (!dbRoot || !list.length) return;
+  const up = {}; list.forEach(e => { up[`kale_events_v1/${e.key}`] = { t: e.t, u: e.u, k: e.k, m: e.m || "", x: e.x }; });
+  dbRoot.update(up).catch(() => {});
+}
+function loomEvents(old, nu) {
+  const t = Date.now(), u = evUser(), out = [], nz = v => v || "—", rnd = () => Math.random().toString(36).slice(2, 6);
+  const add = (k, x) => out.push({ key: `${t}_${rnd()}`, t, u, k, m: nu.id, x });
+  if ((old.currentCustomer || "") !== (nu.currentCustomer || "")) add("cust", `Mevcut müşteri: ${nz(old.currentCustomer)} → ${nz(nu.currentCustomer)}`);
+  if ((old.nextCustomer || "") !== (nu.nextCustomer || "")) add("next", `Sıradaki müşteri: ${nz(old.nextCustomer)} → ${nz(nu.nextCustomer)}`);
+  if (old.status !== nu.status && nu.status !== "running") add("stop", `Durdu: ${EV_STATUS[nu.status] || nu.status}`);
+  if (JSON.stringify(old.colors) !== JSON.stringify(nu.colors)) {
+    const mainStr = l => (l.width === 140 ? [l.colors[0], l.colors[3]] : [l.colors[0]]).map(c => !c || c === "0" ? "—" : c).join(" + ");
+    const a = mainStr(old), b = mainStr(nu);
+    add("color", a !== b ? `Ana renk: ${a} → ${b}` : "Alt renkler değişti");
+  }
+  return out;
+}
+function checkNewOrders() {   /* siparisleri sadece OKUR; yeni gorulenler icin olay yazar */
+  const idsNow = Object.keys(ordersData || {}), seen = lsGet(EV_SEEN_ORD, null);
+  if (!Array.isArray(seen)) { lsSet(EV_SEEN_ORD, idsNow); return; }   /* ilk çalıştırma: mevcut siparişler sessizce "görüldü" sayılır */
+  const S = new Set(seen), fresh = idsNow.filter(id => !S.has(id));
+  if (fresh.length) emitEvents(fresh.map(id => {
+    const o = ordersData[id] || {}, n = Object.values(o.lines || {}).length;
+    return { key: "ord_" + id, t: o.created || Date.now(), u: "", k: "order", m: "", x: `Yeni sipariş: ${o.cust || "?"} · ${n} satır` };
+  }));
+  lsSet(EV_SEEN_ORD, idsNow);
+}
+const unreadEv = () => { const r = new Set(lsGet(EV_READ, [])), me = evUser(); return events.filter(e => !r.has(e.key) && (!e.u || e.u !== me)); };
+function markRead() { lsSet(EV_READ, events.map(e => e.key).slice(0, 120)); updateBell(); }
+function updateBell() { const n = unreadEv().length, b = $("bellN"); if (!b) return; b.textContent = n > 99 ? "99+" : String(n); b.style.display = n ? "inline-block" : "none"; }
+const dayKey = t => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+function dayLabel(t) {
+  const k = dayKey(t), now = Date.now();
+  return k === dayKey(now) ? "Bugün" : k === dayKey(now - 864e5) ? "Dün" : new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+const hhmm = t => new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+function renderNotif() {
+  const r = new Set(lsGet(EV_READ, [])), me = evUser(); let last = null;
+  $("notifList").innerHTML = events.length ? events.map(e => {
+    const k = dayKey(e.t), head = k !== last ? `<div class="evd">${esc(dayLabel(e.t))}</div>` : ""; last = k;
+    return head + `<div class="ev${!r.has(e.key) && e.u !== me ? " new" : ""}"><span class="ei">${EV_ICON[e.k] || "🔔"}</span><div class="eb"><b>${e.m ? esc(e.m) : (e.k === "order" ? "Sipariş" : "")}</b>${esc(e.x)}<small>${esc(hhmm(e.t))}${e.u ? " · " + esc(e.u) : ""}</small></div></div>`;
+  }).join("") : '<p style="color:var(--mu);padding:16px 4px">Henüz bildirim yok.</p>';
+}
+function openNotif() { renderNotif(); $("notifModal").classList.add("open"); markRead(); }
+function showNotice(list) {
+  const n = $("notice"), e = list[0];
+  n.textContent = list.length > 1 ? `🔔 ${list.length} yeni bildirim` : `${EV_ICON[e.k] || "🔔"} ${e.m ? e.m + ": " : ""}${e.x}${e.u ? " (" + e.u + ")" : ""}`;
+  n.style.display = "block"; clearTimeout(noticeT); noticeT = setTimeout(() => { n.style.display = "none"; }, 7000);
+}
+function onEvents(snap) {
+  const v = snap.val() || {};
+  const list = Object.entries(v).map(([key, e]) => ({ key, ...e })).filter(e => e && e.t).sort((a, b) => b.t - a.t);
+  const first = knownEv === null, me = evUser();
+  const fresh = first ? [] : list.filter(e => !knownEv.has(e.key) && (!e.u || e.u !== me));
+  knownEv = new Set(list.map(e => e.key)); events = list;
+  if (first && lsGet(EV_READ, null) === null) lsSet(EV_READ, list.map(e => e.key));   /* bu cihazda ilk kez: geçmiş "okunmuş" sayılır */
+  updateBell();
+  if ($("notifModal").classList.contains("open")) { renderNotif(); markRead(); }
+  if (fresh.length) showNotice(fresh);
+  if (list.length > EV_MAX && !evPruning && dbRoot) {   /* en eski olayları sil: sadece son 50 kalır */
+    evPruning = true; const up = {}; list.slice(EV_MAX).forEach(e => { up[`kale_events_v1/${e.key}`] = null; });
+    Promise.resolve(dbRoot.update(up)).catch(() => {}).then(() => { evPruning = false; });
+  }
+}
+
+/* ---------- Yedek: SADECE makineler + ek renkler (müşteri listesi, siparişler, bildirimler yedeğe girmez) ----------
+   Dosya: { app:"kale-makineler", v:1, created, looms:{id:{...}}, colors:[{name,hex}] }.
+   Geri yükleme TEK atomik yazımdır (makineler + ek renkler + "restore" bildirimi); önce mevcut hal bu cihaza saklanır (geri alınabilir). */
+const BK_APP = "kale-makineler", PRE_KEY = "kale_prerestore_backup", LASTBK_KEY = "kale_last_backup";
+function buildBackup() {
+  const lm = {}; allIds().forEach(id => { lm[id] = JSON.parse(JSON.stringify(looms[id])); });
+  return { app: BK_APP, v: 1, created: Date.now(), looms: lm, colors: extraColors.map(c => ({ name: c.name, hex: c.hex })) };
+}
+function parseBackup(text) {
+  let b; try { b = JSON.parse(text); } catch { throw new Error("Dosya okunamadı: geçerli bir yedek değil."); }
+  if (!b || b.app !== BK_APP || !b.looms || typeof b.looms !== "object") throw new Error("Bu dosya bir makine yedeği değil.");
+  const missing = allIds().filter(id => !b.looms[id] || typeof b.looms[id] !== "object");
+  if (missing.length) throw new Error(`Yedekte ${missing.length} makine eksik (${missing.slice(0, 4).join(", ")}…). Geri yükleme yapılmadı.`);
+  return b;
+}
+const stampTxt = t => new Date(t).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const fileStamp = t => { const d = new Date(t), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; };
+function downloadText(name, text) {
+  try {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch {} }, 1500);
+  } catch {}
+}
+function bkInfoRefresh() {
+  const last = lsGet(LASTBK_KEY, null), pre = lsGet(PRE_KEY, null);
+  $("bkInfo").textContent = last ? `Bu cihazda son yedek: ${stampTxt(last)}` : "Bu cihazda henüz yedek alınmadı.";
+  $("bkUndo").style.display = pre ? "block" : "none";
+  if (pre) $("bkUndo").textContent = `↩️ Son geri yüklemeyi geri al (${stampTxt(pre.created)} hali)`;
+}
+function takeBackup() {
+  const b = buildBackup(), txt = JSON.stringify(b, null, 1);
+  $("bkText").value = txt; downloadText(`makineler-yedek-${fileStamp(b.created)}.json`, txt);
+  lsSet(LASTBK_KEY, b.created); bkInfoRefresh(); toast("Yedek alındı ✓");
+}
+function unknownColorCells(b, extras) {   /* yedekte olup listede bulunmayan renkler "0" olarak yüklenir */
+  const known = new Set(["0", ...Object.keys(COLORS).filter(k => FIXED_COLOR_NAMES.has(k)), ...extras.map(c => c.name)]);
+  let n = 0; allIds().forEach(id => { const cs = b.looms[id].colors; (Array.isArray(cs) ? cs : Object.values(cs || {})).forEach(c => { const nmn = (c && typeof c === "object") ? c.name : c; if (nmn != null && !known.has(String(nmn))) n++; }); });
+  return n;
+}
+async function restoreBackup(b) {
+  if (!dbRoot || $("sync").classList.contains("off")) return toast("Bağlantı yok: geri yükleme yapılamadı");   /* çevrimdışıyken yazma kuyruğa girip sonradan habersiz uygulanmasın */
+  const bkColors = (Array.isArray(b.colors) ? b.colors : Object.values(b.colors || {})).filter(c => c && c.name);
+  const merged = [...bkColors, ...extraColors.filter(c => !bkColors.some(x => x.name === c.name))];   /* mevcut ek renkler silinmez */
+  const unk = unknownColorCells(b, merged), when = stampTxt(b.created || 0);
+  if (!confirm(`${when} tarihli yedek geri yüklensin mi?\n\nBu işlem TÜM kullanıcılar için makineleri o yedekteki hale getirir. Şu anki hal bu cihaza otomatik saklanır; "Son geri yüklemeyi geri al" ile dönebilirsiniz.${unk ? `\n\nUyarı: ${unk} renk hücresi listede olmayan bir renk içeriyor ve "Yok (0)" olarak yüklenecek.` : ""}`)) return;
+  const prevExtras = extraColors.map(c => ({ ...c })), pre = buildBackup();
+  applyExtraColors(merged);   /* ad doğrulaması normalize'dan ÖNCE geçerli olsun */
+  const t = Date.now(), up = {}, nl = {};
+  allIds().forEach(id => { const n = normalize(b.looms[id], id); n.lastModified = t; nl[id] = n; up[`kale_dokuma_live_v2/${id}`] = n; });
+  up.kale_colors_v2 = { v: 2, list: extraColors };
+  const key = `${t}_rst`; up[`kale_events_v1/${key}`] = { t, u: evUser(), k: "restore", m: "", x: `Yedekten geri yüklendi (yedek: ${when})` };
+  try { await dbRoot.update(up); }
+  catch { applyExtraColors(prevExtras); return toast("Geri yüklenemedi: yetkiniz yok veya bağlantı yok"); }
+  lsSet(PRE_KEY, pre);
+  Object.keys(nl).forEach(id => { looms[id] = nl[id]; rawColors[id] = nl[id].colors; });
+  store.set(CACHE_KEY, looms); refresh(); afterColorsChanged(); bkInfoRefresh(); toast("Geri yüklendi ✓");
+}
+function openBk() { bkInfoRefresh(); $("bkModal").classList.add("open"); }
+
+/* ---------- Renk yönetimi ---------- */
+function colorUsage(name) {
+  const main = [], sub = [], seen = new Set();
+  Object.values(looms).forEach(l => {
+    const w140 = l.width === 140;
+    l.colors.forEach((c, i) => {
+      if (c !== name) return;
+      const isMain = w140 ? (i === 0 || i === 3) : i === 0;
+      const wing = w140 ? (i < 3 ? "1. kanat" : "2. kanat") : "";
+      const key = (isMain ? "m" : "s") + l.id + wing;
+      if (seen.has(key)) return; seen.add(key);
+      (isMain ? main : sub).push({ id: l.id, wing });
+    });
+  });
+  return { main, sub };
+}
+function renderColManager() {
+  const list = Object.keys(COLORS).filter(k => k !== "0").sort(trCompare);
+  const chips = (arr, cls) => arr.map(x => `<span class="lchip ${cls}">${esc(x.id)}${x.wing ? ` <i>· ${x.wing}</i>` : ""}</span>`).join("");
+  $("colList").innerHTML = list.map(n => {
+    const u = colorUsage(n), open = colSel === n, extra = !FIXED_COLOR_NAMES.has(n);
+    let h = `<div class="col-item${open ? " open" : ""}" data-n="${esc(n)}"><span class="dot" style="background:${hexOf(n)};width:22px;height:22px"></span><b title="${esc(n)}">${esc(n)}</b><small>ana ${u.main.length} · alt ${u.sub.length}</small>${extra ? `<button type="button" class="del" data-a="del" data-n="${esc(n)}" aria-label="Sil">🗑</button>` : ""}</div>`;
+    if (open) {
+      h += `<div class="col-det">${extra ? `<div class="lab">➕ Eklenen renk (silinebilir)</div>` : ""}` +
+        (u.main.length ? `<div><div class="lab">● ANA RENK OLARAK (${u.main.length})</div><div class="chips">${chips(u.main, "m")}</div></div>` : "") +
+        (u.sub.length ? `<div><div class="lab">○ ALT RENK OLARAK (${u.sub.length})</div><div class="chips">${chips(u.sub, "")}</div></div>` : "") +
+        (!u.main.length && !u.sub.length ? `<div class="lab">Hiçbir makinede kullanılmıyor.</div>` : "") + `</div>`;
+    }
+    return h;
+  }).join("");
+}
+function afterColorsChanged() {
+  refresh();
+  if ($("colModal").classList.contains("open")) renderColManager();
+  if ($("editModal").classList.contains("open")) { try { buildColorRows($("fWidth").value, readColors()); } catch {} }
+}
+function renormColors() {   /* renk listesi sonradan geldiyse / değiştiyse makine renklerini ham veriden yeniden doğrula */
+  Object.keys(rawColors).forEach(id => { if (looms[id]) looms[id].colors = normalize({ ...looms[id], colors: rawColors[id] }, id).colors; });
+}
+const trUpper = n => n.replace(/i/g, "İ").replace(/ı/g, "I").toUpperCase();
+const orderLinesUsing = name => Object.values(ordersData || {}).reduce((t, o) => t + Object.values(o?.lines || {}).filter(l => l && l.color === name).length, 0);
+/* Ek renk listesi + (varsa) makine renk güncellemeleri TEK atomik yazımda gider; böylece diğer cihazlar tutarsız ara durum görmez. */
+function writeColors(extra) {
+  store.set(CCOL_KEY, extraColors);
+  const payload = { kale_colors_v2: { v: 2, list: extraColors }, ...(extra || {}) };
+  return (dbRoot ? dbRoot.update(payload) : Promise.resolve()).catch(() => toast("Renkler kaydedilemedi: yetkiniz yok veya bağlantı yok"));
+}
+function loomColorPatch(fn, extra, t) {   /* her makinenin renk listesini fn ile dönüştür, bellekte ve atomik yazımda güncelle */
+  Object.values(looms).forEach(l => {
+    const nc = l.colors.map(fn);
+    if (nc.every((c, i) => c === l.colors[i])) return;
+    l.colors = nc; l.lastModified = t; rawColors[l.id] = nc;
+    extra[`kale_dokuma_live_v2/${l.id}/colors`] = nc; extra[`kale_dokuma_live_v2/${l.id}/lastModified`] = t;
+  });
+}
+function addColor() {
+  const name = trUpper($("colName").value.trim().replace(/\s+/g, " ")), hex = $("colHex").value;
+  if (!name) return toast("Renk adını yazın");
+  if (name === "0" || name === "-") return toast("Bu ad kullanılamaz");
+  if (Object.keys(COLORS).some(k => lc(k) === lc(name))) return toast("Bu renk zaten var");
+  applyExtraColors([...extraColors, { name, hex }]); writeColors();
+  $("colName").value = ""; colSel = name; afterColorsChanged(); toast("Renk eklendi ✓");
+}
+function delColor(name) {
+  if (FIXED_COLOR_NAMES.has(name)) return toast("Sabit renk silinemez");
+  const u = colorUsage(name), n = u.main.length + u.sub.length, ordN = orderLinesUsing(name);
+  const msg = (n || ordN) ? `"${name}" ${n} makine yerinde ve ${ordN} sipariş satırında kullanılıyor. Silinirse makine kartlarında "Yok (0)" olur, sipariş satırları gri görünür. Silinsin mi?` : `"${name}" silinsin mi?`;
+  if (!confirm(msg)) return;
+  applyExtraColors(extraColors.filter(c => c.name !== name));
+  const extra = {}; loomColorPatch(c => c === name ? "0" : c, extra, Date.now());
+  if (colSel === name) colSel = null;
+  store.set(CACHE_KEY, looms); writeColors(extra); afterColorsChanged();
+}
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2200);
+}
+
+/* ---------- Build static UI ---------- */
+function initUi() {
+  $("branchBar").innerHTML =
+    `<button class="branch-btn active" data-branch="all">Tümü (${TOTAL})</button>` +
+    Object.entries(BRANCHES).map(([k, b]) => `<button class="branch-btn" data-branch="${k}">${esc(b.name)} (${b.count})</button>`).join("");
+
+  const opts = optsHtml;
+  $("warpRows").innerHTML = [1,2].map(i => `
+    <div class="csel"><i>${i}:</i><span class="ind" id="wd${i}"></span>
+    <select id="ws${i}" class="inp" data-i="${i}" aria-label="Çözgü ${i}">${opts(WARPS)}</select></div>`).join("");
+  document.querySelectorAll("[id^=ws]").forEach(s => s.onchange = () => $("wd" + s.dataset.i).style.background = warpHex(s.value));
+
+  $("branchBar").onclick = e => {
+    const b = e.target.closest(".branch-btn"); if (!b) return;
+    document.querySelectorAll(".branch-btn").forEach(x => x.classList.toggle("active", x === b));
+    branch = b.dataset.branch; refresh();
+  };
+  document.querySelectorAll(".filter-btn").forEach(btn => btn.onclick = () => {
+    document.querySelectorAll(".filter-btn").forEach(x => x.classList.toggle("active", x === btn));
+    widthFilter = btn.dataset.filter; refresh();
+  });
+  document.querySelectorAll(".stat").forEach(b => b.onclick = () => { statusFilter = statusFilter === b.dataset.st ? "all" : b.dataset.st; refresh(); });
+  let timer;
+  $("search").oninput = e => { clearTimeout(timer); timer = setTimeout(() => { query = e.target.value.trim(); refresh(); }, 200); };
+  document.querySelectorAll(".sbtn").forEach(b => b.onclick = () => setStatus(b.dataset.val));
+  $("fWidth").onchange = () => buildColorRows($("fWidth").value, readColors());
+  document.querySelectorAll(".xbtn").forEach(b => b.onclick = () => setExtra(selectedExtra === b.dataset.x ? "" : b.dataset.x));
+  [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => { sel.dataset.prev = sel.value; syncShift(); });
+  $("shiftBtn").onclick = () => {   /* sadece formu doldurur; Kaydet'e basılana kadar hiçbir şey yazılmaz */
+    const n = $("fNext").value; if (!n) return;
+    fillCustSelect($("fCur"), n); fillCustSelect($("fNext"), ""); syncShift();
+    toast("Sıradaki müşteri şimdiki yapıldı. Kaydet'e basın.");
+  };
+  $("bkBtn").onclick = openBk;
+  $("bkClose").onclick = () => $("bkModal").classList.remove("open");
+  $("bkSave").onclick = takeBackup;
+  $("bkPick").onclick = () => $("bkFile").click();
+  $("bkFile").onchange = e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { try { restoreBackup(parseBackup(String(rd.result))); } catch (err) { alert(err.message); } };
+    rd.readAsText(f); e.target.value = "";
+  };
+  $("bkTextRestore").onclick = () => { try { restoreBackup(parseBackup($("bkText").value)); } catch (err) { alert(err.message); } };
+  $("bkUndo").onclick = () => { const pre = lsGet(PRE_KEY, null); if (pre) { try { restoreBackup(parseBackup(JSON.stringify(pre))); } catch (err) { alert(err.message); } } };
+  $("bkCopy").onclick = () => {
+    const t = $("bkText"); if (!t.value) takeBackup();
+    try { navigator.clipboard.writeText(t.value).then(() => toast("Kopyalandı ✓"), () => { t.select(); document.execCommand("copy"); toast("Kopyalandı ✓"); }); } catch { t.select(); try { document.execCommand("copy"); toast("Kopyalandı ✓"); } catch {} }
+  };
+  $("bellBtn").onclick = openNotif;
+  $("notifClose").onclick = () => $("notifModal").classList.remove("open");
+  $("notice").onclick = () => { $("notice").style.display = "none"; openNotif(); };
+  $("colBtn").onclick = () => { colSel = null; $("colName").value = ""; renderColManager(); $("colModal").classList.add("open"); };
+  $("colClose").onclick = () => $("colModal").classList.remove("open");
+  $("colAdd").onclick = addColor;
+  $("colName").addEventListener("keydown", e => { if (e.key === "Enter") addColor(); });
+  $("colList").addEventListener("click", e => {
+    const d = e.target.closest('[data-a="del"]');
+    if (d) { delColor(d.dataset.n); return; }
+    const it = e.target.closest(".col-item"); if (!it) return;
+    colSel = colSel === it.dataset.n ? null : it.dataset.n; renderColManager();
+  });
+  $("closeBtn").onclick = $("closeBtn2").onclick = () => $("editModal").classList.remove("open");
+  $("menuBtn").onclick = () => $("menuModal").classList.add("open");
+  $("menuClose").onclick = () => $("menuModal").classList.remove("open");
+  ["bkBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
+  $("saveBtn").onclick = saveLoom;
+  $("ordClose").onclick = () => $("ordModal").classList.remove("open");
+  $("pdfBtn").onclick = printReport;
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+}
+
+/* ---------- Giriş ---------- */
+const openLoom = id => openModal(id);
+/* ---------- Edit modal ---------- */
+function setStatus(st) {
+  selectedStatus = st;
+  document.querySelectorAll(".sbtn").forEach(b => b.className = "sbtn" + (b.dataset.val === st ? " sel-" + st : ""));
+}
+function buildColorRows(width, vals = []) {
+  const wide = Number(width) === 140, n = colorCount(width);
+  const lab = wide ? ["Ana","Alt 1","Alt 2","Ana","Alt 1","Alt 2"] : ["1","2","3","4"];
+  $("colLabel").textContent = wide ? "Renkler (her kanatta 1 ana + 2 alt renk)" : "Ana Renk (1) ve Alt Renkler (2, 3, 4)";
+  let h = "";
+  for (let i = 1; i <= n; i++) {
+    if (wide && (i === 1 || i === 4)) h += `<div class="wing-h">${i === 1 ? "1. Kanat" : "2. Kanat"}</div>`;
+    h += `<div class="csel"><i>${lab[i - 1]}:</i><span class="ind" id="cd${i}"></span><select id="cs${i}" class="inp" aria-label="Renk ${i}">${optsHtml(COLORS)}</select></div>`;
+  }
+  $("colRows").innerHTML = h;
+  for (let i = 1; i <= n; i++) {
+    const sel = $("cs" + i);
+    sel.value = vals[i - 1] in COLORS ? vals[i - 1] : "0";
+    $("cd" + i).style.background = hexOf(sel.value);
+    sel.onchange = () => $("cd" + i).style.background = hexOf(sel.value);
+  }
+}
+const readColors = () => { const a = []; for (let i = 1; $("cs" + i); i++) a.push($("cs" + i).value); return a; };
+function openModal(id) {
+  const l = looms[id]; if (!l) return;
+  selectedId = id;
+  $("mTitle").textContent = `${l.id} Ayarları`;
+  fillCustSelect($("fCur"), l.currentCustomer || ""); fillCustSelect($("fNext"), l.nextCustomer || ""); syncShift();
+  $("fWidth").value = l.width; buildColorRows(l.width, l.colors);
+  l.warps.forEach((w, i) => { $("ws" + (i + 1)).value = w; $("wd" + (i + 1)).style.background = warpHex(w); });
+  setStatus(l.status || "running");
+  setExtra(l.extra);
+  $("editModal").classList.add("open");
+}
+function saveLoom() {
+  if (!selectedId) return;
+  const cur = $("fCur").value.trim(), nxt = $("fNext").value.trim();
+  const data = {
+    ...looms[selectedId], currentCustomer: cur, nextCustomer: nxt,
+    width: parseInt($("fWidth").value, 10), status: selectedStatus,
+    colors: readColors(),
+    warps: [1,2].map(i => $("ws" + i).value),
+    extra: selectedExtra,
+    lastModified: Date.now()
+  };
+  const evs = loomEvents(looms[selectedId], data);   /* eski ve yeni halin farkı → bildirimler */
+  looms[selectedId] = data; rawColors[selectedId] = data.colors; store.set(CACHE_KEY, looms); refresh();
+  $("editModal").classList.remove("open");
+  if (loomsRef) loomsRef.child(selectedId).set(data).then(() => { toast("Kaydedildi ✓"); emitEvents(evs); }).catch(() => toast("Kaydedilemedi: yetkiniz yok veya bağlantı yok"));
+  else toast("Yerel olarak kaydedildi");
+}
+
+/* ---------- Print ---------- */
+function printReport() {
+  const now = new Date();
+  const date = now.toLocaleDateString("tr-TR") + " " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const title = branch === "all" ? `Tüm Fabrika (${TOTAL} Makine)` : `${BRANCHES[branch].name} Şubesi`;
+  const dotted = (hex, txt) => `<span class="pd" style="background:${hex}"></span>${esc(txt)}`;
+  const rows = sorted().filter(l => branch === "all" || l.branch === branch).map(l => {
+    const C = l.colors, w140 = l.width === 140;
+    const item = (c, lab) => c === "0" ? `<span style="color:#888">${lab}: Yok (0)</span>` : dotted(hexOf(c), `${lab}: ${c}`);
+    const subs = (w140 ? [["K1/1",1],["K1/2",2],["K2/1",4],["K2/2",5]] : [["2",1],["3",2],["4",3]]).map(([lab, i]) => `<div>${item(C[i], lab)}</div>`).join("");
+    const mains = (w140 ? [["K1",0],["K2",3]] : [["",0]]).map(([lab, i]) => `<div>${dotted(hexOf(C[i]), (lab ? lab + ": " : "") + (C[i] === "0" ? "0 (Yok)" : C[i]))}</div>`).join("");
+    return `<tr>
+      <td style="font-weight:700;text-align:center">${esc(l.id)}</td>
+      <td style="text-align:center">${esc(BRANCHES[l.branch].name)}</td>
+      <td style="text-align:center">${esc(l.width)} cm</td>
+      <td style="font-weight:700">${esc(l.currentCustomer || "-")}</td>
+      <td>${mains}</td>
+      <td style="font-size:8.5pt">${subs}</td>
+      <td style="font-size:8.5pt">1: ${esc(l.warps[0])}<br>2: ${esc(l.warps[1])}</td>
+      <td style="color:#444">${esc(l.nextCustomer || "-")}</td></tr>`;
+  }).join("");
+  $("printSection").innerHTML = `
+    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:8px">
+      <div><h1 style="font-size:15pt">🧵 KALE DOKUMA TAKİP - RAPORU</h1><p style="font-size:9.5pt;color:#444">Bölüm: <strong>${esc(title)}</strong></p></div>
+      <div style="font-size:8.5pt;color:#444">Tarih: ${esc(date)}</div></div>
+    <table class="pt"><thead><tr><th>Makine</th><th>Şube</th><th>En</th><th>Şu Anki Müşteri</th><th>Ana Renk (1)</th><th>Alt Renkler</th><th>Çözgü</th><th>Gelecek Müşteri</th></tr></thead><tbody>${rows}</tbody></table>`;
+  window.print();
+}
+
+/* ---------- Firebase ----------
+   Bu sayfa YAZAR: kale_dokuma_live_v2 (makineler), kale_colors_v2 (ek renkler)
+   Bu sayfa sadece OKUR: kale_siparis_v1 (siparişler) */
+function setSync(ok, text) { $("sync").classList.toggle("off", !ok); $("syncText").textContent = text; }
+
+function authMsg(e) {
+  const c = (e && e.code) || "";
+  if (c === "auth/network-request-failed") return "Bağlantı yok. İnterneti kontrol edin.";
+  if (c === "auth/too-many-requests") return "Çok fazla deneme. Biraz bekleyip tekrar deneyin.";
+  if (c === "auth/user-disabled") return "Bu hesap devre dışı.";
+  if (c === "auth/invalid-email") return "E-posta adresi geçersiz.";
+  return "E-posta veya şifre hatalı.";
+}
+
+let dataStarted = false;
+function showLogin(msg) {
+  $("login").classList.add("open");
+  const e = $("loginErr"); e.textContent = msg || ""; e.style.display = msg ? "block" : "none";
+  $("loginBtn").disabled = false;
+}
+function signOut() {
+  const done = () => { try { localStorage.removeItem(CACHE_KEY); localStorage.removeItem(CUST_KEY); } catch {} location.reload(); };
+  if (typeof firebase !== "undefined" && firebase.apps.length) firebase.auth().signOut().then(done, done); else done();
+}
+const denied = e => { if (e && (e.code === "PERMISSION_DENIED" || /permission/i.test(e.message || ""))) { toast("Bu hesabın yetkisi yok"); setTimeout(signOut, 1800); } };
+
+function initFirebase() {
+  $("loginForm").addEventListener("submit", ev => {
+    ev.preventDefault();
+    if (typeof firebase === "undefined" || !firebase.apps.length) return showLogin("Bağlantı kurulamadı. İnterneti kontrol edip sayfayı yenileyin.");
+    $("loginBtn").disabled = true;
+    firebase.auth().signInWithEmailAndPassword($("loginEmail").value.trim(), $("loginPass").value)
+      .then(() => { $("loginPass").value = ""; })
+      .catch(e => showLogin(authMsg(e)));
+  });
+  $("outBtn").onclick = signOut;
+  if (typeof firebase === "undefined") { setSync(false, "Bağlantı yok"); return showLogin("Firebase yüklenemedi. İnterneti kontrol edip sayfayı yenileyin."); }
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyBWWp1Le6f3y__f7WWoFVvYw9MwdHwFYjc",
+      authDomain: "fabrika-e9b49.firebaseapp.com",
+      databaseURL: "https://fabrika-e9b49-default-rtdb.firebaseio.com",
+      projectId: "fabrika-e9b49",
+      storageBucket: "fabrika-e9b49.firebasestorage.app",
+      messagingSenderId: "208016312960",
+      appId: "1:208016312960:web:db8531b655252e19ecf465"
+    });
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) { $("login").classList.remove("open"); startData(); }
+      else if (!dataStarted) showLogin();
+      else location.reload();
+    });
+  } catch (e) {
+    console.warn("Firebase kapalı:", e); setSync(false, "Bağlantı yok"); showLogin("Firebase başlatılamadı.");
+  }
+}
+
+function startData() {
+  if (dataStarted) return; dataStarted = true;
+  const db = firebase.database();
+  loomsRef = db.ref("kale_dokuma_live_v2");
+  custRef = db.ref("kale_customers_pool_v2");
+  colorsRef = db.ref("kale_colors_v2"); dbRoot = db.ref();
+  /* Ek renkler MAKİNELERDEN ÖNCE yüklenir; yoksa ek renkli makineler "0" sanılır */
+  const colorsReady = colorsRef.once("value").then(sn => {
+    const v = sn.val(); if (v === null) return;
+    const raw = Array.isArray(v.list) ? v.list : Object.values(v.list || {});
+    applyExtraColors(raw);
+    if (raw.length !== extraColors.length) return colorsRef.set({ v: 2, list: extraColors });   /* sabit renklerle çakışan eski kayıtları temizle */
+  }).catch(() => {});
+  ordRef = db.ref("kale_siparis_v1/orders");
+  ordRef.on("value", s => { ordersData = s.val() || {}; checkNewOrders(); renderLooms(); if ($("ordModal").classList.contains("open")) renderOrd(); }, denied);
+  eventsRef = db.ref("kale_events_v1");
+  eventsRef.on("value", onEvents, denied);
+
+  /* Bağlantı durumu */
+  db.ref(".info/connected").on("value", s => setSync(!!s.val(), s.val() ? "Canlı Bağlantı" : "Çevrimdışı"));
+
+  /* İlk yükleme: eksik makineleri tamamla (migrasyon), sonra tek tek değişiklikleri dinle */
+  colorsReady.then(() => loomsRef.once("value")).then(snap => {
+    const remote = snap.val() || {};
+    allIds().forEach(id => {
+      if (remote[id]) { rawColors[id] = remote[id].colors; looms[id] = normalize(remote[id], id); }
+      else loomsRef.child(id).set(looms[id]).catch(() => {});
+    });
+    store.set(CACHE_KEY, looms); refresh();
+    const onLoom = s => {
+      if (!s.key || !(s.key in looms)) return;
+      rawColors[s.key] = s.val()?.colors; looms[s.key] = normalize(s.val(), s.key);
+      store.set(CACHE_KEY, looms); refresh();
+    };
+    loomsRef.on("child_changed", onLoom);
+    loomsRef.on("child_added", onLoom);
+    colorsRef.on("value", sn => { const v = sn.val(); if (v === null) return; applyExtraColors(v.list); renormColors(); afterColorsChanged(); }, denied);
+  }).catch(e => { setSync(false, "Bağlantı yok"); denied(e); });
+
+  custRef.on("value", s => {
+    const v = s.val();
+    customers = v ? Object.values(v).filter(Boolean) : []; store.set(CUST_KEY, customers); updateCustList();
+  }, denied);
+}
+
+initUi(); refresh(); updateCustList(); initFirebase();
+</script>
+</body>
+</html>
