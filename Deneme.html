@@ -27,6 +27,11 @@ header{padding:12px 10px 8px;display:flex;flex-direction:column;gap:10px}
 .mrow .mi{font-size:1.5rem;flex-shrink:0}
 .mrow b{display:block;font-size:1rem;font-weight:800}
 .mrow small{display:block;color:var(--mu);font-size:.74rem;font-weight:600;margin-top:2px}
+.lchips{display:flex;flex-wrap:wrap;gap:6px}
+.lchip{padding:5px 11px;border-radius:8px;border:1px solid var(--ac);background:transparent;color:var(--ac);font-size:.74rem;font-weight:800;cursor:pointer}
+.irow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--bd);margin-bottom:8px}
+.irow small{color:var(--mu);font-size:.74rem;font-weight:700}
+.irow b{font-size:.95rem;font-weight:800;text-align:right}
 .sheet-foot{position:sticky;bottom:0;margin:6px -18px -18px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd);display:grid;grid-template-columns:1fr 2fr;gap:10px;z-index:3}
 .sheet-foot .b-cancel,.sheet-foot .b-save{padding:14px 10px;font-size:1rem;border-radius:12px}
 @media(max-width:700px){input,select,textarea{font-size:16px!important}}
@@ -319,6 +324,16 @@ body *{visibility:hidden}
     </div>
     <p style="color:var(--mu);font-size:.74rem;margin-bottom:10px" id="actInfo"></p>
     <div class="cm-list" id="actList"></div>
+  </div>
+</div>
+<div class="overlay" id="infoModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="infoClose">✕ Kapat</button>
+      <h2 id="infoTitle">Makine</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div id="infoBody"></div>
   </div>
 </div>
 <div class="overlay" id="colModal">
@@ -623,16 +638,35 @@ function updateStats() {
   const n = Object.values(looms).filter(l => visible(l)).length, sh = $("shown");
   sh.textContent = `Gösterilen: ${n} / ${TOTAL}`; sh.style.display = n === TOTAL ? "none" : "block";
 }
+const ST_NAME = { running: "Çalışıyor", stopped: "Duruş", yarn: "İplik Yok", maint: "Bakımda" };
+let infoLoomId = null;
 function renderActive() {
-  const seen = new Map();
-  Object.values(looms).forEach(l => { const n = String(l.currentCustomer || "").trim(); if (n && !seen.has(n.toLocaleLowerCase("tr"))) seen.set(n.toLocaleLowerCase("tr"), n); });
-  const names = [...seen.values()].sort(trCompare);
-  $("actInfo").textContent = names.length ? `Şu an makinelerde: ${names.length} müşteri` : "";
-  $("actList").innerHTML = names.length
-    ? names.map(n => `<div class="mrow" style="cursor:default;font-weight:700">${esc(n)}</div>`).join("")
+  const groups = new Map();
+  sorted().forEach(l => {
+    const n = String(l.currentCustomer || "").trim(); if (!n) return;
+    const k = n.toLocaleLowerCase("tr");
+    if (!groups.has(k)) groups.set(k, { name: n, ids: [] });
+    groups.get(k).ids.push(l.id);
+  });
+  const list = [...groups.values()].sort((x, y) => trCompare(x.name, y.name));
+  $("actInfo").textContent = list.length ? `Şu an makinelerde: ${list.length} müşteri` : "";
+  $("actList").innerHTML = list.length
+    ? list.map(g => `<div class="mrow" style="cursor:default;flex-direction:column;align-items:flex-start;gap:6px"><b>${esc(g.name)}</b><div class="lchips">${g.ids.map(id => `<button type="button" class="lchip" data-loom="${esc(id)}">${esc(id)}</button>`).join("")}</div></div>`).join("")
     : `<p style="color:var(--mu);text-align:center;padding:16px">Şu an makinede müşteri yok.</p>`;
 }
-const refresh = () => { renderLooms(); updateStats(); if ($("actModal").classList.contains("open")) renderActive(); };
+const dotHtml = c => `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${hexOf(c)};border:1px solid var(--bd);vertical-align:-2px;margin-right:6px"></span>`;
+const colTxt = c => c === "0" ? "0 (Yok)" : esc(c);
+function renderLoomInfo() {
+  const l = looms[infoLoomId]; if (!l) { $("infoModal").classList.remove("open"); return; }
+  $("infoTitle").textContent = l.id;
+  const row = (k, v) => `<div class="irow"><small>${k}</small><b>${v}</b></div>`;
+  const colors = l.width === 140
+    ? row("1. KANAT ANA RENK", dotHtml(l.colors[0]) + colTxt(l.colors[0])) + row("2. KANAT ANA RENK", dotHtml(l.colors[3]) + colTxt(l.colors[3]))
+    : row("ANA RENK", dotHtml(l.colors[0]) + colTxt(l.colors[0]));
+  $("infoBody").innerHTML = row("MÜŞTERİ", esc(l.currentCustomer || "-")) + row("GENİŞLİK", esc(l.width) + " cm") + colors + row("DURUM", esc(ST_NAME[l.status] || l.status));
+}
+function openLoomInfo(id) { infoLoomId = id; renderLoomInfo(); $("infoModal").classList.add("open"); }
+const refresh = () => { renderLooms(); updateStats(); if ($("actModal").classList.contains("open")) renderActive(); if ($("infoModal").classList.contains("open")) renderLoomInfo(); };
 
 const lc = s => s.toLocaleLowerCase("tr");
 /* Türkçe alfabe sıralaması - tarayıcının dil desteğine BAĞLI DEĞİL (a b c ç d e f g ğ h ı i j k l m n o ö p q r s ş t u ü v w x y z) */
@@ -944,13 +978,15 @@ function initUi() {
   $("closeBtn").onclick = $("closeBtn2").onclick = () => $("editModal").classList.remove("open");
   $("actBtn").onclick = () => { renderActive(); $("actModal").classList.add("open"); };
   $("actClose").onclick = () => $("actModal").classList.remove("open");
+  $("actList").onclick = e => { const b = e.target.closest("[data-loom]"); if (b) openLoomInfo(b.dataset.loom); };
+  $("infoClose").onclick = () => $("infoModal").classList.remove("open");
   $("menuBtn").onclick = () => $("menuModal").classList.add("open");
   $("menuClose").onclick = () => $("menuModal").classList.remove("open");
   ["bkBtn", "actBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("actModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("actModal").classList.remove("open"); $("infoModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
