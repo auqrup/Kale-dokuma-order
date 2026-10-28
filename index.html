@@ -27,6 +27,11 @@ header{padding:12px 10px 8px;display:flex;flex-direction:column;gap:10px}
 .mrow .mi{font-size:1.5rem;flex-shrink:0}
 .mrow b{display:block;font-size:1rem;font-weight:800}
 .mrow small{display:block;color:var(--mu);font-size:.74rem;font-weight:600;margin-top:2px}
+.lchips{display:flex;flex-wrap:wrap;gap:6px}
+.lchip{padding:5px 11px;border-radius:8px;border:1px solid var(--ac);background:transparent;color:var(--ac);font-size:.74rem;font-weight:800;cursor:pointer}
+.irow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--bd);margin-bottom:8px}
+.irow small{color:var(--mu);font-size:.74rem;font-weight:700}
+.irow b{font-size:.95rem;font-weight:800;text-align:right}
 .sheet-foot{position:sticky;bottom:0;margin:6px -18px -18px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd);display:grid;grid-template-columns:1fr 2fr;gap:10px;z-index:3}
 .sheet-foot .b-cancel,.sheet-foot .b-save{padding:14px 10px;font-size:1rem;border-radius:12px}
 @media(max-width:700px){input,select,textarea{font-size:16px!important}}
@@ -48,6 +53,9 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .stat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:7px 2px;text-align:center}
 .stat b{display:block;font-size:1.2rem;font-weight:800;line-height:1.2}
 .stat span{font-size:.66rem;color:var(--mu);font-weight:600}
+button.stat{color:inherit;cursor:pointer;font:inherit}
+.stat.on{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+.shown{font-size:.72rem;color:var(--mu);font-weight:600;text-align:center}
 .search{flex:1;min-width:0;min-height:44px;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:10px 13px;border-radius:11px;font-size:.9rem}
 .search::placeholder{color:var(--mu)}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;width:100%}
@@ -55,11 +63,19 @@ h1{font-size:1.05rem;font-weight:800;letter-spacing:.01em}
 .empty{grid-column:1/-1;text-align:center;color:var(--mu);padding:30px 0;font-size:.9rem}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .card:active{transform:scale(.97)}
+.card.s-stopped{border-color:var(--stop);background:linear-gradient(180deg,rgba(248,113,113,.16),var(--card) 65%)}
+.card.s-yarn{border-color:var(--yarn);background:linear-gradient(180deg,rgba(255,154,77,.16),var(--card) 65%)}
+.card.s-maint{border-color:var(--mnt);background:linear-gradient(180deg,rgba(196,163,255,.16),var(--card) 65%)}
+.stlab{font-size:.62rem;font-weight:800;letter-spacing:.04em;text-align:center;border-radius:5px;padding:2px 0}
+.stlab.stopped{color:var(--stop);background:rgba(248,113,113,.14)}
+.stlab.yarn{color:var(--yarn);background:rgba(255,154,77,.14)}
+.stlab.maint{color:var(--mnt);background:rgba(196,163,255,.14)}
 .stripe{height:15px;flex-shrink:0}
 .stripe.bot{height:5px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22);margin-top:auto}
 .body{padding:9px;display:flex;flex-direction:column;gap:7px;min-width:0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:5px;min-width:0}
 .id{font-weight:800;font-size:1.12rem;color:var(--ac)}
+.badge.full{flex:none;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.2;padding:6px 8px}
 .badge{flex:1;min-width:0;text-align:center;background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:4px 6px;font-size:.92rem;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .w{font-size:.68rem;font-weight:800;padding:3px 6px;border-radius:5px;color:#fff}
 .w140{background:#2f7fb5}.w160{background:#7c5cc9}.w200{background:#c27a1e}
@@ -176,11 +192,12 @@ body *{visibility:hidden}
     <div class="sync off" id="sync"><span class="pulse"></span><span id="syncText">Bağlanıyor</span></div>
   </div>
   <div class="stats">
-    <div class="stat"><b id="sRun" style="color:var(--run)">0</b><span>Çalışıyor</span></div>
-    <div class="stat"><b id="sStop" style="color:var(--stop)">0</b><span>Duruş</span></div>
-    <div class="stat"><b id="sYarn" style="color:var(--yarn)">0</b><span>İplik Yok</span></div>
-    <div class="stat"><b id="sMnt" style="color:var(--mnt)">0</b><span>Bakımda</span></div>
+    <button type="button" class="stat" data-st="running" aria-pressed="false"><b id="sRun" style="color:var(--run)">0</b><span>Çalışıyor</span></button>
+    <button type="button" class="stat" data-st="stopped" aria-pressed="false"><b id="sStop" style="color:var(--stop)">0</b><span>Duruş</span></button>
+    <button type="button" class="stat" data-st="yarn" aria-pressed="false"><b id="sYarn" style="color:var(--yarn)">0</b><span>İplik Yok</span></button>
+    <button type="button" class="stat" data-st="maint" aria-pressed="false"><b id="sMnt" style="color:var(--mnt)">0</b><span>Bakımda</span></button>
   </div>
+  <div class="shown" id="shown" style="display:none"></div>
 </header>
 <div class="stick">
   <div class="srow">
@@ -231,7 +248,7 @@ body *{visibility:hidden}
       </div>
     </div>
     <div class="fg"><label for="fCur">Mevcut Müşteri</label><select class="inp" id="fCur"></select></div>
-    <div class="fg"><label for="fNext">Gelecek Müşteri</label><select class="inp" id="fNext"></select><small style="color:var(--mu);font-size:.7rem">Listede olmayan müşteri için önce Sipariş sayfasından ekleyin.</small></div>
+    <div class="fg"><label for="fNext">Gelecek Müşteri</label><select class="inp" id="fNext"></select><button type="button" class="b-cancel" id="shiftBtn" style="width:100%;margin-top:8px;padding:10px;display:none">⏭ Sıradakini şimdiki yap</button><small style="color:var(--mu);font-size:.7rem">Listede olmayan müşteri için önce Sipariş sayfasından ekleyin.</small></div>
     <div class="fg"><label for="fWidth">En (Genişlik)</label>
       <select id="fWidth" class="inp"><option value="140">140 cm</option><option value="160">160 cm</option><option value="200">200 cm (2 Metre)</option></select>
     </div>
@@ -258,6 +275,7 @@ body *{visibility:hidden}
       <span style="width:70px"></span>
     </div>
     <button type="button" class="mrow" id="bkBtn"><span class="mi">💾</span><span><b>Yedek</b><small>Makineleri dosyaya al / geri yükle</small></span></button>
+    <button type="button" class="mrow" id="actBtn"><span class="mi">👥</span><span><b>Makinedeki Müşteriler</b><small>Şu an makinelerde çalışan müşteriler</small></span></button>
     <button type="button" class="mrow" id="colBtn"><span class="mi">🎨</span><span><b>Renkler</b><small>Renk listesi, renk ekle, hangi makinede?</small></span></button>
     <button type="button" class="mrow" id="pdfBtn"><span class="mi">🖨️</span><span><b>PDF / Yazdır</b><small>Makine durum raporu</small></span></button>
     <button type="button" class="mrow" id="outBtn"><span class="mi">🚪</span><span><b>Çıkış</b><small>Hesaptan çık</small></span></button>
@@ -298,6 +316,27 @@ body *{visibility:hidden}
 
 <div class="notice" id="notice" style="display:none"></div>
 
+<div class="overlay" id="actModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="actClose">✕ Kapat</button>
+      <h2>Makinedeki Müşteriler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <p style="color:var(--mu);font-size:.74rem;margin-bottom:10px" id="actInfo"></p>
+    <div class="cm-list" id="actList"></div>
+  </div>
+</div>
+<div class="overlay" id="infoModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="infoClose">✕ Kapat</button>
+      <h2 id="infoTitle">Makine</h2>
+      <span style="width:70px"></span>
+    </div>
+    <div id="infoBody"></div>
+  </div>
+</div>
 <div class="overlay" id="colModal">
   <div class="sheet">
     <div class="sheet-head">
@@ -385,6 +424,7 @@ const COLORS = {
 };
 const WARPS = { "SİYAH":"#0f172a", "BEYAZ":"#ffffff", "SARI":"#eab308" };
 const STATUS_COLOR = { running:"var(--run)", stopped:"var(--stop)", yarn:"var(--yarn)", maint:"var(--mnt)" };
+const STATUS_LABEL = { stopped:"DURUŞ", yarn:"İPLİK YOK", maint:"BAKIM" };
 const hexOf = n => COLORS[n] || COLORS["0"];
 const warpHex = n => WARPS[n] || WARPS["SİYAH"];
 
@@ -461,13 +501,14 @@ allIds().forEach(id => { looms[id] = normalize(cached?.[id] ?? defaults[id], id)
 let customers = store.get(CUST_KEY, []);
 
 let selectedId = null, selectedStatus = "running";
-let branch = "all", widthFilter = "all", query = "";
+let branch = "all", widthFilter = "all", statusFilter = "all", query = "";
 let loomsRef = null, custRef = null, ordRef = null, ordersData = {}, ordId = null;
 
 /* ---------- Render ---------- */
-function visible(l) {
+function visible(l, skipStatus) {
   if (branch !== "all" && l.branch !== branch) return false;
   if (widthFilter !== "all" && String(l.width) !== widthFilter) return false;
+  if (!skipStatus && statusFilter !== "all" && l.status !== statusFilter) return false;
   if (query) {
     /* Arama: müşteri, makine no, ANA renk ve ilk ALT renk (140'lıkta iki kanat için: 0,1 ve 3,4). Harfler gevşek eşleşir (ş=s, ı=i...). */
     const fold = t => String(t || "").replace(/[İIı]/g, "i").toLowerCase().replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u");
@@ -500,9 +541,10 @@ function cardHtml(l) {
   return `
   <div class="stripe" style="background:${stripe}"></div>
   <div class="body">
+    ${STATUS_LABEL[l.status] ? `<div class="stlab ${esc(l.status)}">${STATUS_LABEL[l.status]}</div>` : ""}
+    <div class="badge full" title="${esc(cur)}">${esc(cur)}</div>
     <div class="top">
       <span class="id">${esc(l.id)}</span>
-      <span class="badge" title="${esc(cur)}">${esc(cur)}</span>
       <span class="st" style="background:${STATUS_COLOR[l.status] || "var(--mu)"}"></span>
       <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
     </div>
@@ -575,13 +617,13 @@ function openOrd(id) { ordId = id; renderOrd(); $("ordModal").classList.add("ope
 
 function renderLooms() {
   const grid = $("grid");
-  const list = sorted().filter(visible);
+  const list = sorted().filter(l => visible(l));
   grid.innerHTML = "";
   if (!list.length) { grid.innerHTML = '<div class="empty">Sonuç bulunamadı. Aramayı veya filtreleri değiştirin.</div>'; return; }
   const frag = document.createDocumentFragment();
   list.forEach(l => {
     const b = document.createElement("div");
-    b.setAttribute("role", "button"); b.tabIndex = 0; b.className = "card"; b.innerHTML = cardHtml(l);
+    b.setAttribute("role", "button"); b.tabIndex = 0; b.className = "card" + (STATUS_LABEL[l.status] ? " s-" + l.status : ""); b.innerHTML = cardHtml(l);
     b.onclick = e => e.target.closest(".obtn") ? openOrd(l.id) : openLoom(l.id);
     b.onkeydown = e => { if (e.key === "Enter" && e.target === b) openLoom(l.id); };
     frag.appendChild(b);
@@ -591,10 +633,41 @@ function renderLooms() {
 
 function updateStats() {
   const c = { running: 0, stopped: 0, yarn: 0, maint: 0 };
-  Object.values(looms).forEach(l => { if ((branch === "all" || l.branch === branch) && l.status in c) c[l.status]++; });
+  Object.values(looms).forEach(l => { if (visible(l, true) && l.status in c) c[l.status]++; });
   $("sRun").textContent = c.running; $("sStop").textContent = c.stopped; $("sYarn").textContent = c.yarn; $("sMnt").textContent = c.maint;
+  document.querySelectorAll(".stat").forEach(b => { const on = b.dataset.st === statusFilter; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+  const n = Object.values(looms).filter(l => visible(l)).length, sh = $("shown");
+  sh.textContent = `Gösterilen: ${n} / ${TOTAL}`; sh.style.display = n === TOTAL ? "none" : "block";
 }
-const refresh = () => { renderLooms(); updateStats(); };
+const ST_NAME = { running: "Çalışıyor", stopped: "Duruş", yarn: "İplik Yok", maint: "Bakımda" };
+let infoLoomId = null;
+function renderActive() {
+  const groups = new Map();
+  sorted().forEach(l => {
+    const n = String(l.currentCustomer || "").trim(); if (!n) return;
+    const k = n.toLocaleLowerCase("tr");
+    if (!groups.has(k)) groups.set(k, { name: n, ids: [] });
+    groups.get(k).ids.push(l.id);
+  });
+  const list = [...groups.values()].sort((x, y) => trCompare(x.name, y.name));
+  $("actInfo").textContent = list.length ? `Şu an makinelerde: ${list.length} müşteri` : "";
+  $("actList").innerHTML = list.length
+    ? list.map(g => `<div class="mrow" style="cursor:default;flex-direction:column;align-items:flex-start;gap:6px"><b>${esc(g.name)}</b><div class="lchips">${g.ids.map(id => `<button type="button" class="lchip" data-loom="${esc(id)}">${esc(id)}</button>`).join("")}</div></div>`).join("")
+    : `<p style="color:var(--mu);text-align:center;padding:16px">Şu an makinede müşteri yok.</p>`;
+}
+const dotHtml = c => `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${hexOf(c)};border:1px solid var(--bd);vertical-align:-2px;margin-right:6px"></span>`;
+const colTxt = c => c === "0" ? "0 (Yok)" : esc(c);
+function renderLoomInfo() {
+  const l = looms[infoLoomId]; if (!l) { $("infoModal").classList.remove("open"); return; }
+  $("infoTitle").textContent = l.id;
+  const row = (k, v) => `<div class="irow"><small>${k}</small><b>${v}</b></div>`;
+  const colors = l.width === 140
+    ? row("1. KANAT ANA RENK", dotHtml(l.colors[0]) + colTxt(l.colors[0])) + row("2. KANAT ANA RENK", dotHtml(l.colors[3]) + colTxt(l.colors[3]))
+    : row("ANA RENK", dotHtml(l.colors[0]) + colTxt(l.colors[0]));
+  $("infoBody").innerHTML = row("MÜŞTERİ", esc(l.currentCustomer || "-")) + row("GENİŞLİK", esc(l.width) + " cm") + colors + row("DURUM", esc(ST_NAME[l.status] || l.status));
+}
+function openLoomInfo(id) { infoLoomId = id; renderLoomInfo(); $("infoModal").classList.add("open"); }
+const refresh = () => { renderLooms(); updateStats(); if ($("actModal").classList.contains("open")) renderActive(); if ($("infoModal").classList.contains("open")) renderLoomInfo(); };
 
 const lc = s => s.toLocaleLowerCase("tr");
 /* Türkçe alfabe sıralaması - tarayıcının dil desteğine BAĞLI DEĞİL (a b c ç d e f g ğ h ı i j k l m n o ö p q r s ş t u ü v w x y z) */
@@ -621,8 +694,10 @@ function fillCustSelect(sel, cur) {
   sel.innerHTML = '<option value="">— Seçilmedi —</option>' + list.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
   sel.value = cur || ""; sel.dataset.prev = sel.value;
 }
+function syncShift() { const b = $("shiftBtn"); if (b) b.style.display = $("fNext").value ? "block" : "none"; }
 function updateCustList() {
   [$("fCur"), $("fNext")].forEach(s => fillCustSelect(s, s.dataset.prev || ""));
+  syncShift();
 }
 /* ---------- Bildirimler (Firebase: kale_events_v1 = son 50 olay; sadece bu sayfa YAZAR) ----------
    Olay türleri: cust (mevcut müşteri), next (sıradaki müşteri), stop (duruş / iplik yok / bakım), color (renk), order (yeni sipariş).
@@ -858,14 +933,20 @@ function initUi() {
   };
   document.querySelectorAll(".filter-btn").forEach(btn => btn.onclick = () => {
     document.querySelectorAll(".filter-btn").forEach(x => x.classList.toggle("active", x === btn));
-    widthFilter = btn.dataset.filter; renderLooms();
+    widthFilter = btn.dataset.filter; refresh();
   });
+  document.querySelectorAll(".stat").forEach(b => b.onclick = () => { statusFilter = statusFilter === b.dataset.st ? "all" : b.dataset.st; refresh(); });
   let timer;
-  $("search").oninput = e => { clearTimeout(timer); timer = setTimeout(() => { query = e.target.value.trim(); renderLooms(); }, 200); };
+  $("search").oninput = e => { clearTimeout(timer); timer = setTimeout(() => { query = e.target.value.trim(); refresh(); }, 200); };
   document.querySelectorAll(".sbtn").forEach(b => b.onclick = () => setStatus(b.dataset.val));
   $("fWidth").onchange = () => buildColorRows($("fWidth").value, readColors());
   document.querySelectorAll(".xbtn").forEach(b => b.onclick = () => setExtra(selectedExtra === b.dataset.x ? "" : b.dataset.x));
-  [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => { sel.dataset.prev = sel.value; });
+  [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => { sel.dataset.prev = sel.value; syncShift(); });
+  $("shiftBtn").onclick = () => {   /* sadece formu doldurur; Kaydet'e basılana kadar hiçbir şey yazılmaz */
+    const n = $("fNext").value; if (!n) return;
+    fillCustSelect($("fCur"), n); fillCustSelect($("fNext"), ""); syncShift();
+    toast("Sıradaki müşteri şimdiki yapıldı. Kaydet'e basın.");
+  };
   $("bkBtn").onclick = openBk;
   $("bkClose").onclick = () => $("bkModal").classList.remove("open");
   $("bkSave").onclick = takeBackup;
@@ -896,13 +977,17 @@ function initUi() {
     colSel = colSel === it.dataset.n ? null : it.dataset.n; renderColManager();
   });
   $("closeBtn").onclick = $("closeBtn2").onclick = () => $("editModal").classList.remove("open");
+  $("actBtn").onclick = () => { renderActive(); $("actModal").classList.add("open"); };
+  $("actClose").onclick = () => $("actModal").classList.remove("open");
+  $("actList").onclick = e => { const b = e.target.closest("[data-loom]"); if (b) openLoomInfo(b.dataset.loom); };
+  $("infoClose").onclick = () => $("infoModal").classList.remove("open");
   $("menuBtn").onclick = () => $("menuModal").classList.add("open");
   $("menuClose").onclick = () => $("menuModal").classList.remove("open");
-  ["bkBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
+  ["bkBtn", "actBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("actModal").classList.remove("open"); $("infoModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
@@ -934,7 +1019,7 @@ function openModal(id) {
   const l = looms[id]; if (!l) return;
   selectedId = id;
   $("mTitle").textContent = `${l.id} Ayarları`;
-  fillCustSelect($("fCur"), l.currentCustomer || ""); fillCustSelect($("fNext"), l.nextCustomer || "");
+  fillCustSelect($("fCur"), l.currentCustomer || ""); fillCustSelect($("fNext"), l.nextCustomer || ""); syncShift();
   $("fWidth").value = l.width; buildColorRows(l.width, l.colors);
   l.warps.forEach((w, i) => { $("ws" + (i + 1)).value = w; $("wd" + (i + 1)).style.background = warpHex(w); });
   setStatus(l.status || "running");

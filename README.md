@@ -1,8 +1,33 @@
 # Kale Dokuma – Factory Management Web Apps
 
-Two single-file HTML apps for a weaving factory (velvet prayer rugs / carpets / fabric rolls).
+## 0. HANDOFF – READ THIS FIRST (instructions for the next assistant)
+
+State of the project: 2026-10-21. Files: `index.html`, `siparis.html`, `fabrika.html`, `README.md` (this spec) and `check.py` (static checks).
+**This README is the spec; the three HTML files are the source of truth. Do not rely on memory – read the code before changing it.**
+
+**The owner**: runs the weaving factory, speaks Arabic (replies in Arabic; UI strings in the pages stay Turkish), works from a phone, deploys by uploading files in the GitHub web UI (same file names, then refresh), uses ONLY free tiers (GitHub Pages + Firebase Spark, no credit card), tests every upload on the live site and reports back. He wants short, step-by-step, phone-friendly answers. When he says "question only / don't execute / let's talk first" → do NOT change files. He decides; propose first when behaviour is ambiguous.
+
+**Rules that must never be broken**
+1. **Data ownership**: every page writes only its own Firebase paths (see section 3). index.html never writes orders or the customer list; siparis.html never writes machines/colors/events; fabrika.html writes nothing.
+2. **Color list is frozen** (28 colors in the `COLORS` constant, identical in the three pages). Never rename, edit or delete a fixed color; only EXTRA colors (`kale_colors_v2`) can be added/deleted. A color name used in orders must never be renamed (names are stored inside looms and orders).
+3. **Customer names are never renamed** (stored inside looms and orders); customers are added/deleted only from siparis.html; deletion is blocked while the customer has orders or is on a loom.
+4. `DAILY` (production rates) must be identical in index.html and siparis.html; `COLORS` identical in all three.
+5. Login is Firebase Auth (3 accounts); the database rules (section 4) allow only those UIDs. Never ask the owner for passwords or tokens; the Firebase web config in the code is public by design.
+6. Never write to Firebase from `fabrika.html`.
+
+**How to work (this avoids the mistakes that happened before)**
+- Make one change at a time, edit with exact-string replacements that assert a UNIQUE match (the files are long single-file pages), keep Turkish UI strings and the existing style.
+- Before delivering run `python3 check.py` (JS syntax, duplicate/missing ids, identical COLORS/DAILY, data-ownership audit). It was mutation-tested: it catches syntax errors, duplicate or missing ids, diverging color/rate tables and forbidden writes.
+- Test logic with small Node harnesses (extract the inline `<script>`, stub the DOM, fake Firebase with `once/on/set/update/transaction`); the real exported database (`fabrika-e9b49-default-rtdb-export.json`) is the best test data – ask the owner for a fresh export if needed.
+- You normally cannot open a browser: say clearly that the layout/behaviour was NOT verified in a real browser and give the owner a short list of things to test on his phone.
+- After every change tell the owner: which files to upload, what to test, what is still pending. Update this README (section 7 = open items).
+- Pitfalls already met: sticky bars inside padded sheets must use `top/bottom:0` + negative margins (not negative offsets); `normalize()` turns unknown color names into "0" – extra colors must be loaded BEFORE looms; Firebase drops empty arrays, so store lists as `{v:2,list:[...]}`; use transactions when several users write the same list.
+
+**Quick start prompt for a new chat** (attach the 5 files): "This is my weaving-factory project (3 HTML pages + Firebase). Read README.md section 0 first and follow it strictly. I will describe the next change; first tell me how you will do it and wait for my OK."
+
+Three single-file HTML apps for a weaving factory (velvet prayer rugs / carpets / fabric rolls).
 Owner speaks Arabic (discussion) and Turkish (UI + code strings). Works from a phone.
-This file is a hand-over document: read it first, then the header comment inside each HTML file.
+This file is the technical reference: read `HANDOFF.md` first (rules, pitfalls, workflow), then this file, then the header comment inside each HTML file. Tests: `tests/README.md`.
 
 ## 1. What exists
 
@@ -10,14 +35,15 @@ This file is a hand-over document: read it first, then the header comment inside
 |---|---|---|
 | `index.html` | **Makineler** – live status of all looms | https://auqrup.github.io/Kale-dokuma-order/ |
 | `siparis.html` | **Sipariş Yönlendirme** – order intake + routing orders to looms | https://auqrup.github.io/Kale-dokuma-order/siparis.html |
+| `check.py` | Static pre-upload checks (`python3 check.py`; needs Python 3 + Node) | – |
 | `fabrika.html` | **Atölye** – READ-ONLY factory-floor view (one big card per loom: customer in large type, loom id, main color(s), width) + short "Rapor" of which customers are being worked for now | https://auqrup.github.io/Kale-dokuma-order/fabrika.html |
 
-- Hosting: **GitHub Pages** (free, public repo `Kale-dokuma-order`, account `auqrup`). Both files live in the SAME repo.
+- Hosting: **GitHub Pages** (free, public repo `Kale-dokuma-order`, account `auqrup`). All three files live in the SAME repo.
   (An older separate repo `NEW-ORDER` was abandoned/deleted – verify it no longer exists.)
 - Backend: **Firebase Realtime Database + Firebase Auth**, project `fabrika-e9b49`, **Spark (free) plan, no billing**.
 - No build step, no framework. Plain HTML/CSS/JS, Firebase compat SDK 9.23.0 from gstatic.
 - `index.html` deliberately has NO link to `siparis.html` (owner's decision). `siparis.html` links back to the machines page.
-- Both pages have `<meta name="robots" content="noindex,nofollow">`.
+- All pages have `<meta name="robots" content="noindex,nofollow">`.
 
 ## 2. Factory model
 
@@ -25,19 +51,19 @@ This file is a hand-over document: read it first, then the header comment inside
 - Loom widths: 140 / 160 / 200 cm (default `WIDTHS[(num-1)%3]`, editable per loom).
 - **140 cm looms have TWO WINGS (kanat)**: 6 colors (`colors[0..2]` wing 1: main + 2 sub; `colors[3..5]` wing 2). 160/200 cm looms have 4 colors (`colors[0]` = main).
 - Each loom: status (`running|stopped|yarn|maint`), current customer, next customer, colors, 2 warp (çözgü) colors, `lastModified`.
-- Color `"0"` = no yarn / none. Fixed palettes `COLORS` (22 named colors) and `WARPS` (SİYAH / BEYAZ / SARI) in both files – keep them in sync.
+- Color `"0"` = no yarn / none. Fixed color list `COLORS` (28 final colors, FROZEN – see section 6) must be identical in index.html, siparis.html and fabrika.html; `WARPS` (SİYAH / BEYAZ / SARI) exists in index.html and siparis.html.
 - **Only K1 (Karaman 1)** makes full 140 cm wide products; every other 140 cm loom makes 70 cm-wide pieces (two wings).
 
 ## 3. Firebase data layout and write ownership
 
-Convention enforced only in code (rules are per-UID, not per-path):
+Convention enforced only in code (rules are per-UID, not per-path). fabrika.html writes NOTHING.
 
 | Path | Written by | Read by |
 |---|---|---|
-| `kale_dokuma_live_v2/<loomId>` | index.html | both |
+| `kale_dokuma_live_v2/<loomId>` | index.html | index, siparis, fabrika |
 | `kale_customers_pool_v2` | **siparis.html** (customer list: add / delete; written with transactions) | both (index.html read-only: select from the list) |
 | `kale_events_v1` | index.html (notification log, last 50 events) | index.html |
-| `kale_colors_v2` | index.html ("🎨 Renkler" window) – ONLY the extra colors `{v:2,list:[{name,hex}]}` | both (siparis.html read-only) |
+| `kale_colors_v2` | index.html ("🎨 Renkler" window) – ONLY the extra colors `{v:2,list:[{name,hex}]}` | index, siparis (read-only), fabrika (read-only) |
 | `kale_siparis_v1/orders/<orderId>` | siparis.html | both (index.html read-only) |
 
 New code must respect this split. **Customer management (add/delete) lives ONLY in siparis.html** ("👥 Müşteri listesi" on the home screen and in the customer step; owner decision). A customer cannot be deleted while he has an order or is written on a loom (current/next customer); customer NAMES cannot be changed (add the correct one, delete the wrong one) because a name is stored inside looms (written by index.html) and orders (written by siparis.html) and neither page may write the other's data. Starting an order with a typed new name adds it to the list automatically. index.html has no customer manager any more: the loom edit window only selects from the list (plus names already on looms).
@@ -100,31 +126,39 @@ Order object: `{id, cust, created (ms), due ("YYYY-MM-DD" or empty = expected fi
 - **"🎨 Renkler" window** (header button): lists every color with counts "ana N · alt M"; tapping a color shows which looms use it as MAIN color (index 0, and index 3 = wing-2 main on 140 cm looms) and which as SUB color. **The color list is now FROZEN**: the 28 final colors (as exported by the owner on 2026-10-11, including his renames/hex changes such as ÖZBEK BORDO, Z-BLUE, KREM, GÜL, B.GREEN, CAM GÖBEĞİ, SAXMAVİ, SOĞAN(ALTIN)) are the `COLORS` constant in BOTH index.html and siparis.html (keep them identical; siparis has no "0" entry). Fixed colors cannot be edited, renamed or deleted. The owner can only ADD new colors (name auto-uppercased, case-insensitive uniqueness, color picker) – these "extra" colors are stored as `{v:2, list:[{name,hex}]}` in `kale_colors_v2` and may be deleted again (loom cells using it become "0", confirm dialog also counts order lines). On load, index.html auto-prunes `kale_colors_v2` entries whose name is already a fixed color (cleans the old full list). Loading order matters: extra colors are loaded BEFORE looms, cached in localStorage `kale_colors_extra_cache`, and `rawColors` keeps raw loom color lists so looms are re-validated if extras arrive later (otherwise looms with an unknown color name would be read as "0" and could be overwritten). siparis.html applies the same logic read-only. To change the fixed list in future: edit the `COLORS` constant in both files (never rename a color that exists in orders).
 - **Notifications (🔔 in the header)**: log node `kale_events_v1` = last 50 events `{t,u,k,m,x}` (time, author = email prefix, kind, loom id, Turkish text); only index.html writes it. Kinds: `cust` (current customer changed), `next` (next customer changed), `stop` (status changed to stopped / no yarn / maintenance – resuming creates no event), `color` (main color changed, or "Alt renkler değişti"), `order` (new order). Loom events are created in `saveLoom` by the user who made the change (`loomEvents(old,new)`, written after the loom write succeeds). New orders: siparis.html is NOT touched; index.html detects ids it has not seen yet (`checkNewOrders`, device-local `kale_seen_orders`; first run on a device marks existing orders as seen silently) and writes the event with the deterministic key `ord_<orderId>` and `t = order.created`, so several devices writing the same event collapse into one record (also catches orders saved while nobody had this page open). Every client prunes the log to 50 (multi-path delete). On other users' devices a banner appears for 7 s ("⛔ R9: Durdu: Duruş (veli)", tap opens the list) and the bell shows an unread badge; read state is per device (`kale_notif_read`); your own changes never notify you. Notifications only reach people who have the page open (or see the badge on their next visit) – no phone push (that would need a paid backend).
 - **Notification list dates**: events are grouped under day headings ("Bugün", "Dün", then dd.mm.yyyy) and each shows its time (HH:MM) and author. (An order event's time is the order's `created` time, i.e. when the order was started, not when it was saved.) Kind `restore` (🔄) is logged when a backup is restored.
-- **Backup / restore ("💾 Yedek" button)**: machines page only. File `{app:"kale-makineler", v:1, created, looms:{R1..K6}, colors:[extra colors]}` – NO notifications, customer list or orders (customers/orders belong to siparis.html). "📤 Yedek al" downloads `makineler-yedek-<date>_<time>.json` (also shown as text for copy/paste). "📥 Geri yükle" (file or pasted text) validates the file (must be a kale-makineler v1 backup containing ALL 34 looms, otherwise nothing is changed), asks for confirmation showing the backup date, saves the current state on this device (`kale_prerestore_backup`, for "↩️ Son geri yüklemeyi geri al"), then writes looms + extra colors + one `restore` event in ONE atomic root `update()`. Extra colors are merged (never removed) so order lines keep their colors. Restore is refused while offline; if the write fails nothing changes locally.
+- **Backup / restore ("💾 Yedek" button)**: machines page only. File `{app:"kale-makineler", v:1, created, looms:{R1..K6}, colors:[extra colors]}` – NO notifications, customer list or orders (customers/orders belong to siparis.html). "📤 Yedek al" downloads `makineler-yedek-<date>_<time>.json` (also shown as text for copy/paste). "📥 Geri yükle" (file or pasted text) validates the file (must be a kale-makineler v1 backup containing ALL 34 looms, otherwise nothing is changed), asks for confirmation showing the backup date, saves the current state on this device (`kale_prerestore_backup`, for "↩️ Son geri yüklemeyi geri al"), then writes looms + extra colors + one `restore` event in ONE atomic root `update()`. Extra colors are merged (never removed) so order lines keep their colors. Restore is refused while offline; if the write fails nothing changes locally. The Yedek window also shows when the last backup was taken on this device (`kale_last_backup`).
 - **Phone-oriented layout (index.html)**: scrolling header = title + sync pill + the 4 status counters; the sticky part is only `.stick` = search box + 🔔 + ☰ and one horizontally scrollable chip row (branches | size filters, ≥42 px tall). The ☰ menu sheet (`#menuModal`) holds the rarely used actions 💾 Yedek, 🎨 Renkler, 🖨️ PDF / Yazdır and 🚪 Çıkış (same element ids as before, so the handlers are unchanged; each also closes the menu). The loom edit window has a sticky footer (`.sheet-foot`: İptal + ✓ Kaydet), 46 px inputs and uppercase section labels; inputs are 16 px on phones to stop iOS zoom. Sticky bars inside padded sheets use `top/bottom:0` + negative margins (negative offsets would clip them). Layout was NOT verified in a real browser by the assistant.
 - Color dropdowns in the loom edit window (main/sub colors and warp colors) are sorted in Turkish alphabetical order with "0 (İplik Yok)" always first (`optsHtml` + `trCompare`).
 - Loom property `extra` (`"spingel"` / `"simli"` / `""`): two ✅ toggle buttons ŞPİNGEL and SİMLİ in the loom edit window; it is shown ONLY in the edit window, at the very BOTTOM of it (owner explicitly does NOT want it on cards or in print); selecting one clears the other, tapping the selected one clears it. Not used by siparis.html.
-- Filters by branch/width; the search box matches customer, loom id, MAIN color and the FIRST sub color (140 cm looms: both wings, indexes 0,1,3,4) with loose letter matching (ş=s, ı=i, ç=c, ğ=g, ö=o, ü=u); stats (running/stopped/no yarn/maintenance), print/PDF report, customer manager (dropdown-based customer fields).
+- Filters by branch/width; the search box matches customer, loom id, MAIN color and the FIRST sub color (140 cm looms: both wings, indexes 0,1,3,4) with loose letter matching (ş=s, ı=i, ç=c, ğ=g, ö=o, ü=u); stats (running/stopped/no yarn/maintenance), print/PDF report; the customer fields in the loom edit window are dropdowns filled from the customer list (no customer manager on this page).
 - "📋 Siparişler (N)" button per loom: read-only modal listing orders whose width matches AND whose color equals the loom's CURRENT main color (exact matches only – owner decided not to show "possible with change" on this page), with assigned orders, remaining qty, meters, and a warning if an assigned color no longer matches.
+- **Customer name on cards (2026-10-29)**: the current-customer name is a full-width line (`.badge.full`, wraps instead of "AFG E…") ABOVE the id/status/width row (`.top`), not inside it. The ŞU ANKİ / GELECEK block is unchanged.
+- **Status highlight on cards (2026-10-29)**: a card whose status is stopped / no yarn / maintenance gets class `s-stopped` / `s-yarn` / `s-maint` (border in the status color + light gradient tint) and a small label strip at the top of its body (`.stlab`: DURUŞ / İPLİK YOK / BAKIM, map `STATUS_LABEL`). Running cards are unchanged. The small status dot stays.
+- **Tappable status counters (2026-10-29)**: the 4 counters (`.stat`, now `<button data-st=...>`) filter the grid by status (`statusFilter`; tap again to clear; active one has `.on`). The counters count by branch + size filter + search but NOT by the status filter itself (otherwise the other counters would drop to 0). `visible(l, skipStatus)` – NEVER pass `visible` straight to `.filter()` (the index would become `skipStatus`; use `.filter(l => visible(l))`). A muted line `#shown` "Gösterilen: N / 34" appears only when something is filtered. Size filter and search now call `refresh()` so the counters follow them. The print report still follows only the branch.
+- **"⏭ Sıradakini şimdiki yap" button (2026-10-29)**: in the loom edit window under "Gelecek Müşteri" (`#shiftBtn`, shown only while a next customer is selected, `syncShift()`): moves the next customer into the current-customer field and clears the next field. It only fills the form – nothing is written until "Kaydet" (then the normal `cust`/`next` notifications are produced). It never touches colors or status.
+- **"👥 Makinedeki Müşteriler" (menu, under Yedek) (2026-10-29)**: `#actBtn` opens `#actModal` – a names-only list of the customers currently on looms (`currentCustomer` of every loom, any status; NOT `nextCustomer`), trimmed, de-duplicated case-insensitively, sorted with `trCompare`, plus a count line. Read-only, writes nothing; re-rendered live by `refresh()` while open (`renderActive()`). Under each name a small row of loom-id chips (`.lchip`, `data-loom`, in branch/number order, every status); tapping one opens `#infoModal` (`openLoomInfo` / `renderLoomInfo`): customer, width, MAIN color(s) with a color dot (140 cm: both wings), status. It is a second small overlay on top of the list (closing it returns to the list) and also re-renders live.
 
 ## 7. Open items / pending
 
-1. ~~`ONLY100` loom ID~~ – RESOLVED: A3. Owner is testing the pages and will send all remaining notes in one batch; code was last revised for the answers above (110×200, 60×80, rolls).
-2. ~~Where the 110×200 congregational rug is produced~~ – RESOLVED: 200 cm looms only, 110 cm long.
-3. ~~Rolls on 140 cm wing looms~~ – RESOLVED: a 140 loom weaves ONE 140-wide fabric; each 70 cm half (wing) can have its own color and the fabric is cut down the middle. If the customer wants a color present on only one wing, the other wing's color inevitably comes out too – the customer either accepts both or the order is declined. Same logic as seccade (companion line).
-4. ~~Linking "Yapılan" between companion and original~~ – RESOLVED: linked (see 5).
-5. Possible future: lightweight order-form fields (fabric code, meters, dates) instead of PDF uploads – deferred.
-6. Optional security hardening (API-key origin restriction).
+Resolved questions (kept for context): `ONLY100` = A3; 110×200 is 200 cm looms only; rolls on 140 looms follow the wing/companion logic; "Yapılan" is linked.
+
+Still open / deferred by the owner:
+1. Order-form fields (fabric code, note per line) – deferred ("not needed yet, will add if testing shows the need").
+2. Optional security hardening: restrict the API key to the site origin in Google Cloud Console; consider disabling user sign-up.
+3. Firebase cleanup by hand (section 10) – "later".
+4. Layout of the new phone-oriented index.html header/menu/edit-window was never seen in a real browser by the assistant – ask the owner for feedback/screenshots. The same applies to the 2026-10-29 additions (status highlight + label strip on cards, tappable counters + "Gösterilen" line, "Sıradakini şimdiki yap" button): logic tested with a simulated-DOM harness only.
+
+Ideas proposed to the owner but NOT chosen (do not build unless he asks): suggested delivery date from capacity; actual-production logging; stop/resume log; backup reminder bar; read-only account for the factory screen; QR label per loom; "next color" field; customer status card + WhatsApp message; WhatsApp-ready daily report; "Kontrol" data-quality panel; Arabic UI toggle; Excel export; PWA install; push notifications (needs paid backend – advised against).
 
 ## 8. Operations
 
 - Deploy: upload changed file(s) via GitHub web UI (Add file → Upload files, same file name) → Commit. Pages updates in about a minute. GitHub Copilot commit-message suggestions were disabled in the owner's settings.
 - Backups (owner's routine): orders → "📤 Yedek al" (siparis.html) weekly; machines → "💾 Yedek" (index.html) before big changes; whole database → Firebase console Realtime Database ⋮ → Export JSON monthly.
-- **Testing caveat**: all code was verified only with Node syntax checks and simulated-DOM logic tests, never in a real browser by the assistant; the owner tests on the live site and reports back. Login and rule changes were tested live and work.
+- **Testing caveat**: all code is verified only with Node syntax checks and simulated-DOM logic tests (`python3 tests/run_all.py`, 115 checks), never in a real browser by the assistant; the owner tests on the live site and reports back. Login and rule changes were tested live and work.
 
 ## 9. Working with the owner
 
-Arabic-speaking, uses a phone, prefers short step-by-step instructions, no paid services (free tiers only), tests every upload and reports back conversationally. Keep UI strings in Turkish. Always change one thing at a time and keep the two pages' shared constants (colors, branches, widths) in sync.
+Arabic-speaking, uses a phone, prefers short step-by-step instructions, no paid services (free tiers only), tests every upload and reports back conversationally. Keep UI strings in Turkish. Always change one thing at a time and keep the three pages' shared constants (COLORS, DAILY rates, branches, widths) in sync.
 
 ## 10. Firebase cleanup (owner does this by hand in the console, after a backup)
 
