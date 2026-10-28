@@ -269,6 +269,7 @@ body *{visibility:hidden}
       <span style="width:70px"></span>
     </div>
     <button type="button" class="mrow" id="bkBtn"><span class="mi">💾</span><span><b>Yedek</b><small>Makineleri dosyaya al / geri yükle</small></span></button>
+    <button type="button" class="mrow" id="actBtn"><span class="mi">👥</span><span><b>Makinedeki Müşteriler</b><small>Şu an makinelerde çalışan müşteriler</small></span></button>
     <button type="button" class="mrow" id="colBtn"><span class="mi">🎨</span><span><b>Renkler</b><small>Renk listesi, renk ekle, hangi makinede?</small></span></button>
     <button type="button" class="mrow" id="pdfBtn"><span class="mi">🖨️</span><span><b>PDF / Yazdır</b><small>Makine durum raporu</small></span></button>
     <button type="button" class="mrow" id="outBtn"><span class="mi">🚪</span><span><b>Çıkış</b><small>Hesaptan çık</small></span></button>
@@ -309,6 +310,17 @@ body *{visibility:hidden}
 
 <div class="notice" id="notice" style="display:none"></div>
 
+<div class="overlay" id="actModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button type="button" class="b-cancel" id="actClose">✕ Kapat</button>
+      <h2>Makinedeki Müşteriler</h2>
+      <span style="width:70px"></span>
+    </div>
+    <p style="color:var(--mu);font-size:.74rem;margin-bottom:10px" id="actInfo"></p>
+    <div class="cm-list" id="actList"></div>
+  </div>
+</div>
 <div class="overlay" id="colModal">
   <div class="sheet">
     <div class="sheet-head">
@@ -611,7 +623,16 @@ function updateStats() {
   const n = Object.values(looms).filter(l => visible(l)).length, sh = $("shown");
   sh.textContent = `Gösterilen: ${n} / ${TOTAL}`; sh.style.display = n === TOTAL ? "none" : "block";
 }
-const refresh = () => { renderLooms(); updateStats(); };
+function renderActive() {
+  const seen = new Map();
+  Object.values(looms).forEach(l => { const n = String(l.currentCustomer || "").trim(); if (n && !seen.has(n.toLocaleLowerCase("tr"))) seen.set(n.toLocaleLowerCase("tr"), n); });
+  const names = [...seen.values()].sort(trCompare);
+  $("actInfo").textContent = names.length ? `Şu an makinelerde: ${names.length} müşteri` : "";
+  $("actList").innerHTML = names.length
+    ? names.map(n => `<div class="mrow" style="cursor:default;font-weight:700">${esc(n)}</div>`).join("")
+    : `<p style="color:var(--mu);text-align:center;padding:16px">Şu an makinede müşteri yok.</p>`;
+}
+const refresh = () => { renderLooms(); updateStats(); if ($("actModal").classList.contains("open")) renderActive(); };
 
 const lc = s => s.toLocaleLowerCase("tr");
 /* Türkçe alfabe sıralaması - tarayıcının dil desteğine BAĞLI DEĞİL (a b c ç d e f g ğ h ı i j k l m n o ö p q r s ş t u ü v w x y z) */
@@ -921,13 +942,15 @@ function initUi() {
     colSel = colSel === it.dataset.n ? null : it.dataset.n; renderColManager();
   });
   $("closeBtn").onclick = $("closeBtn2").onclick = () => $("editModal").classList.remove("open");
+  $("actBtn").onclick = () => { renderActive(); $("actModal").classList.add("open"); };
+  $("actClose").onclick = () => $("actModal").classList.remove("open");
   $("menuBtn").onclick = () => $("menuModal").classList.add("open");
   $("menuClose").onclick = () => $("menuModal").classList.remove("open");
-  ["bkBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
+  ["bkBtn", "actBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
   $("saveBtn").onclick = saveLoom;
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
-  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("actModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
 }
 
 /* ---------- Giriş ---------- */
