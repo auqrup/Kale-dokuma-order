@@ -220,7 +220,16 @@ const P = [
   { k:"afg2", g:"AFGAN SET2", name:"148 × 200", w:200, l:148, opts:[{ mw:200, ac:1, no100:true }] },
   { k:"afg3", g:"AFGAN SET3", name:"172 × 200", w:200, l:172, opts:[{ mw:200, ac:1, no100:true }] },
   { k:"afg4", g:"AFGAN SET4", name:"200 × 196", w:200, l:196, opts:[{ mw:200, ac:1, no100:true }] },
-  { k:"rulo", g:"Kumaş", name:"Rulo", roll:true, opts:[{ mw:140, len:40 }, { mw:160, len:35 }, { mw:200, len:30 }] }
+  /* Kumaş: ENE ve TÜRE göre ayrı ürünler. ftype: "simli" (lureks'li) | "spingel" (lureks'siz). Sadece AYNI enli VE AYNI türdeki makineler önerilir
+     (makine türü index.html'deki makine kartından gelir: extra === "simli" ise SİMLİ, aksi halde ŞPİNGEL sayılır). */
+  { k:"k140simli", g:"Kumaş 140 cm", name:"SİMLİ", roll:true, fw:140, ftype:"simli", opts:[{ mw:140, len:40 }] },
+  { k:"k140spingel", g:"Kumaş 140 cm", name:"ŞPİNGEL", roll:true, fw:140, ftype:"spingel", opts:[{ mw:140, len:40 }] },
+  { k:"k160simli", g:"Kumaş 160 cm", name:"SİMLİ", roll:true, fw:160, ftype:"simli", opts:[{ mw:160, len:35 }] },
+  { k:"k160spingel", g:"Kumaş 160 cm", name:"ŞPİNGEL", roll:true, fw:160, ftype:"spingel", opts:[{ mw:160, len:35 }] },
+  { k:"k200simli", g:"Kumaş 200 cm", name:"SİMLİ", roll:true, fw:200, ftype:"simli", opts:[{ mw:200, len:30 }] },
+  { k:"k200spingel", g:"Kumaş 200 cm", name:"ŞPİNGEL", roll:true, fw:200, ftype:"spingel", opts:[{ mw:200, len:30 }] },
+  /* ESKİ ürün: eski siparişlerdeki satırlar k:"rulo" tutuyor; SİLMEYİN. Seçim ekranında gösterilmez (hidden). */
+  { k:"rulo", g:"Kumaş", name:"Rulo", roll:true, hidden:true, opts:[{ mw:140, len:40 }, { mw:160, len:35 }, { mw:200, len:30 }] }
 ];
 /* ================================================================== */
 
@@ -300,10 +309,13 @@ function lineM(ln, m) {
   if (m.width === 140 && ac === 2 && hit === 1) ac = 1;
   return Math.round(Math.ceil(R / ac) * len * 10) / 10;
 }
+/* makine türü: index.html makine kartındaki extra; "simli" değilse (boş dahil) ŞPİNGEL */
+const loomType = l => l.extra === "simli" ? "simli" : "spingel";
 function eligible(p, l) {
   return p.opts.find(o => o.mw === l.width
     && (o.need !== "full140" || FULL140.includes(l.id))
-    && !(o.no100 && ONLY100.includes(l.id)));
+    && !(o.no100 && ONLY100.includes(l.id))
+    && (!p.ftype || loomType(l) === p.ftype));
 }
 /* Her satıra: ürün adı, boyut olarak uygun makineler (ok), tam-en bilgisi (full). Ana sayfa bunları okur. */
 function prep(o) {
@@ -339,7 +351,7 @@ function allCust() {
 let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
-const pname = p => p.roll ? "Rulo kumaş" : `${p.g} ${p.name}`;
+const pname = p => p.roll ? (p.ftype ? `Kumaş ${p.fw} cm ${p.name}` : "Rulo kumaş") : `${p.g} ${p.name}`;
 /* Tarih: o.created = oluşturma (ms), o.due = tahmini bitiş ("YYYY-MM-DD", boş olabilir) */
 const fmtDue = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); return m ? `${m[3]}.${m[2]}.${m[1]}` : ""; };
 const persist = () => { if (S.order?.saved) pushOrder(S.order); };
@@ -544,7 +556,7 @@ function render(keep) {
     drawChips();
   } else if (V === "prod") {
     let h = "<h2>Ürün / Ebat</h2>", g = "";
-    P.forEach(p => {
+    P.filter(p => !p.hidden).forEach(p => {
       if (p.g !== g) { if (g) h += "</div>"; g = p.g; h += `<h3>${esc(g)}</h3><div class="pgrid">`; }
       h += `<button class="pcard" data-act="prod" data-k="${p.k}"><b>${esc(p.name)}</b><small>Makine: ${p.opts.map(o => o.mw).join(" / ")} cm</small></button>`;
     });
@@ -561,7 +573,7 @@ function render(keep) {
       <div class="cgrid">${Object.keys(COLORS).filter(n => !avSet.has(n)).map(btn).join("")}</div>
       <h3>${roll ? "Seçilen renkler ve rulo adedi" : "Seçilen renkler ve adetler"}</h3>
       <div id="selbox"></div>
-      ${roll ? '<p class="hint">Rulo boyu: 140\'lıkta 40 m · 160\'lıkta 35 m · 200\'lükte 30 m</p>' : ""}
+      ${roll ? `<p class="hint">Rulo boyu: ${prodOf(S.pk).opts.map(o => `${o.mw} cm: ${o.len} m`).join(" · ")}</p>` : ""}
       <button class="primary" data-act="addline">Satırları ekle</button>`;
     drawSel();
   } else if (V === "order") {
@@ -582,7 +594,7 @@ function render(keep) {
       const shown = S.all[l.id] ? list : list.filter(r => r.match > 0 || asgIds.includes(r.l.id));
       const change = list.filter(r => !shown.includes(r));
       h += `<div class="sec"><span class="dot" style="background:${hexOf(l.color)}"></span>${esc(pname(p))} · ${esc(l.color)} — kalan ${rem(l)}</div>`;
-      if (!list.length) h += '<div class="empty">Uygun makine yok. FULL140 / ONLY100 ayarlarını kontrol edin.</div>';
+      if (!list.length) h += p?.ftype ? `<div class="empty">Bu ende (${p.fw} cm) ${esc(p.name)} makine yok. index.html makine kartındaki türü (SİMLİ / ŞPİNGEL) kontrol edin.</div>` : '<div class="empty">Uygun makine yok. FULL140 / ONLY100 ayarlarını kontrol edin.</div>';
       else {
         h += shown.length ? shown.map((r, i) => resHtml(r, i, p, l)).join("") : '<div class="empty">Bu renk şu an hiçbir uygun makinede takılı değil.</div>';
         if (change.length) h += `<div class="chg">Renk değişimi şartıyla: ${change.map(r => esc(r.l.id)).join(", ")}</div>`;
