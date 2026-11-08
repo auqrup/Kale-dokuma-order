@@ -72,26 +72,37 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .ocard{width:100%;display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer}
 .ocard b{font-size:1rem;font-weight:800}
 .ocard small{color:var(--mu);font-size:.76rem;font-weight:600}
-.hbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 10px}
-.hc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:9px 2px;text-align:center;cursor:pointer;color:var(--tx);font-family:inherit}
-.hc b{display:block;font-size:1.15rem;font-weight:800}
-.hc span{font-size:.64rem;color:var(--mu);font-weight:700}
+.hbar{display:flex;flex-wrap:wrap;gap:6px}
+.hc{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:6px 10px;cursor:pointer;color:var(--tx);font-family:inherit}
+.hc b{font-size:.95rem;font-weight:800}
+.hc span{color:var(--mu);font-size:.72rem;font-weight:700}
 .hc.on{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
-.hrow{display:flex;gap:8px;margin:0 0 10px}
-.hrow .inp{flex:1;min-width:0;padding:10px}
-.hrow select.inp{flex:none;width:auto}
+.tools{display:none;flex-wrap:wrap;align-items:center;gap:8px}
+body.hm .tools{display:flex}
+.tb{background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:8px 12px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:inherit}
+.tb.pri{background:var(--ac);color:var(--ac-d);border-color:var(--ac)}
+.tsr{display:flex;gap:6px;flex:1 1 230px;min-width:0}
+.tsr .inp{flex:1;min-width:0;padding:7px 10px;font-size:.85rem;border-radius:10px}
+.tsr select.inp{flex:none;width:auto}
+body.hm header{position:static}
+@media(min-width:900px){body.hm header{position:sticky;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 16px}}
+body.hm main{max-width:1560px}
 .hshown{font-size:.72rem;color:var(--mu);font-weight:600;text-align:center;margin:0 0 8px}
-.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:8px}
-@media(min-width:700px){.ogrid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}}
-.oc{display:flex;flex-direction:column;gap:7px;text-align:left;background:var(--card);border:1px solid var(--bd);border-top:5px solid var(--uc,var(--bd));border-radius:14px;padding:10px;cursor:pointer;color:var(--tx);font-family:inherit;min-width:0}
+.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:10px}
+@media(min-width:700px){.ogrid{grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:14px}}
+.oc{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:8px;text-align:left;min-height:178px;padding:16px 13px 13px;border-radius:16px;border:1px solid var(--bd);cursor:pointer;color:var(--tx);font-family:inherit;min-width:0;
+  background:linear-gradient(160deg,var(--card2),var(--card));background:linear-gradient(160deg,color-mix(in srgb,var(--uc,var(--bd)) 16%,var(--card2)),var(--card) 62%);
+  box-shadow:0 10px 26px rgba(0,0,0,.38);transition:transform .12s,box-shadow .12s}
+.oc::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--uc,var(--bd))}
+.oc:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.5)}
 .oc.done{opacity:.6}
-.oc .cn{font-size:.98rem;font-weight:800;line-height:1.2;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.bd{align-self:flex-start;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:99px;color:var(--uc,var(--mu));background:rgba(255,255,255,.07)}
+.oc .cn{font-size:1.08rem;font-weight:800;line-height:1.15;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.bd{align-self:flex-start;font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:99px;color:var(--uc,var(--mu));background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}
 .oc .ps{font-size:.72rem;color:var(--mu);font-weight:600;overflow-wrap:anywhere}
-.pbar{display:block;height:6px;border-radius:99px;background:var(--bg);overflow:hidden}
-.pbar i{display:block;height:100%;background:var(--run)}
+.pbar{display:block;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--run),#6ee7b7)}
 .pnum{display:flex;justify-content:space-between;font-size:.7rem;color:var(--mu);font-weight:700}
-.nxb{border-radius:9px;padding:6px 8px;font-size:.74rem;font-weight:700;background:rgba(240,198,116,.12);border:1px solid rgba(240,198,116,.4);color:var(--ac);overflow-wrap:anywhere}
+.nxb{margin-top:auto;border-radius:10px;padding:7px 9px;font-size:.74rem;font-weight:700;background:rgba(240,198,116,.12);border:1px solid rgba(240,198,116,.4);color:var(--ac);overflow-wrap:anywhere}
 .nxb.late{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.5);color:var(--stop)}
 .nxb.add{background:transparent;border:1px dashed var(--bd);color:var(--mu)}
 .ovl{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.72);z-index:60}
@@ -191,6 +202,7 @@ body *{visibility:hidden}
     <a class="nb" href="https://auqrup.github.io/Kale-dokuma-order/">🧵 Makineler</a>
     <button class="nb" id="outBtn" title="Çıkış">🚪 Çıkış</button>
   </div>
+  <div class="tools" id="tools"></div>
   <div class="crumbs" id="crumbs"></div>
 </header>
 <main id="app"></main>
@@ -586,11 +598,11 @@ function sortOrders(list, mode) {
 function drawOrders() {
   const box = $("olist"); if (!box) return;
   const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
-  const F = { open: i => !i.isDone, late: i => i.st === "late", next: i => !i.isDone && i.nx, done: i => i.isDone };
+  const F = { all: () => true, open: i => !i.isDone, late: i => i.st === "late", next: i => !i.isDone && i.nx, done: i => i.isDone };
   const cnt = k => base.filter(o => F[k](info.get(o.id))).length;
-  $("ocnt").innerHTML = [["open", "Açık"], ["late", "Geciken"], ["next", "Adımı var"], ["done", "Biten"]].map(([k, t]) =>
+  $("ocnt").innerHTML = [["all", "Tümü"], ["open", "Açık"], ["late", "Geciken"], ["next", "Adımı var"], ["done", "Biten"]].map(([k, t]) =>
     `<button type="button" class="hc${S.hf === k ? " on" : ""}" data-act="hf" data-v="${k}"><b>${cnt(k)}</b><span>${t}</span></button>`).join("");
-  const shown = S.hf === "all" ? base : base.filter(o => F[S.hf](info.get(o.id)));
+  const shown = base.filter(o => F[S.hf](info.get(o.id)));
   const sh = $("oshown"); sh.textContent = `Gösterilen: ${shown.length} / ${orders.length}`; sh.style.display = shown.length === orders.length ? "none" : "block";
   const live = sortOrders(shown.filter(o => !info.get(o.id).isDone), S.hs), fin = sortOrders(shown.filter(o => info.get(o.id).isDone), S.hs);
   let h = "";
@@ -598,6 +610,9 @@ function drawOrders() {
   if (fin.length) h += (S.hf === "done" ? "" : `<h3>Tamamlananlar (${fin.length})</h3>`) + `<div class="ogrid">${fin.map(ocard).join("")}</div>`;
   box.innerHTML = h || `<div class="empty">${orders.length ? "Sonuç bulunamadı." : "Henüz kayıtlı sipariş yok."}</div>`;
 }
+const toolsHtml = () => `<button type="button" class="tb pri" data-act="new">➕ Yeni sipariş</button><button type="button" class="tb" data-act="custmgr">👥 Müşteri listesi</button><button type="button" class="tb" data-act="report">📊 Sipariş raporu</button>
+  <div class="hbar" id="ocnt"></div>
+  <div class="tsr"><input class="inp" id="hq" type="search" placeholder="Müşteri ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>`;
 const dateTxt = o => `Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")}${o.due ? ` · Tahmini bitiş: ${fmtDue(o.due)}` : ""}`;
 function linesInfoHtml(o) {
   const ls = o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return `<div class="hl"><span class="dot" style="background:${hexOf(l.color)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(l.color)} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span></div>`; }).join("");
@@ -676,14 +691,10 @@ function render(keep) {
   const o = S.order, V = S.view, app = $("app");
   $("crumbs").innerHTML = o ? `<span>👤 ${esc(o.cust)}</span>` + (V === "color" && S.pk ? `<span>📐 ${esc(pname(prodOf(S.pk)))}</span>` : "") : "";
 
+  document.body.classList.toggle("hm", V === "home");
+  if (V !== "home") $("tools").innerHTML = ""; else if (!$("hq")) $("tools").innerHTML = toolsHtml();
   if (V === "home") {
-    const list = [...orders].sort((a, b) => b.created - a.created);
-    app.innerHTML = `<button class="primary" data-act="new" style="margin:0 0 10px">➕ Yeni sipariş</button>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px"><button class="second" data-act="custmgr" style="margin:0">👥 Müşteri listesi</button><button class="second" data-act="report" style="margin:0">📊 Sipariş raporu</button></div>
-      <h2>Kayıtlı siparişler (${orders.length})</h2>
-      <div class="hbar" id="ocnt"></div>
-      <div class="hrow"><input class="inp" id="hq" type="search" placeholder="Müşteri ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>
-      <div class="hshown" id="oshown" style="display:none"></div><div id="olist"></div>` +
+    app.innerHTML = `<div class="hshown" id="oshown" style="display:none"></div><div id="olist"></div>` +
       `<h3>Yedek</h3>
       <div class="bkrow"><button class="nb" data-act="bk-out">📤 Yedek al</button><button class="nb" data-act="bk-in">📥 Geri yükle</button></div>` +
       (S.bk ? `<textarea id="bk" class="inp" rows="5" ${S.bk === "out" ? "readonly" : 'placeholder="Yedek metnini buraya yapıştırın"'}>${S.bk === "out" ? esc(JSON.stringify(orders)) : ""}</textarea>` +
