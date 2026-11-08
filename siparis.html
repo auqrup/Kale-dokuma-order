@@ -72,6 +72,53 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .ocard{width:100%;display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer}
 .ocard b{font-size:1rem;font-weight:800}
 .ocard small{color:var(--mu);font-size:.76rem;font-weight:600}
+.hbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 10px}
+.hc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:9px 2px;text-align:center;cursor:pointer;color:var(--tx);font-family:inherit}
+.hc b{display:block;font-size:1.15rem;font-weight:800}
+.hc span{font-size:.64rem;color:var(--mu);font-weight:700}
+.hc.on{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+.hrow{display:flex;gap:8px;margin:0 0 10px}
+.hrow .inp{flex:1;min-width:0;padding:10px}
+.hrow select.inp{flex:none;width:auto}
+.hshown{font-size:.72rem;color:var(--mu);font-weight:600;text-align:center;margin:0 0 8px}
+.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:8px}
+@media(min-width:700px){.ogrid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}}
+.oc{display:flex;flex-direction:column;gap:7px;text-align:left;background:var(--card);border:1px solid var(--bd);border-top:5px solid var(--uc,var(--bd));border-radius:14px;padding:10px;cursor:pointer;color:var(--tx);font-family:inherit;min-width:0}
+.oc.done{opacity:.6}
+.oc .cn{font-size:.98rem;font-weight:800;line-height:1.2;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bd{align-self:flex-start;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:99px;color:var(--uc,var(--mu));background:rgba(255,255,255,.07)}
+.oc .ps{font-size:.72rem;color:var(--mu);font-weight:600;overflow-wrap:anywhere}
+.pbar{display:block;height:6px;border-radius:99px;background:var(--bg);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--run)}
+.pnum{display:flex;justify-content:space-between;font-size:.7rem;color:var(--mu);font-weight:700}
+.nxb{border-radius:9px;padding:6px 8px;font-size:.74rem;font-weight:700;background:rgba(240,198,116,.12);border:1px solid rgba(240,198,116,.4);color:var(--ac);overflow-wrap:anywhere}
+.nxb.late{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.5);color:var(--stop)}
+.nxb.add{background:transparent;border:1px dashed var(--bd);color:var(--mu)}
+.ovl{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.72);z-index:60}
+.ovl.open{display:flex}
+.shs{width:100%;max-width:640px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:22px 22px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+@media(min-width:700px){.ovl{align-items:center}.shs{border-radius:22px}}
+.shh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.shh h2{margin:0;font-size:1.1rem;overflow-wrap:anywhere}
+.sx{flex:none;background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;font-family:inherit}
+.shc{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:.78rem;color:var(--mu);font-weight:600;margin-bottom:8px}
+.shs h3{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mu);margin:16px 0 8px;font-weight:800}
+.qk{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qk button{background:var(--bg);border:1px solid var(--bd);color:var(--tx);border-radius:99px;padding:7px 12px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit}
+.qk button.clr{color:var(--stop)}
+.td{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);margin-bottom:6px}
+.td input[type=checkbox]{width:20px;height:20px;flex:none}
+.td span{flex:1;overflow-wrap:anywhere;font-size:.9rem}
+.td.ok span{text-decoration:line-through;color:var(--mu)}
+.td button{background:transparent;border:0;color:var(--stop);font-size:1.05rem;cursor:pointer;padding:4px 8px}
+.tdadd{display:flex;gap:8px;margin-top:6px}
+.tdadd .inp{flex:1;min-width:0;padding:10px}
+.tdadd button{flex:none;background:var(--ac);color:var(--ac-d);border:0;border-radius:10px;padding:0 16px;font-weight:800;cursor:pointer;font-family:inherit}
+.hl{display:flex;gap:7px;align-items:flex-start;margin:4px 0;font-size:.84rem;font-weight:600}
+.hl .dot{margin-top:3px;flex:none}
+.hov{position:fixed;z-index:70;display:none;width:330px;max-width:90vw;max-height:80vh;overflow:auto;background:var(--card2);border:1px solid var(--ac);border-radius:14px;padding:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);pointer-events:none;font-size:.8rem}
+.hov h4{margin:0 0 6px;font-size:1rem;overflow-wrap:anywhere}
+.hov .hs{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);font-weight:800;margin:10px 0 4px}
 .line{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px}
 .line.dn{opacity:.55}
 .lh{display:flex;align-items:center;gap:8px}
@@ -153,6 +200,8 @@ body *{visibility:hidden}
 <input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password" required>
 <div id="loginErr"></div><button type="submit" class="primary" id="loginBtn" style="margin-top:6px">Giriş</button></form></div>
 <div class="toast" id="toast"></div>
+<div class="ovl" id="shOv"><div class="shs" id="shBox"></div></div>
+<div class="hov" id="hov"></div>
 
 <script>
 /* ============================================================
@@ -337,7 +386,7 @@ function pushOrder(o) {
   if (ordRef) ordRef.child(o.id).set(JSON.parse(JSON.stringify(o))).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
 }
 const arr = x => Array.isArray(x) ? x : Object.values(x || {});
-const normOrder = x => ({ ...x, saved: true, lines: arr(x.lines).map(l => ({ ...l, ok: arr(l.ok), asg: l.asg || {} })) });
+const normOrder = x => ({ ...x, saved: true, todos: arr(x.todos), lines: arr(x.lines).map(l => ({ ...l, ok: arr(l.ok), asg: l.asg || {} })) });
 
 function allCust() {
   const m = new Map();
@@ -348,7 +397,7 @@ function allCust() {
   return [...m.values()].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null };
+let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null, hq:"", hf:"all", hs:"due", sheet:null };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
 const pname = p => p.roll ? (p.ftype ? `Kumaş ${p.fw} cm ${p.name}` : "Rulo kumaş") : `${p.g} ${p.name}`;
@@ -507,10 +556,110 @@ function resHtml(r, i, p, line) {
     ${r.maint ? '<div class="rl warn">⚠ Arıza/Bakımda</div>' : ""}
   </div>`;
 }
+/* ---------- Sipariş listesi: kartlar, filtreler, ayrıntı penceresi; yeni alanlar: o.next {t,d}, o.todos [{id,t,ok}], o.note ---------- */
+const ST_C = { late:"var(--stop)", soon:"var(--yarn)", ok:"var(--run)", none:"var(--mu)", done:"var(--run)" };
+const NEXT_QUICK = ["Renk bekleniyor", "İplik bekleniyor", "Müşteri onayı bekleniyor", "Sevke hazır", "Ödeme bekleniyor"];
+function ordInfo(o) {
+  const main = o.lines.filter(l => !l.comp);
+  const qty = main.reduce((s, l) => s + (l.qty || 0), 0), done = main.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0);
+  const isDone = o.lines.length > 0 && o.lines.every(l => rem(l) === 0), d = dueDays(o);
+  const st = isDone ? "done" : d === null ? "none" : d < 0 ? "late" : d <= 3 ? "soon" : "ok";
+  const txt = isDone ? "✓ Tamamlandı" : d === null ? "Tarih yok" : d < 0 ? `${-d} gün gecikti` : d === 0 ? "Bugün" : `${d} gün kaldı`;
+  const names = [...new Set(main.map(l => { const p = prodOf(l.k); return p ? pname(p) : l.k; }))];
+  const todos = arr(o.todos);
+  return { qty, done, isDone, d, st, txt, names, colors: new Set(main.map(l => l.color)).size, todos, tdDone: todos.filter(t => t.ok).length,
+    nx: (o.next && o.next.t) || "", nd: (o.next && o.next.d) || "", pct: qty ? Math.min(100, Math.round(done / qty * 100)) : 0 };
+}
 function ocard(o) {
-  const tot = o.lines.reduce((s, l) => s + rem(l), 0);
-  return `<button class="ocard" data-act="open" data-id="${o.id}"><b>${esc(o.cust)}</b>
-    <small>${new Date(o.created).toLocaleDateString("tr-TR")}${o.due ? ` → bitiş ${fmtDue(o.due)}` : ""} · ${o.lines.length} satır · ${tot ? `kalan ${tot} adet` : "✓ tamamlandı"}</small></button>`;
+  const I = ordInfo(o), ps = I.names.length ? esc(I.names[0]) + (I.names.length > 1 ? ` +${I.names.length - 1}` : "") + ` · ${I.colors} renk` : "Ürün yok";
+  const nl = I.nd && dueDays({ due: I.nd }) <= 0 && !I.isDone;
+  const nx = I.nx || I.nd ? `<div class="nxb${nl ? " late" : ""}">${nl ? "⏰" : "➡"} ${esc(I.nx || "Hatırlatma")}${I.nd ? ` · ${fmtDue(I.nd)}` : ""}</div>` : '<div class="nxb add">+ Sonraki adım ekle</div>';
+  return `<button type="button" class="oc${I.isDone ? " done" : ""}" style="--uc:${ST_C[I.st]}" data-act="sheet" data-id="${esc(o.id)}">
+    <span class="cn">${esc(o.cust)}</span><span class="bd">${esc(I.txt)}</span><span class="ps">${ps}</span>
+    <span class="pbar"><i style="width:${I.pct}%"></i></span><span class="pnum"><span>${I.done} / ${I.qty}</span>${I.todos.length ? `<span>☑ ${I.tdDone}/${I.todos.length}</span>` : ""}</span>${nx}</button>`;
+}
+function sortOrders(list, mode) {
+  const I = new Map(list.map(o => [o.id, ordInfo(o)])), k = o => I.get(o.id).d === null ? 1e9 : I.get(o.id).d;
+  const f = mode === "new" ? (a, b) => b.created - a.created : mode === "name" ? (a, b) => a.cust.localeCompare(b.cust, "tr") : (a, b) => k(a) - k(b) || b.created - a.created;
+  return [...list].sort(f);
+}
+function drawOrders() {
+  const box = $("olist"); if (!box) return;
+  const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
+  const F = { open: i => !i.isDone, late: i => i.st === "late", next: i => !i.isDone && i.nx, done: i => i.isDone };
+  const cnt = k => base.filter(o => F[k](info.get(o.id))).length;
+  $("ocnt").innerHTML = [["open", "Açık"], ["late", "Geciken"], ["next", "Adımı var"], ["done", "Biten"]].map(([k, t]) =>
+    `<button type="button" class="hc${S.hf === k ? " on" : ""}" data-act="hf" data-v="${k}"><b>${cnt(k)}</b><span>${t}</span></button>`).join("");
+  const shown = S.hf === "all" ? base : base.filter(o => F[S.hf](info.get(o.id)));
+  const sh = $("oshown"); sh.textContent = `Gösterilen: ${shown.length} / ${orders.length}`; sh.style.display = shown.length === orders.length ? "none" : "block";
+  const live = sortOrders(shown.filter(o => !info.get(o.id).isDone), S.hs), fin = sortOrders(shown.filter(o => info.get(o.id).isDone), S.hs);
+  let h = "";
+  if (live.length) h += `<div class="ogrid">${live.map(ocard).join("")}</div>`;
+  if (fin.length) h += (S.hf === "done" ? "" : `<h3>Tamamlananlar (${fin.length})</h3>`) + `<div class="ogrid">${fin.map(ocard).join("")}</div>`;
+  box.innerHTML = h || `<div class="empty">${orders.length ? "Sonuç bulunamadı." : "Henüz kayıtlı sipariş yok."}</div>`;
+}
+const dateTxt = o => `Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")}${o.due ? ` · Tahmini bitiş: ${fmtDue(o.due)}` : ""}`;
+function linesInfoHtml(o) {
+  const ls = o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return `<div class="hl"><span class="dot" style="background:${hexOf(l.color)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(l.color)} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span></div>`; }).join("");
+  return ls || '<div class="hl">Ürün yok</div>';
+}
+function drawSheet() {
+  const o = orders.find(x => x.id === S.sheet);
+  if (!o) { S.sheet = null; $("shOv").classList.remove("open"); return; }
+  const I = ordInfo(o);
+  $("shBox").innerHTML = `<div class="shh"><h2>${esc(o.cust)}</h2><button type="button" class="sx" data-act="sheet-close">✕ Kapat</button></div>
+    <div class="shc"><span class="bd" style="--uc:${ST_C[I.st]}">${esc(I.txt)}</span><span>${esc(dateTxt(o))}</span></div>
+    <div class="pbar"><i style="width:${I.pct}%"></i></div><div class="pnum" style="margin-top:4px"><span>${I.done} / ${I.qty}</span><span>%${I.pct}</span></div>
+    <h3>➡ Sonraki adım</h3>
+    <input class="inp nx-t" maxlength="140" placeholder="Örn: Kırmızı iplik bekleniyor" value="${esc(I.nx)}">
+    <div class="qk">${NEXT_QUICK.map(t => `<button type="button" data-act="nx-q" data-v="${esc(t)}">${esc(t)}</button>`).join("")}<button type="button" class="clr" data-act="nx-clear">Temizle</button></div>
+    <div style="margin-top:8px"><small class="hint">Hatırlatma tarihi (isteğe bağlı)</small><input type="date" class="inp nx-d" value="${esc(I.nd)}"></div>
+    <h3>☑ Eksikler / yapılacaklar (${I.tdDone}/${I.todos.length})</h3>
+    ${I.todos.map(t => `<div class="td${t.ok ? " ok" : ""}"><input type="checkbox" data-act="td-tg" data-id="${esc(t.id)}"${t.ok ? " checked" : ""}><span>${esc(t.t)}</span><button type="button" data-act="td-del" data-id="${esc(t.id)}" aria-label="Sil">✕</button></div>`).join("")}
+    <div class="tdadd"><input class="inp td-new" maxlength="140" placeholder="Örn: Kırmızı renk eksik"><button type="button" data-act="td-add">Ekle</button></div>
+    <h3>📝 Not</h3><textarea class="inp nt-t" rows="3" maxlength="600" placeholder="Bu sipariş için not…">${esc(o.note || "")}</textarea>
+    <h3>Ürünler</h3>${linesInfoHtml(o)}
+    <button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>`;
+  $("shOv").classList.add("open");
+}
+const closeSheet = () => { S.sheet = null; $("shOv").classList.remove("open"); };
+function refreshSheet() {
+  if (!S.sheet) return;
+  const a = document.activeElement;
+  if (a && $("shBox").contains(a) && /INPUT|TEXTAREA/.test(a.tagName)) return;   /* yazarken yenileme */
+  drawSheet();
+}
+function withOrd(fn) { const o = orders.find(x => x.id === S.sheet); if (!o) return false; fn(o); pushOrder(o); drawOrders(); return true; }
+function setNext(patch, quiet) {
+  withOrd(o => { const n = { t: "", d: "", ...(o.next || {}), ...patch }; if (!n.t && !n.d) delete o.next; else o.next = n; });
+  if (!quiet) drawSheet();
+}
+function addTodo() {
+  const i = $("shBox").querySelector(".td-new"), t = (i ? i.value : "").trim(); if (!t) return toast("Yazın");
+  withOrd(o => { o.todos = [...arr(o.todos), { id: uid(), t, ok: false }]; });
+  drawSheet(); const n = $("shBox").querySelector(".td-new"); if (n) n.focus();
+}
+function hovHtml(o) {
+  const I = ordInfo(o), todos = I.todos.map(t => `<div class="hl"><span>${t.ok ? "☑" : "☐"}</span><span>${esc(t.t)}</span></div>`).join("");
+  return `<h4>${esc(o.cust)}</h4><span class="bd" style="--uc:${ST_C[I.st]}">${esc(I.txt)}</span>
+    <div class="hl" style="color:var(--mu)">${esc(dateTxt(o))}</div>
+    <div class="hl">${I.done} / ${I.qty} · %${I.pct}</div>
+    <div class="hs">Sonraki adım</div><div class="hl">${I.nx || I.nd ? `➡ ${esc(I.nx || "Hatırlatma")}${I.nd ? ` · ${fmtDue(I.nd)}` : ""}` : "—"}</div>
+    <div class="hs">Eksikler (${I.tdDone}/${I.todos.length})</div>${todos || '<div class="hl">—</div>'}
+    ${o.note ? `<div class="hs">Not</div><div class="hl">${esc(o.note)}</div>` : ""}
+    <div class="hs">Ürünler</div>${linesInfoHtml(o)}`;
+}
+let hovId = null;
+const canHover = () => !!(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches);
+const hideHov = () => { hovId = null; $("hov").style.display = "none"; };
+function showHov(card) {
+  if (!canHover() || S.sheet) return;
+  const id = card.dataset.id; if (hovId === id) return;
+  const o = orders.find(x => x.id === id); if (!o) return hideHov();
+  hovId = id; const h = $("hov"); h.innerHTML = hovHtml(o); h.style.display = "block";
+  const r = card.getBoundingClientRect(), w = h.offsetWidth, hh = h.offsetHeight;
+  let x = r.right + 10; if (x + w > window.innerWidth - 8) x = Math.max(8, r.left - w - 10);
+  h.style.left = x + "px"; h.style.top = Math.max(8, Math.min(r.top, window.innerHeight - hh - 8)) + "px";
 }
 function lineHtml(l) {
   const p = prodOf(l.k), r = rem(l);
@@ -531,12 +680,15 @@ function render(keep) {
     const list = [...orders].sort((a, b) => b.created - a.created);
     app.innerHTML = `<button class="primary" data-act="new" style="margin:0 0 10px">➕ Yeni sipariş</button>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px"><button class="second" data-act="custmgr" style="margin:0">👥 Müşteri listesi</button><button class="second" data-act="report" style="margin:0">📊 Sipariş raporu</button></div>
-      <h2>Kayıtlı siparişler (${list.length})</h2>` +
-      (list.length ? list.map(ocard).join("") : '<div class="empty">Henüz kayıtlı sipariş yok.</div>') +
+      <h2>Kayıtlı siparişler (${orders.length})</h2>
+      <div class="hbar" id="ocnt"></div>
+      <div class="hrow"><input class="inp" id="hq" type="search" placeholder="Müşteri ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>
+      <div class="hshown" id="oshown" style="display:none"></div><div id="olist"></div>` +
       `<h3>Yedek</h3>
       <div class="bkrow"><button class="nb" data-act="bk-out">📤 Yedek al</button><button class="nb" data-act="bk-in">📥 Geri yükle</button></div>` +
       (S.bk ? `<textarea id="bk" class="inp" rows="5" ${S.bk === "out" ? "readonly" : 'placeholder="Yedek metnini buraya yapıştırın"'}>${S.bk === "out" ? esc(JSON.stringify(orders)) : ""}</textarea>` +
         (S.bk === "in" ? '<button class="second" data-act="bk-apply">Uygula</button>' : "") : "");
+    drawOrders();
   } else if (V === "report") {
     app.innerHTML = `<button class="second" data-act="rep-print" style="margin:0 0 12px">🖨️ PDF / Yazdır</button><div class="rep">${reportHtml()}</div>`;
   } else if (V === "custmgr") {
@@ -675,6 +827,15 @@ document.addEventListener("click", e => {
     cs.forEach(c => o.lines.push({ id: uid(), k: S.pk, color: c, qty: S.sel[c], done: 0, asg: {} }));
     persist(); go("order");
   }
+  else if (a === "sheet") { hideHov(); S.sheet = b.dataset.id; drawSheet(); }
+  else if (a === "sheet-close") closeSheet();
+  else if (a === "sheet-open") { const x = orders.find(y => y.id === S.sheet); closeSheet(); if (x) { S.order = x; go("order"); } }
+  else if (a === "hf") { S.hf = S.hf === b.dataset.v ? "all" : b.dataset.v; drawOrders(); }
+  else if (a === "nx-q") setNext({ t: b.dataset.v })
+  else if (a === "nx-clear") setNext({ t: "", d: "" })
+  else if (a === "td-add") addTodo()
+  else if (a === "td-tg") { withOrd(x => { const t = arr(x.todos).find(y => y.id === b.dataset.id); if (t) t.ok = !t.ok; }); drawSheet(); }
+  else if (a === "td-del") { withOrd(x => { x.todos = arr(x.todos).filter(y => y.id !== b.dataset.id); }); drawSheet(); }
   else if (a === "open") { S.order = orders.find(x => x.id === b.dataset.id); go("order"); }
   else if (a === "addmore") go("prod");
   else if (a === "show") go("res");
@@ -743,6 +904,23 @@ document.addEventListener("change", e => {
   }
   persist(); render(true);
 });
+document.addEventListener("input", e => { if (e.target.id === "hq") { S.hq = e.target.value; drawOrders(); } });
+document.addEventListener("change", e => {
+  const c = e.target.classList;
+  if (c.contains("hs-sel")) { S.hs = e.target.value; drawOrders(); return; }
+  if (!S.sheet) return;
+  if (c.contains("nx-t")) setNext({ t: e.target.value.trim() }, true);
+  else if (c.contains("nx-d")) setNext({ d: e.target.value || "" }, true);
+  else if (c.contains("nt-t")) withOrd(o => { const v = e.target.value.trim(); if (v) o.note = v; else delete o.note; });
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { closeSheet(); hideHov(); }
+  else if (e.key === "Enter" && e.target.classList && e.target.classList.contains("td-new")) addTodo();
+  else if (e.key === "Enter" && e.target.classList && e.target.classList.contains("nx-t")) e.target.blur();
+});
+document.addEventListener("mouseover", e => { const c = e.target.closest && e.target.closest(".oc"); if (c) showHov(c); else if (hovId) hideHov(); });
+window.addEventListener("scroll", () => { if (hovId) hideHov(); }, true);
+$("shOv").addEventListener("click", e => { if (e.target === $("shOv")) closeSheet(); });
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "cin") document.querySelector('[data-act="cust-ok"]').click(); });
 
 /* ---------- Firebase ----------
@@ -817,7 +995,8 @@ function startData() {
       const fnd = orders.find(o => o.id === S.order.id);
       if (fnd) S.order = fnd; else { S.order = null; if (["order","res","color","prod"].includes(S.view)) S.view = "home"; }
     }
-    if (["home","order","res","report"].includes(S.view)) render(true);
+    if (S.view === "home" && $("olist")) drawOrders(); else if (["home","order","res","report"].includes(S.view)) render(true);
+    refreshSheet();
   }, e => { toast("Siparişler Firebase'den okunamadı"); denied(e); });
   db.ref("kale_dokuma_live_v2").on("value", s => {
     const r = s.val() || {};
