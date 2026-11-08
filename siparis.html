@@ -127,6 +127,21 @@ body.hm main{max-width:1560px}
 .tdadd button{flex:none;background:var(--ac);color:var(--ac-d);border:0;border-radius:10px;padding:0 16px;font-weight:800;cursor:pointer;font-family:inherit}
 .hl{display:flex;gap:7px;align-items:flex-start;margin:4px 0;font-size:.84rem;font-weight:600}
 .hl .dot{margin-top:3px;flex:none}
+.shs .shh{position:sticky;top:0;margin:-16px -16px 10px;padding:14px 16px;background:var(--card);z-index:3;border-bottom:1px solid var(--bd)}
+.shb{display:flex;gap:8px;flex:none}
+.sv{background:var(--card2);border:1px solid var(--bd);color:var(--mu);border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;font-family:inherit}
+.sv.on{background:var(--ac);color:var(--ac-d);border-color:var(--ac)}
+.shs button.second.sv{width:100%;padding:13px;margin-top:10px;font-size:.95rem}
+.svb{position:fixed;left:0;right:0;bottom:0;z-index:55;display:none;align-items:center;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(23,27,34,.98);border-top:1px solid var(--ac)}
+.svb.on{display:flex}
+.svb span{flex:1;font-size:.78rem;font-weight:700;color:var(--ac)}
+.svb button{border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;font-family:inherit;border:1px solid var(--bd);background:var(--card2);color:var(--tx)}
+.svb .vs{background:var(--ac);color:var(--ac-d);border-color:var(--ac)}
+body.dirty main{padding-bottom:90px}
+.mrow{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:13px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);text-align:left;cursor:pointer;margin-bottom:10px;text-decoration:none;font-family:inherit}
+.mrow .mi{font-size:1.5rem;flex-shrink:0}
+.mrow b{display:block;font-size:1rem;font-weight:800}
+.mrow small{display:block;color:var(--mu);font-size:.74rem;font-weight:600;margin-top:2px}
 .hov{position:fixed;z-index:70;display:none;width:330px;max-width:90vw;max-height:80vh;overflow:auto;background:var(--card2);border:1px solid var(--ac);border-radius:14px;padding:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);pointer-events:none;font-size:.8rem}
 .hov h4{margin:0 0 6px;font-size:1rem;overflow-wrap:anywhere}
 .hov .hs{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);font-weight:800;margin:10px 0 4px}
@@ -199,8 +214,7 @@ body *{visibility:hidden}
   <div class="nav">
     <button class="nb" data-act="back">← Geri</button>
     <button class="nb" data-act="home">🏠 Ana sayfa</button>
-    <a class="nb" href="https://auqrup.github.io/Kale-dokuma-order/">🧵 Makineler</a>
-    <button class="nb" id="outBtn" title="Çıkış">🚪 Çıkış</button>
+    <button class="nb" data-act="menu">☰ Menü</button>
   </div>
   <div class="tools" id="tools"></div>
   <div class="crumbs" id="crumbs"></div>
@@ -213,6 +227,13 @@ body *{visibility:hidden}
 <div id="loginErr"></div><button type="submit" class="primary" id="loginBtn" style="margin-top:6px">Giriş</button></form></div>
 <div class="toast" id="toast"></div>
 <div class="ovl" id="shOv"><div class="shs" id="shBox"></div></div>
+<div class="ovl" id="menuOv"><div class="shs">
+  <div class="shh"><h2>Menü</h2><button type="button" class="sx" data-act="menu-close">✕ Kapat</button></div>
+  <a class="mrow" href="https://auqrup.github.io/Kale-dokuma-order/"><span class="mi">🧵</span><span><b>Makineler</b><small>Makine takip sayfası</small></span></a>
+  <a class="mrow" href="fabrika.html"><span class="mi">🏭</span><span><b>Atölye</b><small>Atölye görünümü (sadece okuma)</small></span></a>
+  <button type="button" class="mrow" id="outBtn"><span class="mi">🚪</span><span><b>Çıkış</b><small>Hesaptan çık</small></span></button>
+</div></div>
+<div class="svb" id="svb"></div>
 <div class="hov" id="hov"></div>
 
 <script>
@@ -409,13 +430,36 @@ function allCust() {
   return [...m.values()].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null, hq:"", hf:"all", hs:"due", sheet:null };
+let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
 const pname = p => p.roll ? (p.ftype ? `Kumaş ${p.fw} cm ${p.name}` : "Rulo kumaş") : `${p.g} ${p.name}`;
 /* Tarih: o.created = oluşturma (ms), o.due = tahmini bitiş ("YYYY-MM-DD", boş olabilir) */
 const fmtDue = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); return m ? `${m[3]}.${m[2]}.${m[1]}` : ""; };
-const persist = () => { if (S.order?.saved) pushOrder(S.order); };
+const clone = x => JSON.parse(JSON.stringify(x));
+/* Kayıtlı siparişte değişiklikler TASLAK olarak S.order (kopya) üzerinde tutulur; Firebase'e SADECE "Kaydet" ile yazılır. */
+const persist = () => { if (S.order?.saved) { S.dirty = true; drawBar(); } };
+function drawBar() {
+  const on = !!(S.order?.saved && S.dirty);
+  document.body.classList.toggle("dirty", on);
+  $("svb").classList.toggle("on", on);
+  $("svb").innerHTML = on ? '<span>● Kaydedilmemiş değişiklikler var</span><button type="button" data-act="ord-discard">↩ Vazgeç</button><button type="button" class="vs" data-act="ord-save">💾 Kaydet</button>' : "";
+}
+function saveOrder(quiet) {
+  const o = S.order; if (!o || !o.saved) return;
+  if (!S.dirty) { if (!quiet) toast("Değişiklik yok"); return; }
+  const stored = clone(o), i = orders.findIndex(x => x.id === o.id);
+  if (i >= 0) orders[i] = stored; else orders.push(stored);
+  pushOrder(stored); S.order = clone(stored); S.dirty = false; drawBar(); drawOrders();
+  if (!quiet) toast("Kaydedildi ✓");
+}
+function leaveOk() {   /* kaydedilmemiş değişiklik varsa sorar; true = çıkılabilir */
+  if (!(S.order?.saved && S.dirty)) return true;
+  if (confirm("Değişiklikler kaydedilsin mi?")) { saveOrder(true); return true; }
+  if (confirm("Kaydetmeden çıkılsın mı? Değişiklikler silinecek.")) { S.dirty = false; drawBar(); return true; }
+  return false;
+}
+window.addEventListener("beforeunload", e => { if ((S.order?.saved && S.dirty) || S.sdirty) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- Öneri motoru ---------- */
 function suggest(line, order) {
@@ -618,11 +662,12 @@ function linesInfoHtml(o) {
   const ls = o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return `<div class="hl"><span class="dot" style="background:${hexOf(l.color)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(l.color)} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span></div>`; }).join("");
   return ls || '<div class="hl">Ürün yok</div>';
 }
+function openSheet(id) { const o = orders.find(x => x.id === id); if (!o) return; hideHov(); S.sheet = id; S.draft = clone(o); S.sdirty = false; drawSheet(); }
 function drawSheet() {
-  const o = orders.find(x => x.id === S.sheet);
-  if (!o) { S.sheet = null; $("shOv").classList.remove("open"); return; }
+  const o = S.draft;
+  if (!o) { $("shOv").classList.remove("open"); return; }
   const I = ordInfo(o);
-  $("shBox").innerHTML = `<div class="shh"><h2>${esc(o.cust)}</h2><button type="button" class="sx" data-act="sheet-close">✕ Kapat</button></div>
+  $("shBox").innerHTML = `<div class="shh"><h2>${esc(o.cust)}</h2><div class="shb"><button type="button" class="sv${S.sdirty ? " on" : ""}" data-act="sh-save">💾 Kaydet</button><button type="button" class="sx" data-act="sheet-close">✕ Kapat</button></div></div>
     <div class="shc"><span class="bd" style="--uc:${ST_C[I.st]}">${esc(I.txt)}</span><span>${esc(dateTxt(o))}</span></div>
     <div class="pbar"><i style="width:${I.pct}%"></i></div><div class="pnum" style="margin-top:4px"><span>${I.done} / ${I.qty}</span><span>%${I.pct}</span></div>
     <h3>➡ Sonraki adım</h3>
@@ -634,17 +679,40 @@ function drawSheet() {
     <div class="tdadd"><input class="inp td-new" maxlength="140" placeholder="Örn: Kırmızı renk eksik"><button type="button" data-act="td-add">Ekle</button></div>
     <h3>📝 Not</h3><textarea class="inp nt-t" rows="3" maxlength="600" placeholder="Bu sipariş için not…">${esc(o.note || "")}</textarea>
     <h3>Ürünler</h3>${linesInfoHtml(o)}
+    <button type="button" class="second sv${S.sdirty ? " on" : ""}" data-act="sh-save">💾 Kaydet</button>
     <button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>`;
   $("shOv").classList.add("open");
 }
-const closeSheet = () => { S.sheet = null; $("shOv").classList.remove("open"); };
+function markSheet() { const b = $("shBox"); if (b) b.querySelectorAll(".sv").forEach(x => x.classList.toggle("on", S.sdirty)); }
+/* Pencere SADECE kendi alanlarını yazar (next / todos / note); ürün satırlarına (yapılan adet vb.) dokunmaz. */
+function saveSheet(quiet) {
+  if (!S.draft) return true;
+  if (!S.sdirty) { if (!quiet) toast("Değişiklik yok"); return true; }
+  const d = S.draft, cur = orders.find(x => x.id === d.id);
+  if (!cur) { toast("Sipariş bulunamadı"); return false; }
+  if (d.next && (d.next.t || d.next.d)) cur.next = clone(d.next); else delete cur.next;
+  cur.todos = clone(arr(d.todos)); if (d.note) cur.note = d.note; else delete cur.note;
+  cache();
+  if (ordRef) ordRef.child(cur.id).update({ next: cur.next || null, todos: cur.todos.length ? cur.todos : null, note: cur.note || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
+  S.sdirty = false; S.draft = clone(cur); drawOrders();
+  if (!quiet) { toast("Kaydedildi ✓"); drawSheet(); }
+  return true;
+}
+function closeSheet(force) {
+  if (!force && S.sdirty) {
+    if (confirm("Değişiklikler kaydedilsin mi?")) saveSheet(true);
+    else if (!confirm("Kaydetmeden kapatılsın mı? Değişiklikler silinecek.")) return false;
+  }
+  S.sheet = null; S.draft = null; S.sdirty = false; $("shOv").classList.remove("open"); return true;
+}
 function refreshSheet() {
-  if (!S.sheet) return;
+  if (!S.sheet || S.sdirty) return;   /* taslak varken uzaktan gelen güncelleme ezmesin */
   const a = document.activeElement;
   if (a && $("shBox").contains(a) && /INPUT|TEXTAREA/.test(a.tagName)) return;   /* yazarken yenileme */
-  drawSheet();
+  const o = orders.find(x => x.id === S.sheet); if (!o) { closeSheet(true); return; }
+  S.draft = clone(o); drawSheet();
 }
-function withOrd(fn) { const o = orders.find(x => x.id === S.sheet); if (!o) return false; fn(o); pushOrder(o); drawOrders(); return true; }
+function withOrd(fn) { if (!S.draft) return false; fn(S.draft); S.sdirty = true; markSheet(); return true; }
 function setNext(patch, quiet) {
   withOrd(o => { const n = { t: "", d: "", ...(o.next || {}), ...patch }; if (!n.t && !n.d) delete o.next; else o.next = n; });
   if (!quiet) drawSheet();
@@ -747,7 +815,7 @@ function render(keep) {
       `<button class="second" data-act="addmore">➕ Ürün / renk ekle</button>` +
       (o.lines.length ? '<button class="primary" data-act="show">🔍 Makineleri göster</button>' : "") +
       (o.saved ? "" : (o.lines.length ? '<button class="second" data-act="save">💾 Siparişi kaydet</button>' : "")) +
-      (o.saved ? '<button class="second" data-act="delord" style="color:var(--stop)">🗑 Siparişi sil</button>' : "");
+      (o.saved ? '<button class="second" data-act="ord-save">💾 Değişiklikleri kaydet</button><button class="second" data-act="delord" style="color:var(--stop)">🗑 Siparişi sil</button>' : "");
   } else {
     const open = o.lines.filter(l => rem(l) > 0 && prodOf(l.k) && !l.comp);
     let h = `<h2>Uygun makineler</h2><small class="hint">Süre = metraj ÷ günlük üretim (yaklaşık).</small>`;
@@ -766,6 +834,7 @@ function render(keep) {
     });
     app.innerHTML = h;
   }
+  drawBar();
   if (!keep) window.scrollTo(0, 0);
 }
 
@@ -812,6 +881,7 @@ function toast(m) { const t = $("toast"); t.textContent = m; t.style.display = "
 function go(v) { S.view = v; render(); }
 function startOrder(name) { S.order = { id: uid(), cust: name, created: Date.now(), saved: false, lines: [] }; go("prod"); }
 function goHome() {
+  if (!leaveOk()) return;
   if (S.order && !S.order.saved && S.order.lines.length && !confirm("Kaydedilmemiş sipariş silinecek. Çıkılsın mı?")) return;
   S.order = null; S.bk = null; go("home");
 }
@@ -838,21 +908,26 @@ document.addEventListener("click", e => {
     cs.forEach(c => o.lines.push({ id: uid(), k: S.pk, color: c, qty: S.sel[c], done: 0, asg: {} }));
     persist(); go("order");
   }
-  else if (a === "sheet") { hideHov(); S.sheet = b.dataset.id; drawSheet(); }
-  else if (a === "sheet-close") closeSheet();
-  else if (a === "sheet-open") { const x = orders.find(y => y.id === S.sheet); closeSheet(); if (x) { S.order = x; go("order"); } }
+  else if (a === "sheet") openSheet(b.dataset.id)
+  else if (a === "sheet-close") closeSheet()
+  else if (a === "sh-save") saveSheet()
+  else if (a === "sheet-open") { const x = orders.find(y => y.id === S.sheet); if (!closeSheet()) return; if (x) { S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("order"); } }
+  else if (a === "ord-save") saveOrder()
+  else if (a === "ord-discard") { if (confirm("Değişiklikler silinsin mi?")) { const x = orders.find(y => y.id === (o && o.id)); S.dirty = false; if (x) { S.order = clone(x); render(true); } else goHome(); } }
+  else if (a === "menu") $("menuOv").classList.add("open")
+  else if (a === "menu-close") $("menuOv").classList.remove("open")
   else if (a === "hf") { S.hf = S.hf === b.dataset.v ? "all" : b.dataset.v; drawOrders(); }
   else if (a === "nx-q") setNext({ t: b.dataset.v })
   else if (a === "nx-clear") setNext({ t: "", d: "" })
   else if (a === "td-add") addTodo()
   else if (a === "td-tg") { withOrd(x => { const t = arr(x.todos).find(y => y.id === b.dataset.id); if (t) t.ok = !t.ok; }); drawSheet(); }
   else if (a === "td-del") { withOrd(x => { x.todos = arr(x.todos).filter(y => y.id !== b.dataset.id); }); drawSheet(); }
-  else if (a === "open") { S.order = orders.find(x => x.id === b.dataset.id); go("order"); }
+  else if (a === "open") { const x = orders.find(y => y.id === b.dataset.id); S.order = x ? clone(x) : null; S.dirty = false; go("order"); }
   else if (a === "addmore") go("prod");
   else if (a === "show") go("res");
   else if (a === "more") { S.all[b.dataset.id] = true; render(true); }
   else if (a === "save") { o.saved = true; orders.push(o); pushOrder(o); S.order = null; go("home"); toast("Sipariş başarıyla eklendi ✓"); }
-  else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; go("home"); } }
+  else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; S.dirty = false; go("home"); } }
   else if (a === "del-line") { o.lines = o.lines.filter(l => l.id !== b.dataset.id && !(l.comp && l.comp.of === b.dataset.id)); persist(); render(true); }
   else if (a === "asg") {
     if (!o.saved) return toast("Önce siparişi kaydedin");
@@ -925,13 +1000,14 @@ document.addEventListener("change", e => {
   else if (c.contains("nt-t")) withOrd(o => { const v = e.target.value.trim(); if (v) o.note = v; else delete o.note; });
 });
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { closeSheet(); hideHov(); }
+  if (e.key === "Escape") { $("menuOv").classList.remove("open"); closeSheet(); hideHov(); }
   else if (e.key === "Enter" && e.target.classList && e.target.classList.contains("td-new")) addTodo();
   else if (e.key === "Enter" && e.target.classList && e.target.classList.contains("nx-t")) e.target.blur();
 });
 document.addEventListener("mouseover", e => { const c = e.target.closest && e.target.closest(".oc"); if (c) showHov(c); else if (hovId) hideHov(); });
 window.addEventListener("scroll", () => { if (hovId) hideHov(); }, true);
 $("shOv").addEventListener("click", e => { if (e.target === $("shOv")) closeSheet(); });
+$("menuOv").addEventListener("click", e => { if (e.target === $("menuOv")) $("menuOv").classList.remove("open"); });
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "cin") document.querySelector('[data-act="cust-ok"]').click(); });
 
 /* ---------- Firebase ----------
@@ -1002,9 +1078,9 @@ function startData() {
       orders.forEach(o => { const b = sig(o); prep(o); if (localOnly.includes(o) || sig(o) !== b) pushOrder(o); });
     } else orders = remote;
     cache();
-    if (S.order?.saved) {
+    if (S.order?.saved && !S.dirty) {
       const fnd = orders.find(o => o.id === S.order.id);
-      if (fnd) S.order = fnd; else { S.order = null; if (["order","res","color","prod"].includes(S.view)) S.view = "home"; }
+      if (fnd) S.order = clone(fnd); else { S.order = null; if (["order","res","color","prod"].includes(S.view)) S.view = "home"; }
     }
     if (S.view === "home" && $("olist")) drawOrders(); else if (["home","order","res","report"].includes(S.view)) render(true);
     refreshSheet();
