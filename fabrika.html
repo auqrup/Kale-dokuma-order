@@ -78,9 +78,6 @@ body{font-family:var(--ff);color:var(--tx);min-height:100vh;background:radial-gr
 .ch i{width:8px;height:8px;border-radius:50%}
 .cc{display:inline-flex;align-items:center;gap:5px;margin-right:6px;color:var(--tx)}
 .warn{color:var(--stop)}
-.nx{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.07);font-size:.82rem;font-weight:700}
-.nx b{text-transform:uppercase}
-.nx span{color:var(--mu)}
 .rf{margin-top:14px;font-size:.68rem;color:var(--mu)}
 /* giriş */
 #login{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:var(--page);padding:20px}
@@ -99,7 +96,7 @@ body{font-family:var(--ff);color:var(--tx);min-height:100vh;background:radial-gr
   #printSection{display:block!important;color:#000;background:#fff;padding:10px;font-family:var(--ff)}
   #printSection *{color:#000!important;border-color:#999!important;box-shadow:none!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #printSection .rc,#printSection .k{background:#fff!important;break-inside:avoid}
-  #printSection .ch,#printSection .nx{background:#fff!important}
+  #printSection .ch{background:#fff!important}
   #printSection .warn{color:#b91c1c!important}
 }
 </style>
@@ -195,7 +192,7 @@ function norm(raw, id) {
   const colors = (Array.isArray(raw?.colors) ? raw.colors : Object.values(raw?.colors || {})).map(nm);
   while (colors.length < (width === 140 ? 6 : 4)) colors.push("0");
   return { id, branch: id[0], num, width, status: ST[raw?.status] ? raw.status : "running",
-           currentCustomer: String(raw?.currentCustomer ?? "").trim(), nextCustomer: String(raw?.nextCustomer ?? "").trim(), colors };
+           currentCustomer: String(raw?.currentCustomer ?? "").trim(), colors };
 }
 const L = {}; ids.forEach(id => L[id] = norm(null, id));
 let loaded = false;
@@ -230,10 +227,9 @@ const keyOf = n => n.replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
 function reportHtml() {
   const all = ids.map(id => L[id]), now = new Date();
   const date = now.toLocaleDateString("tr-TR") + " " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
-  const by = new Map(), nx = new Map(), idle = [];
+  const by = new Map(), idle = [];
   all.forEach(l => {
     if (l.currentCustomer) { const k = keyOf(l.currentCustomer); if (!by.has(k)) by.set(k, { name: l.currentCustomer, ms: [] }); by.get(k).ms.push(l); } else idle.push(l);
-    if (l.nextCustomer) { const k = keyOf(l.nextCustomer); if (!nx.has(k)) nx.set(k, { name: l.nextCustomer, ms: [] }); nx.get(k).ms.push(l); }
   });
   const custs = [...by.values()].sort((a, b) => b.ms.length - a.ms.length || a.name.localeCompare(b.name, "tr"));
   const running = all.filter(l => l.status === "running").length, problem = all.length - running;
@@ -248,12 +244,10 @@ function reportHtml() {
       <div class="row">${cols.map(x => `<span class="cc"><i class="dot" style="background:${hexOf(x)}"></i>${esc(x)}</span>`).join("") || "—"}</div>
       <div class="row">${Object.keys(w).sort((a, b) => b - a).map(k => `${k} cm × ${w[k]}`).join(" · ")}${bad ? ` <span class="warn">· ⚠ ${bad} makine çalışmıyor</span>` : ""}</div></div>`;
   }).join("");
-  const next = [...nx.values()].sort((a, b) => a.name.localeCompare(b.name, "tr")).map(c => `<div class="nx"><b>${esc(c.name)}</b><span>${c.ms.map(l => esc(l.id)).join(", ")}</span></div>`).join("");
   return `<div class="rh"><div><small>KALE DOKUMA</small><h3>Atölye Raporu</h3></div><div class="dt">${esc(date)}</div></div>
     <div class="rk">${kpi(by.size, "Aktif müşteri")}${kpi(all.length - idle.length, "Müşterili makine")}${kpi(running + "/" + all.length, "Çalışıyor")}${kpi(idle.length, "Boşta")}</div>
     ${problem ? `<p class="warn" style="font-size:.8rem;font-weight:800;margin:-6px 0 12px">⚠ ${problem} makine çalışmıyor (duruş / iplik / bakım)</p>` : ""}
     <div class="rt">Şu an çalışılan müşteriler</div>${rows || '<p style="color:var(--mu)">Şu an müşteri atanmış makine yok.</p>'}
-    ${next ? `<div class="rt">Sıradaki müşteriler</div>${next}` : ""}
     ${idle.length ? `<div class="rt">Müşteri atanmamış makineler (${idle.length})</div><div class="row" style="display:flex;flex-wrap:wrap;gap:4px 6px">${idle.map(chip).join("")}</div>` : ""}
     <p class="rf">Renkler: makinenin ANA rengi (140 cm tezgahta iki kanadın ana rengi). Nokta rengi: yeşil çalışıyor · kırmızı duruş · turuncu iplik yok · mor bakım.</p>`;
 }

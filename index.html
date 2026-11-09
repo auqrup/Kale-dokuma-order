@@ -179,6 +179,16 @@ body *{visibility:hidden}
 .pt th{background:#f1f5f9}
 .pd{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;border:1px solid #888}
 }
+/* ---- 2026-11-09: daha modern görünüm (tasarım dili: siparis sayfasıyla aynı), küçük Siparişler düğmesi ---- */
+body{background:radial-gradient(900px 420px at 12% -8%,rgba(52,211,153,.13),transparent 65%),radial-gradient(800px 380px at 100% 0,rgba(240,198,116,.09),transparent 60%),var(--page);background-attachment:fixed}
+.card{background:linear-gradient(160deg,var(--card2),var(--card) 58%);border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.35);transition:transform .12s,box-shadow .12s}
+.card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.5)}
+.card:active{transform:scale(.97)}
+.stat{background:linear-gradient(160deg,var(--card2),var(--card));border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.stat.on{background:linear-gradient(160deg,rgba(240,198,116,.2),var(--card))}
+.badge{background:linear-gradient(160deg,var(--card2),var(--bg))}
+.warp{background:linear-gradient(160deg,var(--card2),var(--bg))}
+.obtn{width:auto;align-self:flex-start;padding:4px 11px;border-radius:99px;font-size:.7rem;background:transparent;color:var(--mu)}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -248,7 +258,6 @@ body *{visibility:hidden}
       </div>
     </div>
     <div class="fg"><label for="fCur">Mevcut Müşteri</label><select class="inp" id="fCur"></select></div>
-    <div class="fg"><label for="fNext">Gelecek Müşteri</label><select class="inp" id="fNext"></select><button type="button" class="b-cancel" id="shiftBtn" style="width:100%;margin-top:8px;padding:10px;display:none">⏭ Sıradakini şimdiki yap</button><small style="color:var(--mu);font-size:.7rem">Listede olmayan müşteri için önce Sipariş sayfasından ekleyin.</small></div>
     <div class="fg"><label for="fWidth">En (Genişlik)</label>
       <select id="fWidth" class="inp"><option value="140">140 cm</option><option value="160">160 cm</option><option value="200">200 cm (2 Metre)</option></select>
     </div>
@@ -385,7 +394,7 @@ body *{visibility:hidden}
    UID bazinda kisitlar ama yol bazinda degil). Yeni kod bu ayrima uymali.
 
    TEZGAH MODELI (normalize/buildLoom): {id, branch, num, width(140|160|200), status,
-     currentCustomer, nextCustomer, colors[], warps[2], extra("spingel"|"simli"|""), lastModified}
+     currentCustomer, colors[], warps[2], extra("spingel"|"simli"|""), lastModified}
      - 140 cm tezgahlar IKI KANATLI: colors[0..2]=1. kanat (ana+2 alt),
        colors[3..5]=2. kanat. 160/200 cm tezgahlarda 4 renk (colors[0]=ana renk).
      - "0" = iplik yok / renk yok.
@@ -483,11 +492,12 @@ function normalize(l, id) {
   m.colors = Array.from({ length: colorCount(m.width) }, (_, i) => (cols[i] in COLORS ? cols[i] : "0"));
   m.warps = [0,1].map(i => (warps[i] in WARPS ? warps[i] : base.warps[i]));
   m.extra = EXTRAS.includes(m.extra) ? m.extra : "";
+  delete m.nextCustomer;   /* "Gelecek müşteri" fikri kaldırıldı: eski kayıtlardaki alan, makine bir sonraki kaydedilişinde Firebase'den de silinir */
   return m;
 }
 function buildLoom(id) {
   const branch = id[0], num = parseInt(id.slice(1), 10);
-  return { id, num, branch, width: WIDTHS[(num - 1) % 3], status: "running", currentCustomer: "", nextCustomer: "", warps: ["BEYAZ","SİYAH"], colors: ["0","0","0","0"], extra: "", lastModified: 0 };
+  return { id, num, branch, width: WIDTHS[(num - 1) % 3], status: "running", currentCustomer: "", warps: ["BEYAZ","SİYAH"], colors: ["0","0","0","0"], extra: "", lastModified: 0 };
 }
 function allIds() {
   return Object.entries(BRANCHES).flatMap(([b, o]) => Array.from({ length: o.count }, (_, i) => b + (i + 1)));
@@ -514,7 +524,7 @@ function visible(l, skipStatus) {
     const fold = t => String(t || "").replace(/[İIı]/g, "i").toLowerCase().replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u");
     const q = fold(query.trim());
     const cols = (l.width === 140 ? [0, 1, 3, 4] : [0, 1]).map(i => l.colors[i]).filter(c => c && c !== "0");
-    return [l.currentCustomer, l.nextCustomer, l.id, ...cols].some(v => fold(v).includes(q));
+    return [l.currentCustomer, l.id, ...cols].some(v => fold(v).includes(q));
   }
   return true;
 }
@@ -536,7 +546,7 @@ function colorsHtml(l) {
 }
 function cardHtml(l) {
   const c = l.colors;
-  const cur = l.currentCustomer?.trim() || "-", nxt = l.nextCustomer?.trim() || "-";
+  const cur = l.currentCustomer?.trim() || "-";
   const stripe = l.width === 140 ? `linear-gradient(90deg,${hexOf(c[0])} 50%,${hexOf(c[3])} 50%)` : hexOf(c[0]);
   return `
   <div class="stripe" style="background:${stripe}"></div>
@@ -549,10 +559,6 @@ function cardHtml(l) {
       <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
     </div>
     ${colorsHtml(l)}
-    <div class="cust">
-      <div class="row"><small>ŞU ANKİ:</small><span class="cur">${esc(cur)}</span></div>
-      <div class="row"><small>GELECEK:</small><span>${esc(nxt)}</span></div>
-    </div>
     <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}</button>
   </div>
   <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
@@ -681,7 +687,7 @@ function trCompare(a, b) {
 }
 function allCustomers() {
   const m = new Map();
-  [...customers, ...Object.values(looms).flatMap(l => [l.currentCustomer, l.nextCustomer])].forEach(n => {
+  [...customers, ...Object.values(looms).flatMap(l => [l.currentCustomer])].forEach(n => {
     n = (n || "").trim();
     if (n && n !== "-" && !m.has(lc(n))) m.set(lc(n), n);
   });
@@ -694,18 +700,16 @@ function fillCustSelect(sel, cur) {
   sel.innerHTML = '<option value="">— Seçilmedi —</option>' + list.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
   sel.value = cur || ""; sel.dataset.prev = sel.value;
 }
-function syncShift() { const b = $("shiftBtn"); if (b) b.style.display = $("fNext").value ? "block" : "none"; }
 function updateCustList() {
-  [$("fCur"), $("fNext")].forEach(s => fillCustSelect(s, s.dataset.prev || ""));
-  syncShift();
+  fillCustSelect($("fCur"), $("fCur").dataset.prev || "");
 }
 /* ---------- Bildirimler (Firebase: kale_events_v1 = son 50 olay; sadece bu sayfa YAZAR) ----------
-   Olay türleri: cust (mevcut müşteri), next (sıradaki müşteri), stop (duruş / iplik yok / bakım), color (renk), order (yeni sipariş).
+   Olay türleri: cust (mevcut müşteri), stop (duruş / iplik yok / bakım), color (renk), order (yeni sipariş).
    Tezgah olaylarını DEĞİŞİKLİĞİ YAPAN kullanıcının sayfası yazar (saveLoom). Yeni sipariş: siparis sayfasına dokunulmaz; bu sayfa siparişleri
    OKUYARAK fark eder ve deterministik anahtarla (ord_<id>) kaydeder, böylece birden çok cihaz aynı olayı yazsa bile tek kayıt kalır.
    Okundu bilgisi cihazda tutulur (localStorage). Kendi yaptığınız değişiklik için bildirim/rozet çıkmaz. */
 const EV_MAX = 50, EV_READ = "kale_notif_read", EV_SEEN_ORD = "kale_seen_orders";
-const EV_ICON = { cust: "👤", next: "⏭️", stop: "⛔", color: "🎨", order: "📦", restore: "💾" };
+const EV_ICON = { cust: "👤", next: "⏭️" /* sadece ESKİ kayıtlar için */, stop: "⛔", color: "🎨", order: "📦", restore: "💾" };
 const EV_STATUS = { stopped: "Duruş", yarn: "İplik yok", maint: "Arıza / Bakım" };
 let eventsRef = null, events = [], knownEv = null, evPruning = false, noticeT = null;
 const evUser = () => { try { return (firebase.auth().currentUser?.email || "").split("@")[0] || "?"; } catch { return "?"; } };
@@ -720,7 +724,6 @@ function loomEvents(old, nu) {
   const t = Date.now(), u = evUser(), out = [], nz = v => v || "—", rnd = () => Math.random().toString(36).slice(2, 6);
   const add = (k, x) => out.push({ key: `${t}_${rnd()}`, t, u, k, m: nu.id, x });
   if ((old.currentCustomer || "") !== (nu.currentCustomer || "")) add("cust", `Mevcut müşteri: ${nz(old.currentCustomer)} → ${nz(nu.currentCustomer)}`);
-  if ((old.nextCustomer || "") !== (nu.nextCustomer || "")) add("next", `Sıradaki müşteri: ${nz(old.nextCustomer)} → ${nz(nu.nextCustomer)}`);
   if (old.status !== nu.status && nu.status !== "running") add("stop", `Durdu: ${EV_STATUS[nu.status] || nu.status}`);
   if (JSON.stringify(old.colors) !== JSON.stringify(nu.colors)) {
     const mainStr = l => (l.width === 140 ? [l.colors[0], l.colors[3]] : [l.colors[0]]).map(c => !c || c === "0" ? "—" : c).join(" + ");
@@ -941,12 +944,7 @@ function initUi() {
   document.querySelectorAll(".sbtn").forEach(b => b.onclick = () => setStatus(b.dataset.val));
   $("fWidth").onchange = () => buildColorRows($("fWidth").value, readColors());
   document.querySelectorAll(".xbtn").forEach(b => b.onclick = () => setExtra(selectedExtra === b.dataset.x ? "" : b.dataset.x));
-  [$("fCur"), $("fNext")].forEach(sel => sel.onchange = () => { sel.dataset.prev = sel.value; syncShift(); });
-  $("shiftBtn").onclick = () => {   /* sadece formu doldurur; Kaydet'e basılana kadar hiçbir şey yazılmaz */
-    const n = $("fNext").value; if (!n) return;
-    fillCustSelect($("fCur"), n); fillCustSelect($("fNext"), ""); syncShift();
-    toast("Sıradaki müşteri şimdiki yapıldı. Kaydet'e basın.");
-  };
+  $("fCur").onchange = () => { $("fCur").dataset.prev = $("fCur").value; };
   $("bkBtn").onclick = openBk;
   $("bkClose").onclick = () => $("bkModal").classList.remove("open");
   $("bkSave").onclick = takeBackup;
@@ -1019,7 +1017,7 @@ function openModal(id) {
   const l = looms[id]; if (!l) return;
   selectedId = id;
   $("mTitle").textContent = `${l.id} Ayarları`;
-  fillCustSelect($("fCur"), l.currentCustomer || ""); fillCustSelect($("fNext"), l.nextCustomer || ""); syncShift();
+  fillCustSelect($("fCur"), l.currentCustomer || "");
   $("fWidth").value = l.width; buildColorRows(l.width, l.colors);
   l.warps.forEach((w, i) => { $("ws" + (i + 1)).value = w; $("wd" + (i + 1)).style.background = warpHex(w); });
   setStatus(l.status || "running");
@@ -1028,15 +1026,16 @@ function openModal(id) {
 }
 function saveLoom() {
   if (!selectedId) return;
-  const cur = $("fCur").value.trim(), nxt = $("fNext").value.trim();
+  const cur = $("fCur").value.trim();
   const data = {
-    ...looms[selectedId], currentCustomer: cur, nextCustomer: nxt,
+    ...looms[selectedId], currentCustomer: cur,
     width: parseInt($("fWidth").value, 10), status: selectedStatus,
     colors: readColors(),
     warps: [1,2].map(i => $("ws" + i).value),
     extra: selectedExtra,
     lastModified: Date.now()
   };
+  delete data.nextCustomer;
   const evs = loomEvents(looms[selectedId], data);   /* eski ve yeni halin farkı → bildirimler */
   looms[selectedId] = data; rawColors[selectedId] = data.colors; store.set(CACHE_KEY, looms); refresh();
   $("editModal").classList.remove("open");
@@ -1062,14 +1061,13 @@ function printReport() {
       <td style="font-weight:700">${esc(l.currentCustomer || "-")}</td>
       <td>${mains}</td>
       <td style="font-size:8.5pt">${subs}</td>
-      <td style="font-size:8.5pt">1: ${esc(l.warps[0])}<br>2: ${esc(l.warps[1])}</td>
-      <td style="color:#444">${esc(l.nextCustomer || "-")}</td></tr>`;
+      <td style="font-size:8.5pt">1: ${esc(l.warps[0])}<br>2: ${esc(l.warps[1])}</td></tr>`;
   }).join("");
   $("printSection").innerHTML = `
     <div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:8px">
       <div><h1 style="font-size:15pt">🧵 KALE DOKUMA TAKİP - RAPORU</h1><p style="font-size:9.5pt;color:#444">Bölüm: <strong>${esc(title)}</strong></p></div>
       <div style="font-size:8.5pt;color:#444">Tarih: ${esc(date)}</div></div>
-    <table class="pt"><thead><tr><th>Makine</th><th>Şube</th><th>En</th><th>Şu Anki Müşteri</th><th>Ana Renk (1)</th><th>Alt Renkler</th><th>Çözgü</th><th>Gelecek Müşteri</th></tr></thead><tbody>${rows}</tbody></table>`;
+    <table class="pt"><thead><tr><th>Makine</th><th>Şube</th><th>En</th><th>Şu Anki Müşteri</th><th>Ana Renk (1)</th><th>Alt Renkler</th><th>Çözgü</th></tr></thead><tbody>${rows}</tbody></table>`;
   window.print();
 }
 
