@@ -95,7 +95,6 @@ body.hm main{max-width:1560px}
   box-shadow:0 10px 26px rgba(0,0,0,.38);transition:transform .12s,box-shadow .12s}
 .oc::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--uc,var(--bd))}
 .oc:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.5)}
-.oc.done{opacity:.6}
 .oc .cn{font-size:1.08rem;font-weight:800;line-height:1.15;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .bd{align-self:flex-start;font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:99px;color:var(--uc,var(--mu));background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}
 .oc .ps{font-size:.72rem;color:var(--mu);font-weight:600;overflow-wrap:anywhere}
@@ -143,6 +142,8 @@ body.dirty main{padding-bottom:90px}
 .mrow b{display:block;font-size:1rem;font-weight:800}
 .mrow small{display:block;color:var(--mu);font-size:.74rem;font-weight:600;margin-top:2px}
 .td small{color:var(--mu);font-weight:700;font-size:.72rem}
+.qk button.sel{border-color:var(--ac);color:var(--ac);background:rgba(240,198,116,.12)}
+.hst{flex:none;width:auto;padding:7px 10px;font-size:.85rem;border-radius:10px}
 .td small.lt{color:var(--stop)}
 .rpt tr.on td{background:#fffbea;font-size:.74rem}
 .hov{position:fixed;z-index:70;display:none;width:330px;max-width:90vw;max-height:80vh;overflow:auto;background:var(--card2);border:1px solid var(--ac);border-radius:14px;padding:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);pointer-events:none;font-size:.8rem}
@@ -232,6 +233,8 @@ body *{visibility:hidden}
 <div class="ovl" id="shOv"><div class="shs" id="shBox"></div></div>
 <div class="ovl" id="menuOv"><div class="shs">
   <div class="shh"><h2>Menü</h2><button type="button" class="sx" data-act="menu-close">✕ Kapat</button></div>
+  <button type="button" class="mrow" data-act="custmgr"><span class="mi">👥</span><span><b>Müşteri listesi</b><small>Müşteri ekle / sil</small></span></button>
+  <button type="button" class="mrow" data-act="report"><span class="mi">📊</span><span><b>Sipariş raporu</b><small>Rapor / PDF / yazdır</small></span></button>
   <a class="mrow" href="https://auqrup.github.io/Kale-dokuma-order/"><span class="mi">🧵</span><span><b>Makineler</b><small>Makine takip sayfası</small></span></a>
   <a class="mrow" href="fabrika.html"><span class="mi">🏭</span><span><b>Atölye</b><small>Atölye görünümü (sadece okuma)</small></span></a>
   <button type="button" class="mrow" id="outBtn"><span class="mi">🚪</span><span><b>Çıkış</b><small>Hesaptan çık</small></span></button>
@@ -391,7 +394,7 @@ function lineM(ln, m) {
   const R = rem(ln); let [ac, len] = e;
   if (!ac) return Math.round(R * len * 10) / 10;
   const hit = (m.width === 140 ? [m.colors[0], m.colors[3]] : [m.colors[0]]).filter(c => c === ln.color).length;
-  if (m.width === 140 && ac === 2 && hit === 1) ac = 1;
+  if (m.width === 140 && ac === 2 && (ln.color2 || hit === 1)) ac = 1;
   return Math.round(Math.ceil(R / ac) * len * 10) / 10;
 }
 /* makine türü: index.html makine kartındaki extra; "simli" değilse (boş dahil) ŞPİNGEL */
@@ -422,7 +425,7 @@ function pushOrder(o) {
   if (ordRef) ordRef.child(o.id).set(JSON.parse(JSON.stringify(o))).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
 }
 const arr = x => Array.isArray(x) ? x : Object.values(x || {});
-const normOrder = x => ({ ...x, saved: true, todos: arr(x.todos), steps: x.steps ? arr(x.steps) : (x.next && (x.next.t || x.next.d) ? [{ id: "n0", t: x.next.t || "Hatırlatma", d: x.next.d || "", ok: false }] : []), next: undefined, lines: arr(x.lines).map(l => ({ ...l, ok: arr(l.ok), asg: l.asg || {} })) });
+const normOrder = x => ({ ...x, saved: true, todos: arr(x.todos), stt: x.stt || (x.pot ? "pot" : undefined), pot: undefined, steps: x.steps ? arr(x.steps) : (x.next && (x.next.t || x.next.d) ? [{ id: "n0", t: x.next.t || "Hatırlatma", d: x.next.d || "", ok: false }] : []), next: undefined, lines: arr(x.lines).map(l => ({ ...l, ok: arr(l.ok), asg: l.asg || {} })) });
 
 function allCust() {
   const m = new Map();
@@ -433,9 +436,13 @@ function allCust() {
   return [...m.values()].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false, potMode:false };
+let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false, hst:"all" };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
+/* ÇİFT satır (140 cm iki kanat): color + color2 TEK satırda, tek adet; iki kanat aynı anda çalışır */
+const colName = l => l.color2 ? `${l.color} + ${l.color2}` : l.color;
+const pairBg = ([a, b]) => `linear-gradient(90deg,${hexOf(a)} 50%,${hexOf(b)} 50%)`;
+const dotBg = l => l.color2 ? pairBg([l.color, l.color2]) : hexOf(l.color);
 const pname = p => p.roll ? (p.ftype ? `Kumaş ${p.fw} cm ${p.name}` : "Rulo kumaş") : `${p.g} ${p.name}`;
 /* Tarih: o.created = oluşturma (ms), o.due = tahmini bitiş ("YYYY-MM-DD", boş olabilir) */
 const fmtDue = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); return m ? `${m[3]}.${m[2]}.${m[1]}` : ""; };
@@ -452,7 +459,8 @@ function saveOrder(quiet) {
   const o = S.order; if (!o || !o.saved) return;
   if (!S.dirty) { if (!quiet) toast("Değişiklik yok"); return; }
   const stored = clone(o), i = orders.findIndex(x => x.id === o.id);
-  if (stored.lines.length) { delete stored.pot; delete stored.pst; }   /* ürün eklendi = artık kesin sipariş */
+  if (stored.lines.length && stored.stt === "pot") delete stored.stt;   /* ürün eklendi: "Muhtemel" etiketi kalkar (otomatik Sipariş/Tamamlandı) */
+  delete stored.pot;
   if (i >= 0) orders[i] = stored; else orders.push(stored);
   pushOrder(stored); S.order = clone(stored); S.dirty = false; drawBar(); drawOrders();
   if (!quiet) toast("Kaydedildi ✓");
@@ -478,7 +486,12 @@ function suggest(line, order) {
     const hit = wings.filter(c => c === line.color).length;
     const half = p.roll ? R : Math.ceil(R / ac);
     let rows = half;
-    if (!two) r.match = hit ? 2 : 0;
+    if (line.color2) {
+      /* çift satır: iki kanat da istenen iki renk olmalı (sırası fark etmez); her devirde iki renkten birer parça */
+      const [w1, w2] = wings;
+      r.match = (two && !(!p.roll && ac === 1) && ((w1 === line.color && w2 === line.color2) || (w1 === line.color2 && w2 === line.color))) ? 2 : 0;
+      rows = R;
+    } else if (!two) r.match = hit ? 2 : 0;
     else if (!p.roll && ac === 1) {
       /* 140 tam en: iki kanat tek parça çalışır, ikisi de aynı renk olmalı */
       r.match = hit === 2 ? 2 : 0; rows = R;
@@ -487,7 +500,7 @@ function suggest(line, order) {
     else if (hit === 1) {
       /* İki kanat birlikte çalışır: diğer kanadın rengi de üretilir, müşteri onu da almak zorunda */
       const other = wings.find(c => c !== line.color);
-      const partner = order.lines.find(x => x !== line && !x.comp && x.k === line.k && x.color === other && rem(x) > 0);
+      const partner = order.lines.find(x => x !== line && !x.comp && !x.color2 && x.k === line.k && x.color === other && rem(x) > 0);
       rows = R;
       if (partner) { r.match = 1.5; r.notes.push(["ok", `✓ Diğer kanat (${other}) siparişteki başka satırı da karşılıyor (${rem(partner)} adet)`]); }
       else { r.match = 1; r.notes.push(["warn", `⚠ Diğer kanat ${other}: müşteri bu rengi de almak zorunda${p.roll ? "" : ` (${R} adet fazladan ${other})`}`]); }
@@ -536,12 +549,12 @@ const dueDays = o => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(o.due || ""); 
 function reportHtml() {
   const now = new Date(), date = now.toLocaleDateString("tr-TR") + " " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
   const remO = o => o.lines.reduce((s, l) => s + rem(l), 0);
-  const open = orders.filter(o => remO(o) > 0).sort((a, b) => ((dueDays(a) ?? 1e9) - (dueDays(b) ?? 1e9)) || (a.created - b.created));
+  const open = orders.filter(o => remO(o) > 0 && !TENT.includes(stOf(o))).sort((a, b) => ((dueDays(a) ?? 1e9) - (dueDays(b) ?? 1e9)) || (a.created - b.created));
   const doneO = orders.filter(o => o.lines.length && remO(o) === 0);
   const load = {}, late = [], changed = [];
   let unassigned = 0;
   const prog = o => { const L = o.lines.filter(l => !l.comp), q = L.reduce((s, l) => s + (l.qty || 0), 0), d = L.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0); return q ? Math.round(d * 100 / q) : 0; };
-  const potO = orders.filter(isPot);
+  const potO = orders.filter(o => TENT.includes(stOf(o)));
   const stepLateList = [];
   orders.forEach(o => ordInfo(o).pend.filter(stepLate).forEach(s => stepLateList.push(`${o.cust}: ${s.t} (${fmtDue(s.d)})`)));
   const pendTotal = orders.reduce((n, o) => n + ordInfo(o).pend.length, 0);
@@ -553,7 +566,7 @@ function reportHtml() {
   const orderRows = open.map(o => {
     const dd = dueDays(o); if (dd !== null && dd < 0) late.push(`${o.cust} (${Math.abs(dd)} gün gecikti)`);
     const dueTxt = o.due ? `${fmtDue(o.due)} <span class="${dd < 0 ? "bad" : ""}">(${dd < 0 ? Math.abs(dd) + " gün gecikti" : dd === 0 ? "bugün" : dd + " gün kaldı"})</span>` : "belirtilmedi";
-    let h = `<tr class="oh"><td colspan="5"><b>${esc(o.cust)}</b> · Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")} · Teslim: ${dueTxt} · İlerleme: %${prog(o)}</td></tr>`;
+    let h = `<tr class="oh"><td colspan="5"><b>${esc(o.cust)}</b> · Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")} · Teslim: ${dueTxt} · İlerleme: %${prog(o)}${stOf(o) !== "active" ? ` · Durum: ${esc(STT[stOf(o)].t)}` : ""}${o.pst ? ` · “${esc(o.pst)}”` : ""}</td></tr>`;
     h += extra(o, 5);
     o.lines.filter(l => rem(l) > 0).forEach(l => {
       const p = prodOf(l.k), ms = Object.keys(l.asg || {});
@@ -563,11 +576,11 @@ function reportHtml() {
         const lm = looms[m], t = (l.comp || !lm) ? null : lineM(l, lm);
         if (lm && !l.comp) {
           const e = load[m] = load[m] || { n: 0, m: 0 }; e.n++; e.m += t || 0;
-          if (l.asg[m] !== wingSig(lm)) changed.push(`${o.cust}: ${p ? pname(p) : l.k} · ${l.color} → ${m}`);
+          if (l.asg[m] !== wingSig(lm)) changed.push(`${o.cust}: ${p ? pname(p) : l.k} · ${colName(l)} → ${m}`);
         }
         return esc(m) + (t != null ? ` · ≈${t} m · ${daysTxt(lm, t)}` : "");
       }).join("<br>");
-      h += `<tr><td>${l.comp ? "↳ " : ""}${esc(p ? pname(p) : l.k)} · ${esc(l.color)}</td><td>${l.qty}</td><td>${l.done || 0}</td><td><b>${rem(l)}</b></td><td>${mach}</td></tr>`;
+      h += `<tr><td>${l.comp ? "↳ " : ""}${esc(p ? pname(p) : l.k)} · ${esc(colName(l))}</td><td>${l.qty}</td><td>${l.done || 0}</td><td><b>${rem(l)}</b></td><td>${mach}</td></tr>`;
     });
     return h;
   }).join("");
@@ -580,10 +593,10 @@ function reportHtml() {
     changed.length ? `<li><span class="bad">Renk değişimi gereken atamalar:</span> ${changed.map(esc).join("; ")}</li>` : "",
     stepLateList.length ? `<li><span class="bad">Tarihi gelen / geçen adımlar:</span> ${stepLateList.map(esc).join("; ")}</li>` : ""].join("");
   return `<div class="rhead"><div><h1>🧵 KALE DOKUMA – SİPARİŞ RAPORU</h1><p>Mevcut sipariş durumu ve tahmini üretim süreleri</p></div><div class="rdate">${esc(date)}</div></div>
-    <div class="kpis">${kpi(open.length, "Açık sipariş")}${kpi(open.reduce((s, o) => s + remO(o), 0), "Toplam kalan adet")}${kpi("≈ " + totalM + " m", "Atanan toplam metraj")}${kpi(unassigned, "Atanmamış satır", unassigned ? "bad" : "")}${kpi(late.length, "Geciken sipariş", late.length ? "bad" : "")}${kpi(doneO.length, "Tamamlanan sipariş")}${kpi(potO.length, "Muhtemel sipariş")}${kpi(pendTotal, "Bekleyen adım", stepLateList.length ? "bad" : "")}</div>
+    <div class="kpis">${kpi(open.length, "Açık sipariş")}${kpi(open.reduce((s, o) => s + remO(o), 0), "Toplam kalan adet")}${kpi("≈ " + totalM + " m", "Atanan toplam metraj")}${kpi(unassigned, "Atanmamış satır", unassigned ? "bad" : "")}${kpi(late.length, "Geciken sipariş", late.length ? "bad" : "")}${kpi(doneO.length, "Tamamlanan sipariş")}${kpi(potO.length, "Görüşmede / muhtemel")}${kpi(pendTotal, "Bekleyen adım", stepLateList.length ? "bad" : "")}</div>
     <h2>Dikkat gerektirenler</h2>${attn ? `<ul class="alist">${attn}</ul>` : '<p class="okc">Dikkat gerektiren durum yok ✓</p>'}
     <h2>Açık siparişler</h2>${open.length ? `<table class="rpt"><thead><tr><th>Ürün · Renk</th><th>Sipariş</th><th>Yapılan</th><th>Kalan</th><th>Makine · ≈ metre · ≈ süre</th></tr></thead><tbody>${orderRows}</tbody></table>` : "<p>Açık sipariş yok.</p>"}
-    ${potO.length ? `<h2>💭 Muhtemel siparişler (${potO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Durum</th><th>Sonraki adımlar</th><th>Eksikler / Not</th></tr></thead><tbody>${potO.map(o => { const I = ordInfo(o); return `<tr><td><b>${esc(o.cust)}</b><br>${new Date(o.created).toLocaleDateString("tr-TR")}</td><td>${esc(I.pst || "—")}</td><td>${I.pend.map((s, i) => `${i + 1}) ${esc(s.t)}${s.d ? ` (${fmtDue(s.d)})` : ""}${stepLate(s) ? ' <span class="bad">⏰</span>' : ""}`).join("<br>") || "—"}</td><td>${I.todos.filter(t => !t.ok).map(t => esc(t.t)).join(", ")}${o.note ? `${I.todos.some(t => !t.ok) ? "<br>" : ""}📝 ${esc(o.note)}` : ""}</td></tr>`; }).join("")}</tbody></table>` : ""}
+    ${potO.length ? `<h2>💭 Görüşmedeki / muhtemel siparişler (${potO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Durum</th><th>Sonraki adımlar</th><th>Ürün / Eksikler / Not</th></tr></thead><tbody>${potO.map(o => { const I = ordInfo(o); return `<tr><td><b>${esc(o.cust)}</b><br>${new Date(o.created).toLocaleDateString("tr-TR")}</td><td>${esc(STT[I.stt].ico + " " + STT[I.stt].t)}${o.pst ? `<br>“${esc(o.pst)}”` : ""}</td><td>${I.pend.map((s, i) => `${i + 1}) ${esc(s.t)}${s.d ? ` (${fmtDue(s.d)})` : ""}${stepLate(s) ? ' <span class="bad">⏰</span>' : ""}`).join("<br>") || "—"}</td><td>${[I.nl ? "" : esc(o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return (p ? pname(p) : l.k) + " " + colName(l) + " × " + l.qty; }).join("; ")), I.todos.filter(t => !t.ok).length ? "Eksik: " + esc(I.todos.filter(t => !t.ok).map(t => t.t).join(", ")) : "", o.note ? "📝 " + esc(o.note) : ""].filter(Boolean).join("<br>") || "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
     <h2>Makine iş yükü (atanmış açık satırlar)</h2>${loadRows ? `<table class="rpt"><thead><tr><th>Makine</th><th>En</th><th>Özellik</th><th>Günlük hız</th><th>Satır</th><th>Toplam metraj</th><th>Tahmini süre</th></tr></thead><tbody>${loadRows}</tbody></table>` : "<p>Henüz makineye atanmış satır yok.</p>"}
     <h2>Tamamlanan siparişler (${doneO.length})</h2><p>${doneO.length ? doneO.slice(0, 20).map(o => esc(o.cust)).join(", ") + (doneO.length > 20 ? " …" : "") : "—"}</p>
     <p class="rfoot">Tahmini süre = ilgili tezgahın kalan metrajı ÷ günlük üretim (200 cm: 240 m · 140 cm: SİMLİ 210 / ŞPİNGEL 370 m · 160 cm: SİMLİ 210 / ŞPİNGEL 350 m). Değerler yaklaşıktır; özelliği seçilmemiş 140/160 cm tezgahlarda SİMLİ hızı varsayılmıştır. Eşlik eden satırlar aynı tezgahta aynı anda üretildiği için metraja tekrar eklenmez.</p>`;
@@ -628,58 +641,71 @@ function resHtml(r, i, p, line) {
     ${r.maint ? '<div class="rl warn">⚠ Arıza/Bakımda</div>' : ""}
   </div>`;
 }
-/* ---------- Sipariş listesi: kartlar, filtreler, ayrıntı penceresi. Alanlar: o.steps [{id,t,d,ok}] (sonraki adımlar), o.todos [{id,t,ok}] (eksikler), o.note, o.pot + o.pst (MUHTEMEL sipariş: ürünsüz, serbest durum yazısı) ---------- */
-const ST_C = { late:"var(--stop)", soon:"var(--yarn)", ok:"var(--run)", none:"var(--mu)", done:"var(--run)", pot:"#c4a3ff" };
+/* ---------- Sipariş listesi: TEK ızgara (bitenler / muhtemeller ayrı bölüm DEĞİL), her kartın iç ETİKETİ (durum) var.
+   Alanlar: o.stt (durum anahtarı; yoksa otomatik: ürün yok = pot, hepsi bitti = done, diğer = active), o.pst (serbest durum yazısı),
+   o.steps [{id,t,d,ok}], o.todos [{id,t,ok}], o.note ---------- */
+const ST_C = { late:"var(--stop)", soon:"var(--yarn)", ok:"var(--run)", none:"var(--mu)" };
+const STT = {
+  active: { t: "Sipariş (devam ediyor)", ico: "📦" },
+  pot:    { t: "Muhtemel sipariş", ico: "💭", c: "#c4a3ff" },
+  talk:   { t: "Görüşülüyor", ico: "💬", c: "#7dd3fc" },
+  quote:  { t: "Teklif bekliyor", ico: "🧾", c: "#fbbf24" },
+  sample: { t: "Numune", ico: "🧵", c: "#5eead4" },
+  think:  { t: "Müşteri düşünüyor", ico: "🤔", c: "#f9a8d4" },
+  hold:   { t: "Beklemede", ico: "⏸", c: "#94a3b8" },
+  done:   { t: "Tamamlandı", ico: "✓", c: "var(--run)" }
+};
+const TENT = ["pot", "talk", "quote", "sample", "think"];   /* henüz kesin sipariş olmayanlar (raporda ayrı bölüm) */
 const NEXT_QUICK = ["Renk bekleniyor", "İplik bekleniyor", "Müşteri onayı bekleniyor", "Sevke hazır", "Ödeme bekleniyor"];
-const POT_QUICK = ["Muhtemel sipariş", "Fiyat teklifi bekliyor", "Numune gönderildi", "Görüşülüyor", "Müşteri düşünüyor"];
-const isPot = o => !!o.pot && o.lines.length === 0;
+const stOf = o => { const s = o.stt && STT[o.stt] ? o.stt : ""; if (s && s !== "active") return s; if (!o.lines.length) return "pot"; return o.lines.every(l => rem(l) === 0) ? "done" : "active"; };
 const stepLate = s => !s.ok && s.d && dueDays({ due: s.d }) <= 0;
 function ordInfo(o) {
-  const main = o.lines.filter(l => !l.comp), pot = isPot(o);
+  const main = o.lines.filter(l => !l.comp), stt = stOf(o), isDone = stt === "done", nl = o.lines.length === 0, d = dueDays(o);
   const qty = main.reduce((s, l) => s + (l.qty || 0), 0), done = main.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0);
-  const isDone = !pot && o.lines.length > 0 && o.lines.every(l => rem(l) === 0), d = dueDays(o);
-  const st = pot ? "pot" : isDone ? "done" : d === null ? "none" : d < 0 ? "late" : d <= 3 ? "soon" : "ok";
-  const txt = pot ? "💭 Muhtemel" : isDone ? "✓ Tamamlandı" : d === null ? "Tarih yok" : d < 0 ? `${-d} gün gecikti` : d === 0 ? "Bugün" : `${d} gün kaldı`;
+  const urg = d === null ? "none" : d < 0 ? "late" : d <= 3 ? "soon" : "ok";
+  const dueTxt = d === null ? "Tarih yok" : d < 0 ? `${-d} gün gecikti` : d === 0 ? "Bugün" : `${d} gün kaldı`;
+  const txt = stt === "active" ? dueTxt : `${STT[stt].ico} ${STT[stt].t}${d !== null && !isDone ? " · " + dueTxt : ""}`;
+  const uc = stt === "active" ? ST_C[urg] : STT[stt].c;
   const names = [...new Set(main.map(l => { const p = prodOf(l.k); return p ? pname(p) : l.k; }))];
   const todos = arr(o.todos), steps = arr(o.steps), pend = steps.filter(s => !s.ok);
-  return { qty, done, isDone, pot, d, st, txt, names, colors: new Set(main.map(l => l.color)).size, todos, tdDone: todos.filter(t => t.ok).length,
-    steps, pend, stLate: pend.some(stepLate), pst: o.pst || "", pct: qty ? Math.min(100, Math.round(done / qty * 100)) : 0 };
+  return { qty, done, isDone, nl, stt, d, late: !isDone && d !== null && d < 0, txt, uc, names, colors: new Set(main.flatMap(l => [l.color, l.color2]).filter(Boolean)).size,
+    todos, tdDone: todos.filter(t => t.ok).length, steps, pend, stLate: pend.some(stepLate), pst: o.pst || "", pct: qty ? Math.min(100, Math.round(done / qty * 100)) : 0 };
 }
 function ocard(o) {
   const I = ordInfo(o), f = I.pend[0];
-  const ps = I.pot ? esc(I.pst || "Durum yazılmadı") : (I.names.length ? esc(I.names[0]) + (I.names.length > 1 ? ` +${I.names.length - 1}` : "") + ` · ${I.colors} renk` : "Ürün yok");
+  const prod = I.nl ? "" : (I.names.length ? esc(I.names[0]) + (I.names.length > 1 ? ` +${I.names.length - 1}` : "") + ` · ${I.colors} renk` : "Ürün yok");
+  const ps = [prod, I.pst ? `“${esc(I.pst)}”` : ""].filter(Boolean).join("<br>") || (I.nl ? "Ürün belirlenmedi" : "");
   const nx = f ? `<div class="nxb${I.stLate ? " late" : ""}">${I.stLate ? "⏰" : "➡"} ${esc(f.t)}${f.d ? ` · ${fmtDue(f.d)}` : ""}${I.pend.length > 1 ? ` <b>+${I.pend.length - 1}</b>` : ""}</div>` : '<div class="nxb add">+ Sonraki adım ekle</div>';
-  const prog = I.pot ? "" : `<span class="pbar"><i style="width:${I.pct}%"></i></span><span class="pnum"><span>${I.done} / ${I.qty}</span>${I.todos.length ? `<span>☑ ${I.tdDone}/${I.todos.length}</span>` : ""}</span>`;
-  return `<button type="button" class="oc${I.isDone ? " done" : ""}" style="--uc:${ST_C[I.st]}" data-act="sheet" data-id="${esc(o.id)}">
+  const prog = I.nl ? "" : `<span class="pbar"><i style="width:${I.pct}%"></i></span><span class="pnum"><span>${I.done} / ${I.qty}</span>${I.todos.length ? `<span>☑ ${I.tdDone}/${I.todos.length}</span>` : ""}</span>`;
+  return `<button type="button" class="oc${I.isDone ? " done" : ""}" style="--uc:${I.uc}" data-act="sheet" data-id="${esc(o.id)}">
     <span class="cn">${esc(o.cust)}</span><span class="bd">${esc(I.txt)}</span><span class="ps">${ps}</span>${prog}${nx}</button>`;
 }
 function sortOrders(list, mode) {
-  const I = new Map(list.map(o => [o.id, ordInfo(o)])), k = o => I.get(o.id).d === null ? 1e9 : I.get(o.id).d;
+  const I = new Map(list.map(o => [o.id, ordInfo(o)])), k = o => I.get(o.id).isDone || I.get(o.id).d === null ? 1e9 : I.get(o.id).d;   /* bitenler/tarihsizler/muhtemeller AYNI yerde: aciller önde, gerisi en yeni → eski */
   const f = mode === "new" ? (a, b) => b.created - a.created : mode === "name" ? (a, b) => a.cust.localeCompare(b.cust, "tr") : (a, b) => k(a) - k(b) || b.created - a.created;
   return [...list].sort(f);
 }
 function drawOrders() {
   const box = $("olist"); if (!box) return;
   const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
-  const F = { all: () => true, open: i => !i.isDone && !i.pot, late: i => i.st === "late", next: i => !i.isDone && i.pend.length > 0, pot: i => i.pot, done: i => i.isDone };
-  const cnt = k => base.filter(o => F[k](info.get(o.id))).length;
-  $("ocnt").innerHTML = [["all", "Tümü"], ["open", "Açık"], ["late", "Geciken"], ["next", "Adımı var"], ["pot", "Muhtemel"], ["done", "Biten"]].map(([k, t]) =>
+  const byStt = base.filter(o => S.hst === "all" || info.get(o.id).stt === S.hst);
+  const F = { all: () => true, late: i => i.late, next: i => !i.isDone && i.pend.length > 0 };
+  const cnt = k => byStt.filter(o => F[k](info.get(o.id))).length;
+  $("ocnt").innerHTML = [["all", "Tümü"], ["late", "Geciken"], ["next", "Adımı var"]].map(([k, t]) =>
     `<button type="button" class="hc${S.hf === k ? " on" : ""}" data-act="hf" data-v="${k}"><b>${cnt(k)}</b><span>${t}</span></button>`).join("");
-  const shown = base.filter(o => F[S.hf](info.get(o.id)));
+  const sc = k => base.filter(o => info.get(o.id).stt === k).length;
+  const hs = $("hst"); if (hs) hs.innerHTML = `<option value="all">Tüm durumlar (${base.length})</option>` + Object.keys(STT).map(k => `<option value="${k}"${S.hst === k ? " selected" : ""}>${STT[k].ico} ${STT[k].t} (${sc(k)})</option>`).join("");
+  const shown = byStt.filter(o => F[S.hf](info.get(o.id)));
   const sh = $("oshown"); sh.textContent = `Gösterilen: ${shown.length} / ${orders.length}`; sh.style.display = shown.length === orders.length ? "none" : "block";
-  const live = sortOrders(shown.filter(o => !info.get(o.id).isDone && !info.get(o.id).pot), S.hs), pots = sortOrders(shown.filter(o => info.get(o.id).pot), S.hs), fin = sortOrders(shown.filter(o => info.get(o.id).isDone), S.hs);
-  let h = "";
-  if (live.length) h += `<div class="ogrid">${live.map(ocard).join("")}</div>`;
-  if (pots.length) h += (S.hf === "pot" ? "" : `<h3>💭 Muhtemel siparişler (${pots.length})</h3>`) + `<div class="ogrid">${pots.map(ocard).join("")}</div>`;
-  if (fin.length) h += (S.hf === "done" ? "" : `<h3>Tamamlananlar (${fin.length})</h3>`) + `<div class="ogrid">${fin.map(ocard).join("")}</div>`;
-  box.innerHTML = h || `<div class="empty">${orders.length ? "Sonuç bulunamadı." : "Henüz kayıtlı sipariş yok."}</div>`;
+  box.innerHTML = shown.length ? `<div class="ogrid">${sortOrders(shown, S.hs).map(ocard).join("")}</div>` : `<div class="empty">${orders.length ? "Sonuç bulunamadı." : "Henüz kayıtlı sipariş yok."}</div>`;
 }
-const toolsHtml = () => `<button type="button" class="tb pri" data-act="new">➕ Yeni sipariş</button><button type="button" class="tb" data-act="new-pot">💭 Muhtemel sipariş</button><button type="button" class="tb" data-act="custmgr">👥 Müşteri listesi</button><button type="button" class="tb" data-act="report">📊 Sipariş raporu</button>
+const toolsHtml = () => `<button type="button" class="tb pri" data-act="new">➕ Yeni</button>
   <div class="hbar" id="ocnt"></div>
+  <select class="inp hst hs-sel2" id="hst"></select>
   <div class="tsr"><input class="inp" id="hq" type="search" placeholder="Müşteri ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>`;
 const dateTxt = o => `Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")}${o.due ? ` · Tahmini bitiş: ${fmtDue(o.due)}` : ""}`;
 function linesInfoHtml(o) {
-  const ls = o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return `<div class="hl"><span class="dot" style="background:${hexOf(l.color)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(l.color)} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span></div>`; }).join("");
+  const ls = o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return `<div class="hl"><span class="dot" style="background:${dotBg(l)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span></div>`; }).join("");
   return ls || '<div class="hl">Ürün yok</div>';
 }
 function openSheet(id) { const o = orders.find(x => x.id === id); if (!o) return; hideHov(); S.sheet = id; S.draft = clone(o); S.sdirty = false; drawSheet(); }
@@ -688,12 +714,13 @@ function drawSheet() {
   if (!o) { $("shOv").classList.remove("open"); return; }
   const I = ordInfo(o);
   const stepRows = I.steps.map(s => `<div class="td${s.ok ? " ok" : ""}"><input type="checkbox" data-act="st-tg" data-id="${esc(s.id)}"${s.ok ? " checked" : ""}><span>${esc(s.t)}${s.d ? ` <small class="${stepLate(s) ? "lt" : ""}">· ${fmtDue(s.d)}</small>` : ""}</span><button type="button" data-act="st-del" data-id="${esc(s.id)}" aria-label="Sil">✕</button></div>`).join("");
-  const top = I.pot
-    ? `<h3>💭 Durum (muhtemel sipariş)</h3><input class="inp ps-t" maxlength="140" placeholder="Örn: Fiyat teklifi bekliyor" value="${esc(I.pst)}"><div class="qk">${POT_QUICK.map(t => `<button type="button" data-act="ps-q" data-v="${esc(t)}">${esc(t)}</button>`).join("")}</div>`
-    : `<div class="pbar"><i style="width:${I.pct}%"></i></div><div class="pnum" style="margin-top:4px"><span>${I.done} / ${I.qty}</span><span>%${I.pct}</span></div>`;
+  const chips = Object.keys(STT).filter(k => k !== "active" || !I.nl).map(k => `<button type="button" class="${I.stt === k ? "sel" : ""}" data-act="stt" data-v="${k}">${STT[k].ico} ${esc(STT[k].t)}</button>`).join("");
   $("shBox").innerHTML = `<div class="shh"><h2>${esc(o.cust)}</h2><div class="shb"><button type="button" class="sv${S.sdirty ? " on" : ""}" data-act="sh-save">💾 Kaydet</button><button type="button" class="sx" data-act="sheet-close">✕ Kapat</button></div></div>
-    <div class="shc"><span class="bd" style="--uc:${ST_C[I.st]}">${esc(I.txt)}</span><span>${esc(dateTxt(o))}</span></div>
-    ${top}
+    <div class="shc"><span class="bd" style="--uc:${I.uc}">${esc(I.txt)}</span><span>${esc(dateTxt(o))}</span></div>
+    ${I.nl ? "" : `<div class="pbar"><i style="width:${I.pct}%"></i></div><div class="pnum" style="margin-top:4px"><span>${I.done} / ${I.qty}</span><span>%${I.pct}</span></div>`}
+    <h3>📌 Durum (kartın etiketi)</h3>
+    <div class="qk" style="margin-top:0">${chips}</div>
+    <input class="inp ps-t" style="margin-top:8px" maxlength="140" placeholder="Durum notu (isteğe bağlı) — örn: Fiyat bekliyor, 15 gün" value="${esc(I.pst)}">
     <h3>➡ Sonraki adımlar (${I.pend.length} bekliyor)</h3>
     ${stepRows}
     <div class="tdadd"><input class="inp st-new" maxlength="140" placeholder="Örn: Kırmızı iplik bekleniyor"><input type="date" class="inp st-d" style="flex:none;width:auto;max-width:150px"><button type="button" data-act="st-add">Ekle</button></div>
@@ -702,23 +729,24 @@ function drawSheet() {
     ${I.todos.map(t => `<div class="td${t.ok ? " ok" : ""}"><input type="checkbox" data-act="td-tg" data-id="${esc(t.id)}"${t.ok ? " checked" : ""}><span>${esc(t.t)}</span><button type="button" data-act="td-del" data-id="${esc(t.id)}" aria-label="Sil">✕</button></div>`).join("")}
     <div class="tdadd"><input class="inp td-new" maxlength="140" placeholder="Örn: Kırmızı renk eksik"><button type="button" data-act="td-add">Ekle</button></div>
     <h3>📝 Not</h3><textarea class="inp nt-t" rows="3" maxlength="600" placeholder="Bu sipariş için not…">${esc(o.note || "")}</textarea>
-    ${I.pot ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
+    ${I.nl ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
     <button type="button" class="second sv${S.sdirty ? " on" : ""}" data-act="sh-save">💾 Kaydet</button>
-    ${I.pot ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle (kesin siparişe çevir)</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Muhtemel siparişi sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
+    ${I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
   $("shOv").classList.add("open");
 }
 function markSheet() { const b = $("shBox"); if (b) b.querySelectorAll(".sv").forEach(x => x.classList.toggle("on", S.sdirty)); }
-/* Pencere SADECE kendi alanlarını yazar (steps / todos / note / pst); ürün satırlarına (yapılan adet vb.) dokunmaz. */
+/* Pencere SADECE kendi alanlarını yazar (stt / pst / steps / todos / note); ürün satırlarına (yapılan adet vb.) dokunmaz. */
 function saveSheet(quiet) {
   if (!S.draft) return true;
   if (!S.sdirty) { if (!quiet) toast("Değişiklik yok"); return true; }
   const d = S.draft, cur = orders.find(x => x.id === d.id);
   if (!cur) { toast("Sipariş bulunamadı"); return false; }
-  cur.steps = clone(arr(d.steps)); delete cur.next;
+  cur.steps = clone(arr(d.steps)); delete cur.next; delete cur.pot;
   cur.todos = clone(arr(d.todos)); if (d.note) cur.note = d.note; else delete cur.note;
-  if (d.pot) { if (d.pst) cur.pst = d.pst; else delete cur.pst; }
+  if (d.pst) cur.pst = d.pst; else delete cur.pst;
+  if (d.stt && d.stt !== "active") cur.stt = d.stt; else delete cur.stt;
   cache();
-  if (ordRef) ordRef.child(cur.id).update({ steps: cur.steps.length ? cur.steps : null, next: null, todos: cur.todos.length ? cur.todos : null, note: cur.note || null, pst: cur.pst || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
+  if (ordRef) ordRef.child(cur.id).update({ steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: cur.todos.length ? cur.todos : null, note: cur.note || null, pst: cur.pst || null, stt: cur.stt || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
   S.sdirty = false; S.draft = clone(cur); drawOrders();
   if (!quiet) { toast("Kaydedildi ✓"); drawSheet(); }
   return true;
@@ -754,13 +782,14 @@ function addTodo() {
 }
 function hovHtml(o) {
   const I = ordInfo(o), li = (a, f) => a.map(f).join("") || '<div class="hl">—</div>';
-  return `<h4>${esc(o.cust)}</h4><span class="bd" style="--uc:${ST_C[I.st]}">${esc(I.txt)}</span>
+  return `<h4>${esc(o.cust)}</h4><span class="bd" style="--uc:${I.uc}">${esc(I.txt)}</span>
     <div class="hl" style="color:var(--mu)">${esc(dateTxt(o))}</div>
-    ${I.pot ? `<div class="hs">Durum</div><div class="hl">${esc(I.pst || "—")}</div>` : `<div class="hl">${I.done} / ${I.qty} · %${I.pct}</div>`}
+    ${I.pst ? `<div class="hl">“${esc(I.pst)}”</div>` : ""}
+    ${I.nl ? "" : `<div class="hl">${I.done} / ${I.qty} · %${I.pct}</div>`}
     <div class="hs">Sonraki adımlar (${I.pend.length} bekliyor)</div>${li(I.steps, s => `<div class="hl"><span>${s.ok ? "☑" : stepLate(s) ? "⏰" : "☐"}</span><span>${esc(s.t)}${s.d ? ` · ${fmtDue(s.d)}` : ""}</span></div>`)}
     <div class="hs">Eksikler (${I.tdDone}/${I.todos.length})</div>${li(I.todos, t => `<div class="hl"><span>${t.ok ? "☑" : "☐"}</span><span>${esc(t.t)}</span></div>`)}
     ${o.note ? `<div class="hs">Not</div><div class="hl">${esc(o.note)}</div>` : ""}
-    ${I.pot ? "" : `<div class="hs">Ürünler</div>${linesInfoHtml(o)}`}`;
+    ${I.nl ? "" : `<div class="hs">Ürünler</div>${linesInfoHtml(o)}`}`;
 }
 let hovId = null;
 const canHover = () => !!(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches);
@@ -778,8 +807,8 @@ function lineHtml(l) {
   const p = prodOf(l.k), r = rem(l);
   const am = Object.keys(l.asg || {}), chg = am.filter(m => looms[m] && l.asg[m] !== wingSig(looms[m]));
   const asgLine = am.length ? `<div class="lq"><span>📌 ${am.map(m => { const t = l.comp ? null : lineM(l, looms[m]); return esc(m) + (t != null ? ` (≈${t} m · ${daysTxt(looms[m], t)})` : ""); }).join(", ")}</span>${chg.length ? `<span class="warn">⚠ renk değişti: ${chg.map(esc).join(", ")}</span>` : ""}</div>` : "";
-  return `<div class="line${r ? "" : " dn"}"><div class="lh"><span class="dot" style="background:${hexOf(l.color)}"></span>
-    <b>${esc(p ? pname(p) : l.k)} · ${esc(l.color)}</b>${l.comp ? "" : `<button data-act="del-line" data-id="${l.id}" aria-label="Sil">✕</button>`}</div>${l.comp ? `<div class="lq"><span class="ok">↳ Eşlik eden satır (${esc(l.comp.m)} makinesinin diğer kanadı) · Yapılan asıl satırla birlikte değişir</span></div>` : ""}
+  return `<div class="line${r ? "" : " dn"}"><div class="lh"><span class="dot" style="background:${dotBg(l)}"></span>
+    <b>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))}</b>${l.comp ? "" : `<button data-act="del-line" data-id="${l.id}" aria-label="Sil">✕</button>`}</div>${l.comp ? `<div class="lq"><span class="ok">↳ Eşlik eden satır (${esc(l.comp.m)} makinesinin diğer kanadı) · Yapılan asıl satırla birlikte değişir</span></div>` : ""}
     <div class="lq"><span>Sipariş: ${l.comp ? `<b>${l.qty}</b>` : `<input class="q-in" type="number" inputmode="numeric" min="1" value="${l.qty}" data-id="${l.id}">`}</span>
     <label>Yapılan <input class="dn-in" type="number" inputmode="numeric" min="0" max="${l.qty}" value="${l.done || 0}" data-id="${l.id}"></label>
     <span>${r ? `Kalan: <b>${r}</b>` : "✓ Bitti"}</span></div>${asgLine}</div>`;
@@ -808,7 +837,7 @@ function render(keep) {
       `<small class="hint">Sipariş veya makine kaydı olan müşteri silinemez. Müşteri adı değiştirilemez: yanlışsa doğrusunu ekleyip yanlışı silin.</small>`;
     $("cmNew").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="cm-add"]').click(); } };
   } else if (V === "cust") {
-    app.innerHTML = `<h2>${S.potMode ? "Müşteri · 💭 Muhtemel sipariş" : "Müşteri"}</h2>
+    app.innerHTML = `<h2>Müşteri</h2>
       <input id="cin" class="inp" placeholder="Müşteri adını yazın..." value="${esc(S.cin)}" autocomplete="off">
       <div class="chips" id="chips"></div>
       <button class="primary" data-act="cust-ok">Tamam</button>
@@ -816,7 +845,7 @@ function render(keep) {
     $("cin").oninput = e => { S.cin = e.target.value; drawChips(); };
     drawChips();
   } else if (V === "prod") {
-    let h = "<h2>Ürün / Ebat</h2>", g = "";
+    let h = "<h2>Ürün / Ebat</h2>" + (o && !o.saved ? '<button class="second" data-act="no-prod">💭 Ürün belirlemeden kaydet (muhtemel / görüşülüyor)</button>' : ""), g = "";
     P.filter(p => !p.hidden).forEach(p => {
       if (p.g !== g) { if (g) h += "</div>"; g = p.g; h += `<h3>${esc(g)}</h3><div class="pgrid">`; }
       h += `<button class="pcard" data-act="prod" data-k="${p.k}"><b>${esc(p.name)}</b><small>Makine: ${p.opts.map(o => o.mw).join(" / ")} cm</small></button>`;
@@ -824,11 +853,12 @@ function render(keep) {
     app.innerHTML = h + "</div>";
   } else if (V === "color") {
     const roll = prodOf(S.pk).roll;
-    const av = availColors(S.pk), avSet = new Set(av.map(a => a.c));
+    const av = availColors(S.pk), avSet = new Set(av.flatMap(a => a.pair || [a.c])), hasPair = av.some(a => a.pair);
     const btn = n => `<button class="cbtn${S.sel[n] ? " sel" : ""}" data-act="color" data-v="${esc(n)}"><span class="dot" style="background:${hexOf(n)}"></span><span>${esc(n)}</span></button>`;
     app.innerHTML = `<h2>Renkler (birden fazla seçebilirsiniz)</h2>
       <h3>Şu an makinelerde takılı renkler (${av.length})</h3>
-      ${av.length ? `<div class="avl-list">${av.map(a => `<button class="cbtn avl${S.sel[a.c] ? " sel" : ""}" data-act="color" data-v="${esc(a.c)}"><span class="dot" style="background:${hexOf(a.c)}"></span><span class="an"><b>${esc(a.c)}</b>${sigHtml(a.l, roll)}<span>${a.rs.map(chipHtml).join("")}</span></span></button>`).join("")}</div>`
+      ${hasPair ? '<p class="hint">İki kanatlı makinelerde iki kanat aynı anda çalışır; bu yüzden iki renk <b>çift (A + B)</b> olarak tek satırda seçilir.</p>' : ""}
+      ${av.length ? `<div class="avl-list">${av.map(a => `<button class="cbtn avl${S.sel[a.c] ? " sel" : ""}" data-act="color" data-v="${esc(a.c)}"><span class="dot" style="background:${a.pair ? pairBg(a.pair) : hexOf(a.c)}"></span><span class="an"><b>${a.pair ? a.pair.map(esc).join(" + ") : esc(a.c)}</b>${sigHtml(a.l, roll)}<span>${a.rs.map(chipHtml).join("")}</span></span></button>`).join("")}</div>`
         : '<div class="hint">Bu ürün için uygun makinelerde şu an takılı renk yok.</div>'}
       <h3>Diğer renkler (makinede takılı değil)</h3>
       <div class="cgrid">${Object.keys(COLORS).filter(n => !avSet.has(n)).map(btn).join("")}</div>
@@ -854,7 +884,7 @@ function render(keep) {
       const p = prodOf(l.k), list = suggest(l, o), asgIds = Object.keys(l.asg || {});
       const shown = S.all[l.id] ? list : list.filter(r => r.match > 0 || asgIds.includes(r.l.id));
       const change = list.filter(r => !shown.includes(r));
-      h += `<div class="sec"><span class="dot" style="background:${hexOf(l.color)}"></span>${esc(pname(p))} · ${esc(l.color)} — kalan ${rem(l)}</div>`;
+      h += `<div class="sec"><span class="dot" style="background:${dotBg(l)}"></span>${esc(pname(p))} · ${esc(colName(l))} — kalan ${rem(l)}</div>`;
       if (!list.length) h += p?.ftype ? `<div class="empty">Bu ende (${p.fw} cm) ${esc(p.name)} makine yok. index.html makine kartındaki türü (SİMLİ / ŞPİNGEL) kontrol edin.</div>` : '<div class="empty">Uygun makine yok. FULL140 / ONLY100 ayarlarını kontrol edin.</div>';
       else {
         h += shown.length ? shown.map((r, i) => resHtml(r, i, p, l)).join("") : '<div class="empty">Bu renk şu an hiçbir uygun makinede takılı değil.</div>';
@@ -872,10 +902,19 @@ function render(keep) {
 /* Uygun makineler HER BİRİ AYRI satırda gösterilir (renk dizilimleri birebir aynı olsa bile): ana rengi seçilen renk olan her makine için bir kart.
    Aynı renge ait kartlar yan yana listelenir; önce boştakiler, sonra makine sırasına göre. */
 function availColors(k) {
-  const items = [], tot = {};
+  const p = prodOf(k), items = [], tot = {}, w2 = l => [l.colors[0], l.colors[3]];
+  const twoMode = l => { const o = eligible(p, l); return l.width === 140 && !!o && !(!p.roll && o.ac === 1); };
+  const pairOf = l => { const w = w2(l); return twoMode(l) && w[0] && w[1] && w[0] !== "0" && w[1] !== "0" && w[0] !== w[1] ? [...w].sort() : null; };
+  const add = (id, extra, r) => { items.push({ c: id, ...extra, rs: [r], l: r.l }); const t = tot[id] = tot[id] || { f: 0, n: 0 }; t.n++; if (!r.busy) t.f++; };
+  const pairKeys = new Set();
+  Object.values(looms).forEach(l => { const pr = pairOf(l); if (pr) pairKeys.add(pr.join("|")); });
   Object.keys(COLORS).forEach(c => {
-    const rs = suggest({ id: "_", k, color: c, qty: 1, done: 0, asg: {} }, { lines: [] }).filter(r => r.match > 0);
-    rs.forEach(r => { items.push({ c, rs: [r], l: r.l }); const t = tot[c] = tot[c] || { f: 0, n: 0 }; t.n++; if (!r.busy) t.f++; });
+    suggest({ id: "_", k, color: c, qty: 1, done: 0, asg: {} }, { lines: [] }).filter(r => r.match > 0).forEach(r => { if (!pairOf(r.l)) add(c, {}, r); });
+  });
+  /* iki kanat farklı renkteyse tek renk değil ÇİFT sunulur: müşteri ikisini birlikte alır (iki kanat aynı anda çalışır) */
+  pairKeys.forEach(key => {
+    const [c1, c2] = key.split("|");
+    suggest({ id: "_", k, color: c1, color2: c2, qty: 1, done: 0, asg: {} }, { lines: [] }).filter(r => r.match > 0).forEach(r => add(key, { pair: [c1, c2] }, r));
   });
   return items.sort((a, b) => (tot[b.c].f - tot[a.c].f) || (tot[b.c].n - tot[a.c].n) || (a.c < b.c ? -1 : a.c > b.c ? 1 : 0) || ((a.rs[0].busy ? 1 : 0) - (b.rs[0].busy ? 1 : 0)) || (ids.indexOf(a.l.id) - ids.indexOf(b.l.id)));
 }
@@ -897,7 +936,7 @@ function chipHtml(r) {
 function drawSel() {
   const b = $("selbox"); if (!b) return;
   const k = Object.keys(S.sel);
-  b.innerHTML = k.length ? k.map(n => `<div class="qrow selrow"><span class="dot s" style="background:${hexOf(n)}"></span><b>${esc(n)}</b><input class="inp sq" type="number" inputmode="numeric" min="1" value="${S.sel[n]}" data-c="${esc(n)}"></div>`).join("")
+  b.innerHTML = k.length ? k.map(n => { const ps = n.split("|"); return `<div class="qrow selrow"><span class="dot s" style="background:${ps.length > 1 ? pairBg(ps) : hexOf(n)}"></span><b>${ps.map(esc).join(" + ")}</b><input class="inp sq" type="number" inputmode="numeric" min="1" value="${S.sel[n]}" data-c="${esc(n)}"></div>`; }).join("")
     : '<span class="hint">Henüz renk seçilmedi.</span>';
 }
 function drawChips() {
@@ -910,17 +949,10 @@ function drawChips() {
 function toast(m) { const t = $("toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2000); }
 function go(v) { S.view = v; render(); }
 function startOrder(name) {
-  if (S.potMode) { S.potMode = false; return startPot(name); }
   S.order = { id: uid(), cust: name, created: Date.now(), saved: false, lines: [] }; go("prod");
-}
-/* MUHTEMEL sipariş: ürünsüz, hemen kaydedilir; durum yazısı (pst) + adımlar/eksikler/not pencerede düzenlenir */
-function startPot(name) {
-  const o = { id: uid(), cust: name, created: Date.now(), saved: true, pot: true, pst: "Muhtemel sipariş", lines: [] };
-  orders.push(o); pushOrder(o); S.order = null; S.dirty = false; go("home"); openSheet(o.id);
 }
 function goHome() {
   if (!leaveOk()) return;
-  S.potMode = false;
   if (S.order && !S.order.saved && S.order.lines.length && !confirm("Kaydedilmemiş sipariş silinecek. Çıkılsın mı?")) return;
   S.order = null; S.bk = null; go("home");
 }
@@ -928,7 +960,8 @@ function goHome() {
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, o = S.order;
-  if (a === "new") { S.order = null; S.cin = ""; S.potMode = false; go("cust"); }
+  if (b.closest("#menuOv") && a !== "menu-close") $("menuOv").classList.remove("open");   /* menüden bir sayfaya gidince menü kapansın */
+  if (a === "new") { S.order = null; S.cin = ""; go("cust"); }
   else if (a === "pick-cust") startOrder(addCustomer(b.dataset.v) || b.dataset.v);
   else if (a === "cust-ok") { const v = addCustomer(S.cin); if (!v) return toast("Müşteri adı yazın"); startOrder(v); }
   else if (a === "custmgr") go("custmgr");
@@ -944,7 +977,7 @@ document.addEventListener("click", e => {
   else if (a === "color") { const n = b.dataset.v; if (S.sel[n]) delete S.sel[n]; else S.sel[n] = 1; b.classList.toggle("sel", !!S.sel[n]); drawSel(); }
   else if (a === "addline") {
     const cs = Object.keys(S.sel); if (!cs.length) return toast("En az bir renk seçin");
-    cs.forEach(c => o.lines.push({ id: uid(), k: S.pk, color: c, qty: S.sel[c], done: 0, asg: {} }));
+    cs.forEach(c => { const ps = c.split("|"); o.lines.push({ id: uid(), k: S.pk, color: ps[0], ...(ps[1] ? { color2: ps[1] } : {}), qty: S.sel[c], done: 0, asg: {} }); });
     persist(); go("order");
   }
   else if (a === "sheet") openSheet(b.dataset.id)
@@ -960,8 +993,8 @@ document.addEventListener("click", e => {
   else if (a === "st-q") addStep(b.dataset.v)
   else if (a === "st-tg") { withOrd(x => { const t = arr(x.steps).find(y => y.id === b.dataset.id); if (t) t.ok = !t.ok; }); drawSheet(); }
   else if (a === "st-del") { withOrd(x => { x.steps = arr(x.steps).filter(y => y.id !== b.dataset.id); }); drawSheet(); }
-  else if (a === "ps-q") { withOrd(x => { x.pst = b.dataset.v; }); drawSheet(); }
-  else if (a === "new-pot") { S.order = null; S.cin = ""; S.potMode = true; go("cust"); }
+  else if (a === "stt") { withOrd(x => { if (b.dataset.v === "active") delete x.stt; else x.stt = b.dataset.v; }); drawSheet(); }
+  else if (a === "no-prod") { if (!o || o.saved) return; o.saved = true; o.stt = "pot"; o.lines = []; orders.push(o); pushOrder(o); S.order = null; S.dirty = false; go("home"); openSheet(o.id); }
   else if (a === "pot-convert") { const x = orders.find(y => y.id === S.sheet); if (!x) return; if (!closeSheet()) return; S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("prod"); }
   else if (a === "pot-del") {
     const x = orders.find(y => y.id === S.sheet);
@@ -992,8 +1025,8 @@ document.addEventListener("click", e => {
       if (lm.width === 140 && p && !full) {
         const wings = [lm.colors[0], lm.colors[3]], other = wings.find(c => c !== ln.color);
         const hasComp = o.lines.some(x => x.comp && x.comp.of === ln.id);
-        const hasPartner = o.lines.some(x => x !== ln && !x.comp && x.k === ln.k && x.color === other && rem(x) > 0);
-        if (wings.filter(c => c === ln.color).length === 1 && other && other !== "0" && !hasComp && !hasPartner) {
+        const hasPartner = o.lines.some(x => x !== ln && !x.comp && !x.color2 && x.k === ln.k && x.color === other && rem(x) > 0);
+        if (!ln.color2 && wings.filter(c => c === ln.color).length === 1 && other && other !== "0" && !hasComp && !hasPartner) {
           o.lines.push({ id: uid(), k: ln.k, color: other, qty: ln.qty, done: ln.done || 0, asg: { [m]: wingSig(lm) }, comp: { of: ln.id, m } });
           toast(`Eşlik eden satır eklendi: ${other} × ${ln.qty}`);
         }
@@ -1042,6 +1075,7 @@ document.addEventListener("input", e => { if (e.target.id === "hq") { S.hq = e.t
 document.addEventListener("change", e => {
   const c = e.target.classList;
   if (c.contains("hs-sel")) { S.hs = e.target.value; drawOrders(); return; }
+  if (c.contains("hs-sel2")) { S.hst = e.target.value; drawOrders(); return; }
   if (!S.sheet) return;
   if (c.contains("ps-t")) withOrd(o => { o.pst = e.target.value.trim(); });
   else if (c.contains("nt-t")) withOrd(o => { const v = e.target.value.trim(); if (v) o.note = v; else delete o.note; });
