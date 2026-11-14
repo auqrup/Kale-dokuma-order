@@ -139,7 +139,12 @@ body{font-family:var(--ff);color:var(--tx);min-height:100vh;background:radial-gr
 <div id="toast"></div>
 <div id="printSection"></div>
 
+<script src="shared.js?v=1"></script>
 <script>
+if (typeof FIXED_COLORS === "undefined") {   /* shared.js yüklenemediyse sessizce bozuk çalışmasın */
+  document.body.innerHTML = '<div style="padding:24px;font:600 16px sans-serif;color:#f87171;background:#0d1014;min-height:100vh">shared.js yüklenemedi.<br><br>GitHub\'a <b>shared.js</b> dosyasını diğer sayfalarla AYNI klasöre yükleyin, sonra sayfayı yenileyin.</div>';
+  throw new Error("shared.js missing");
+}
 /* ============================================================
    KALE DOKUMA - ATÖLYE EKRANI (fabrika.html)  -- BELGE / DOCUMENTATION
    Ayrintili belge icin README.md dosyasina bakin.
@@ -151,30 +156,17 @@ body{font-family:var(--ff);color:var(--tx);min-height:100vh;background:radial-gr
 
    SADECE OKUR (hicbir sey YAZMAZ): kale_dokuma_live_v2 (tezgahlar) ve kale_colors_v2 (ek renkler).
    Giris: Firebase Authentication (diger sayfalarla ayni hesap). Veriler canli guncellenir.
-   Renk listesi (COLORS) index.html ve siparis.html ile AYNI olmali.
+   Renk listesi, subeler ve genislikler shared.js dosyasindadir (3 sayfa icin ortak).
    ============================================================ */
-const COLORS = {
-  "0":"#475569","PETROL":"#084a68","ÖZBEK BORDO":"#300303",
-  "LACİVERT":"#090835","AÇIK BORDO":"#ff2e2e","AÇIK GRİ":"#949ca8",
-  "PAST GRAY":"#c3c5c6","SP GREY":"#323e3e","KOYU GRİ":"#1e1e1f",
-  "SİYAH":"#000000","SİLKY(SARIBEJ)":"#d99b45","SARIBEJ":"#f1bf79",
-  "ŞEKER LT":"#fff2c2","IVORY":"#f6f6ef","ŞEKER AYM":"#e9e3ce",
-  "VİZON":"#684f2c","KOYU KAHVE":"#24160a","MARON":"#5b010b",
-  "ZÜMRÜT":"#073f74","Z-BLUE":"#145090","FOWN (AÇIK BAL)":"#e4d79b",
-  "NEFTİ":"#082b16","FISTIK YEŞİL":"#15b300","KREM":"#f5ebd1",
-  "GÜL":"#692b49","B.GREEN":"#3a644c","CAM GÖBEĞİ":"#009e7e",
-  "SAXMAVİ":"#1100ff","SOĞAN(ALTIN)":"#947400"
-};
+const COLORS = { "0": NO_COLOR_HEX, ...FIXED_COLORS };
 
-const BRANCHES = { R: { name: "Rüya", count: 16 }, A: { name: "Acar", count: 4 }, Y: { name: "Y. Acar", count: 8 }, K: { name: "Karaman", count: 6 } };
 const BR_ORDER = ["R", "A", "Y", "K"];
-const WIDTHS = [140, 160, 200];
 const ST = { running: ["Çalışıyor", "var(--run)"], stopped: ["Duruş", "var(--stop)"], yarn: ["İplik Yok", "var(--yarn)"], maint: ["Bakımda", "var(--mnt)"] };
 const ids = BR_ORDER.flatMap(b => Array.from({ length: BRANCHES[b].count }, (_, i) => b + (i + 1)));
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const hexOf = n => COLORS[n] || "#475569";
+const hexOf = n => COLORS[n] || NO_COLOR_HEX;
 
 /* Ek renkler (kale_colors_v2: sadece OKUNUR). Sabit liste yukarıdaki COLORS'tur. */
 const FIXED_COLOR_NAMES = new Set(Object.keys(COLORS));

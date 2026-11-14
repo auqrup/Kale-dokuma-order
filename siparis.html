@@ -242,7 +242,12 @@ body *{visibility:hidden}
 <div class="svb" id="svb"></div>
 <div class="hov" id="hov"></div>
 
+<script src="shared.js?v=1"></script>
 <script>
+if (typeof FIXED_COLORS === "undefined") {   /* shared.js yüklenemediyse sessizce bozuk çalışmasın */
+  document.body.innerHTML = '<div style="padding:24px;font:600 16px sans-serif;color:#f87171;background:#0d1014;min-height:100vh">shared.js yüklenemedi.<br><br>GitHub\'a <b>shared.js</b> dosyasını diğer sayfalarla AYNI klasöre yükleyin, sonra sayfayı yenileyin.</div>';
+  throw new Error("shared.js missing");
+}
 /* ============================================================
    KALE DOKUMA - SIPARIS YONLENDIRME SAYFASI (siparis.html)  -- BELGE / DOCUMENTATION
    Ayrintili belge icin README.md dosyasina bakin.
@@ -321,20 +326,9 @@ const P = [
 ];
 /* ================================================================== */
 
-/* SABİT RENK LİSTESİ (index.html ile AYNI olmalı; "0" burada yok). Ek renkler Firebase kale_colors_v2'den gelir. */
-const COLORS = {
-  "PETROL":"#084a68","ÖZBEK BORDO":"#300303","LACİVERT":"#090835",
-  "AÇIK BORDO":"#ff2e2e","AÇIK GRİ":"#949ca8","PAST GRAY":"#c3c5c6",
-  "SP GREY":"#323e3e","KOYU GRİ":"#1e1e1f","SİYAH":"#000000",
-  "SİLKY(SARIBEJ)":"#d99b45","SARIBEJ":"#f1bf79","ŞEKER LT":"#fff2c2",
-  "IVORY":"#f6f6ef","ŞEKER AYM":"#e9e3ce","VİZON":"#684f2c",
-  "KOYU KAHVE":"#24160a","MARON":"#5b010b","ZÜMRÜT":"#073f74",
-  "Z-BLUE":"#145090","FOWN (AÇIK BAL)":"#e4d79b","NEFTİ":"#082b16",
-  "FISTIK YEŞİL":"#15b300","KREM":"#f5ebd1","GÜL":"#692b49",
-  "B.GREEN":"#3a644c","CAM GÖBEĞİ":"#009e7e","SAXMAVİ":"#1100ff",
-  "SOĞAN(ALTIN)":"#947400"
-};
-const hexOf = n => COLORS[n] || "#475569";
+/* Sabit renk listesi shared.js içindeki FIXED_COLORS'tur ("0" burada yok → renk listelerinde görünmez). Ek renkler Firebase kale_colors_v2'den gelir. */
+const COLORS = { ...FIXED_COLORS };
+const hexOf = n => COLORS[n] || NO_COLOR_HEX;
 /* Ek renkler: Firebase kale_colors_v2 = { v:2, list:[{name,hex}] } (index.html yazar, bu sayfa sadece OKUR). Sabit liste yukarıdaki COLORS'tur.
    Ham makine renkleri saklanır ki ek renkler sonradan gelirse/değişirse yeniden doğrulanabilsin. */
 const FIXED_COLOR_NAMES = new Set(Object.keys(COLORS));
@@ -350,10 +344,7 @@ function applyExtraColors(list) {
   try { localStorage.setItem(CCOL_KEY, JSON.stringify(kept)); } catch {}
 }
 try { applyExtraColors(JSON.parse(localStorage.getItem(CCOL_KEY) || localStorage.getItem("kale_colors_cache_v2") || "[]")); } catch {}
-const WARPS = { "SİYAH":"#0f172a", "BEYAZ":"#ffffff", "SARI":"#eab308" };
 const WARP_DEF = ["BEYAZ", "SİYAH"];
-const BRANCHES = { R:{ name:"Rüya", count:16 }, A:{ name:"Acar", count:4 }, Y:{ name:"Y. Acar", count:8 }, K:{ name:"Karaman", count:6 } };
-const WIDTHS = [140, 160, 200];
 const STATUS = { running:["Çalışıyor","var(--run)"], stopped:["Durduruldu","var(--stop)"], yarn:["İplik yok","var(--yarn)"], maint:["Arıza/Bakım","var(--mnt)"] };
 const OKEY = "kale_siparis_local_v1";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
@@ -383,9 +374,7 @@ try { orders = JSON.parse(localStorage.getItem(OKEY) || "[]"); } catch { orders 
 const cache = () => { try { localStorage.setItem(OKEY, JSON.stringify(orders)); } catch {} };
 const wingSig = m => (m.width === 140 ? [m.colors[0], m.colors[3]] : [m.colors[0]]).join("|");
 /* Satırın bu makinede tahmini tezgah metresi (kalan adet üzerinden) */
-/* Üretim süresi tahmini: günlük üretim (tezgah boyu, m/gün; yaklaşık) - index.html ile AYNI olmalı.
-   200 cm: 240 · 140 cm: SİMLİ 210 / ŞPİNGEL 370 · 160 cm: SİMLİ 210 / ŞPİNGEL 350. Özellik seçilmemişse SİMLİ varsayılır. */
-const DAILY = { 200: { simli: 240, spingel: 240 }, 140: { simli: 210, spingel: 370 }, 160: { simli: 210, spingel: 350 } };
+/* Üretim süresi: günlük üretim tablosu DAILY shared.js içindedir. Özellik seçilmemişse SİMLİ varsayılır. */
 const dailyRate = l => (DAILY[l.width] || DAILY[200])[l.extra === "spingel" ? "spingel" : "simli"];
 const unsetExtra = l => l.width !== 200 && l.extra !== "spingel" && l.extra !== "simli";
 const fmtDays = d => `${String(Math.max(0.1, Math.round(d * 10) / 10)).replace(".", ",")} gün`;

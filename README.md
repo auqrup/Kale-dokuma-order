@@ -2,28 +2,28 @@
 
 ## 0. HANDOFF – READ THIS FIRST (instructions for the next assistant)
 
-State of the project: 2026-10-21. Files: `index.html`, `siparis.html`, `fabrika.html`, `README.md` (this spec) and `check.py` (static checks).
+State of the project: 2026-10-21. Files: `index.html`, `siparis.html`, `fabrika.html`, **`shared.js` (shared constants – added 2026-11-10)**, `README.md` (this spec) and `check.py` (static checks). **`shared.js` MUST be uploaded to GitHub in the same folder as the pages; if it is missing every page shows a red "shared.js yüklenemedi" message instead of working half-broken.**
 **This README is the spec; the three HTML files are the source of truth. Do not rely on memory – read the code before changing it.**
 
 **The owner**: runs the weaving factory, speaks Arabic (replies in Arabic; UI strings in the pages stay Turkish), works from a phone, deploys by uploading files in the GitHub web UI (same file names, then refresh), uses ONLY free tiers (GitHub Pages + Firebase Spark, no credit card), tests every upload on the live site and reports back. He wants short, step-by-step, phone-friendly answers. When he says "question only / don't execute / let's talk first" → do NOT change files. He decides; propose first when behaviour is ambiguous.
 
 **Rules that must never be broken**
 1. **Data ownership**: every page writes only its own Firebase paths (see section 3). index.html never writes orders or the customer list; siparis.html never writes machines/colors/events; fabrika.html writes nothing.
-2. **Color list is frozen** (28 colors in the `COLORS` constant, identical in the three pages). Never rename, edit or delete a fixed color; only EXTRA colors (`kale_colors_v2`) can be added/deleted. A color name used in orders must never be renamed (names are stored inside looms and orders).
+2. **Color list is frozen** (28 colors in the `FIXED_COLORS` constant of `shared.js` – ONE copy; each page builds its own `COLORS` from it: index/fabrika `{ "0": NO_COLOR_HEX, ...FIXED_COLORS }`, siparis `{ ...FIXED_COLORS }`). Never rename, edit or delete a fixed color; only EXTRA colors (`kale_colors_v2`) can be added/deleted. A color name used in orders must never be renamed (names are stored inside looms and orders).
 3. **Customer names are never renamed** (stored inside looms and orders); customers are added/deleted only from siparis.html; deletion is blocked while the customer has orders or is on a loom.
-4. `DAILY` (production rates) must be identical in index.html and siparis.html; `COLORS` identical in all three.
+4. `DAILY` (production rates), `BRANCHES`, `WIDTHS`, `WARPS` and `FIXED_COLORS` live ONLY in `shared.js` (since 2026-11-10; before that they were copied into each page and had to be kept identical by hand). NEVER declare them again inside a page (check.py fails). If you change `shared.js`: bump `SHARED_VERSION` there AND the `shared.js?v=N` number in all three pages (check.py verifies this; the number is the browser-cache buster), and upload shared.js together with the pages.
 5. Login is Firebase Auth (3 accounts); the database rules (section 4) allow only those UIDs. Never ask the owner for passwords or tokens; the Firebase web config in the code is public by design.
 6. Never write to Firebase from `fabrika.html`.
 
 **How to work (this avoids the mistakes that happened before)**
 - Make one change at a time, edit with exact-string replacements that assert a UNIQUE match (the files are long single-file pages), keep Turkish UI strings and the existing style.
-- Before delivering run `python3 check.py` (JS syntax, duplicate/missing ids, identical COLORS/DAILY, data-ownership audit). It was mutation-tested: it catches syntax errors, duplicate or missing ids, diverging color/rate tables and forbidden writes.
+- Before delivering run `python3 check.py` (JS syntax of pages + shared.js, duplicate/missing ids, shared-constants rules: shared.js well formed / every page loads the same `shared.js?v=N` first / no private copies / COLORS built from FIXED_COLORS, data-ownership audit). It was mutation-tested: it catches syntax errors, duplicate or missing ids, diverging color/rate tables and forbidden writes.
 - Test logic with small Node harnesses (extract the inline `<script>`, stub the DOM, fake Firebase with `once/on/set/update/transaction`); the real exported database (`fabrika-e9b49-default-rtdb-export.json`) is the best test data – ask the owner for a fresh export if needed.
 - You normally cannot open a browser: say clearly that the layout/behaviour was NOT verified in a real browser and give the owner a short list of things to test on his phone.
 - After every change tell the owner: which files to upload, what to test, what is still pending. Update this README (section 7 = open items).
 - Pitfalls already met: sticky bars inside padded sheets must use `top/bottom:0` + negative margins (not negative offsets); `normalize()` turns unknown color names into "0" – extra colors must be loaded BEFORE looms; Firebase drops empty arrays, so store lists as `{v:2,list:[...]}`; use transactions when several users write the same list.
 
-**Quick start prompt for a new chat** (attach the 5 files): "This is my weaving-factory project (3 HTML pages + Firebase). Read README.md section 0 first and follow it strictly. I will describe the next change; first tell me how you will do it and wait for my OK."
+**Quick start prompt for a new chat** (attach the 6 files: 3 pages + shared.js + README.md + check.py): "This is my weaving-factory project (3 HTML pages + Firebase). Read README.md section 0 first and follow it strictly. I will describe the next change; first tell me how you will do it and wait for my OK."
 
 Three single-file HTML apps for a weaving factory (velvet prayer rugs / carpets / fabric rolls).
 Owner speaks Arabic (discussion) and Turkish (UI + code strings). Works from a phone.
@@ -35,6 +35,7 @@ This file is the technical reference: read `HANDOFF.md` first (rules, pitfalls, 
 |---|---|---|
 | `index.html` | **Makineler** – live status of all looms | https://auqrup.github.io/Kale-dokuma-order/ |
 | `siparis.html` | **Sipariş Yönlendirme** – order intake + routing orders to looms | https://auqrup.github.io/Kale-dokuma-order/siparis.html |
+| `shared.js` | Shared constants for the 3 pages (`FIXED_COLORS`, `NO_COLOR_HEX`, `BRANCHES`, `WIDTHS`, `WARPS`, `DAILY`, `SHARED_VERSION`); loaded with `<script src="shared.js?v=N">` before each page's own script | – |
 | `check.py` | Static pre-upload checks (`python3 check.py`; needs Python 3 + Node) | – |
 | `fabrika.html` | **Atölye** – READ-ONLY factory-floor view (one big card per loom: customer in large type, loom id, main color(s), width) + short "Rapor" of which customers are being worked for now | https://auqrup.github.io/Kale-dokuma-order/fabrika.html |
 
@@ -51,7 +52,7 @@ This file is the technical reference: read `HANDOFF.md` first (rules, pitfalls, 
 - Loom widths: 140 / 160 / 200 cm (default `WIDTHS[(num-1)%3]`, editable per loom).
 - **140 cm looms have TWO WINGS (kanat)**: 6 colors (`colors[0..2]` wing 1: main + 2 sub; `colors[3..5]` wing 2). 160/200 cm looms have 4 colors (`colors[0]` = main).
 - Each loom: status (`running|stopped|yarn|maint`), current customer, colors, 2 warp (çözgü) colors, `lastModified`.
-- Color `"0"` = no yarn / none. Fixed color list `COLORS` (28 final colors, FROZEN – see section 6) must be identical in index.html, siparis.html and fabrika.html; `WARPS` (SİYAH / BEYAZ / SARI) exists in index.html and siparis.html.
+- Color `"0"` = no yarn / none. Fixed color list `FIXED_COLORS` in shared.js (28 final colors, FROZEN – see section 6; the same list for all pages); `WARPS` (SİYAH / BEYAZ / SARI) exists in index.html and siparis.html.
 - **Only K1 (Karaman 1)** makes full 140 cm wide products; every other 140 cm loom makes 70 cm-wide pieces (two wings).
 
 ## 3. Firebase data layout and write ownership
@@ -120,7 +121,7 @@ Order object: `{id, cust, created (ms), due ("YYYY-MM-DD" or empty = expected fi
 
 ## 5b. Production-time estimate, Mini seccade, report, save flow (siparis.html) 
 
-- **Daily output (loom length, approximate)** – constants `DAILY` in BOTH pages (keep identical): 200 cm = 240 m/day; 140 cm = SİMLİ 210 / ŞPİNGEL 370; 160 cm = SİMLİ 210 / ŞPİNGEL 350. The loom property `extra` (`spingel`/`simli`, set in the machine edit window) selects the rate; if it is not set on a 140/160 loom SİMLİ is assumed and the text says "(simli varsayıldı)". Estimated duration = meters (`lineM`) ÷ daily rate, shown on suggestion cards, on assigned order lines, in the machine's "Siparişler" window total (index.html) and in the report.
+- **Daily output (loom length, approximate)** – constant `DAILY` (lives in shared.js, ONE copy for both pages): 200 cm = 240 m/day; 140 cm = SİMLİ 210 / ŞPİNGEL 370; 160 cm = SİMLİ 210 / ŞPİNGEL 350. The loom property `extra` (`spingel`/`simli`, set in the machine edit window) selects the rate; if it is not set on a 140/160 loom SİMLİ is assumed and the text says "(simli varsayıldı)". Estimated duration = meters (`lineM`) ÷ daily rate, shown on suggestion cards, on assigned order lines, in the machine's "Siparişler" window total (index.html) and in the report.
 - **Mini seccade 70 × 30**: new product (`k:"mini"`), 140 cm looms only, two pieces across (one per wing, same wing/companion logic as seccade 70×110), 0.3 m per piece.
 - **Save order**: "Siparişi kaydet" now saves, shows "Sipariş başarıyla eklendi ✓" and returns to the home screen (assign machines afterwards by opening the order).
 - **Report** ("📊 Sipariş raporu" on the home screen): on-screen report view + "🖨️ PDF / Yazdır" (uses `#printSection` + `@media print`, same technique as index.html). Sections: KPIs, attention list (overdue orders, unassigned lines, assignments needing a color change), open orders with per-line machine/meters/duration, machine workload table, completed orders, footnote with the assumptions.
@@ -130,7 +131,7 @@ Order object: `{id, cust, created (ms), due ("YYYY-MM-DD" or empty = expected fi
 - Writes NOTHING to Firebase (verified: no set/update/remove/transaction calls). Reads `kale_dokuma_live_v2` (looms) and `kale_colors_v2` (extra colors). Same Firebase Auth login as the other pages (session is shared on the same origin).
 - Layout: header (live pill, "📊 Rapor", fullscreen ⛶, sign-out 🚪), then one section per branch (Rüya, Acar, Y. Acar, Karaman). Each loom = one card: color stripe on top (main color; 140 cm looms show both wing main colors), loom id badge + a small status dot (green running / red stopped / orange no yarn / purple maintenance) at the top, the CURRENT customer in large uppercase type in the middle ("BOŞTA" if none), and at the bottom the main color name(s) with dot(s) and the loom width.
 - "Rapor": KPIs (active customers, machines with a customer, running/total, idle), customers being worked for now (machine chips with status dot, main colors, widths, warning if some machines are not running), idle machines (the old "next customers" section was removed 2026-11-09); "🖨️ PDF / Yazdır" (`#printSection` + `@media print`).
-- The `COLORS` constant must stay identical in index.html, siparis.html and fabrika.html.
+- The fixed colour list is `FIXED_COLORS` in shared.js (single source of truth for all three pages).
 
 ## 6. index.html features
 
@@ -147,6 +148,7 @@ Order object: `{id, cust, created (ms), due ("YYYY-MM-DD" or empty = expected fi
 - **Customer name on cards (2026-10-29)**: the current-customer name is a full-width line (`.badge.full`, wraps instead of "AFG E…") ABOVE the id/status/width row (`.top`), not inside it. (The ŞU ANKİ / GELECEK block was removed on 2026-11-09, see below.)
 - **Status highlight on cards (2026-10-29)**: a card whose status is stopped / no yarn / maintenance gets class `s-stopped` / `s-yarn` / `s-maint` (border in the status color + light gradient tint) and a small label strip at the top of its body (`.stlab`: DURUŞ / İPLİK YOK / BAKIM, map `STATUS_LABEL`). Running cards are unchanged. The small status dot stays.
 - **Tappable status counters (2026-10-29)**: the 4 counters (`.stat`, now `<button data-st=...>`) filter the grid by status (`statusFilter`; tap again to clear; active one has `.on`). The counters count by branch + size filter + search but NOT by the status filter itself (otherwise the other counters would drop to 0). `visible(l, skipStatus)` – NEVER pass `visible` straight to `.filter()` (the index would become `skipStatus`; use `.filter(l => visible(l))`). A muted line `#shown` "Gösterilen: N / 34" appears only when something is filtered. Size filter and search now call `refresh()` so the counters follow them. The print report still follows only the branch.
+- **Shared constants file (2026-11-10, owner decision)**: `shared.js` holds `SHARED_VERSION`, `NO_COLOR_HEX`, `FIXED_COLORS` (frozen, 28), `BRANCHES`, `WIDTHS`, `WARPS`, `DAILY`. It is a classic script (top-level `const`s are visible to the pages' own scripts), loaded BEFORE each page's inline script; each page starts with a guard (`typeof FIXED_COLORS === "undefined"` → red message + `throw`). Per-page things stay in the pages on purpose: `COLORS` object (runtime copy that gets the extra colours from Firebase; siparis has no "0" key so it never appears in colour lists), `hexOf`, `FIXED_COLOR_NAMES`, status label tables (`ST` / `STATUS` / `STATUS_LABEL` – wording differs per page), `EXTRAS`, `FULL140` / `ONLY100`, products. Tested: runtime values of these constants are identical to the pre-move versions in all three pages (`equiv.js` style comparison), the guard works, and check.py was sabotage-tested (private copy, version mismatch, missing tag, literal colour code, broken colour, missing file, page re-declaring BRANCHES: all caught).
 - **REMOVED (2026-11-09, owner decision): the whole "next customer" idea** – no `nextCustomer` field, no "Gelecek Müşteri" select / "⏭ Sıradakini şimdiki yap" button in the loom edit window, no GELECEK row (the redundant ŞU ANKİ row was removed with it; the name stays once in the full-width `.badge.full` line), no `next` notification, no column in the PDF report, no search/customer-list/customer-delete-block use of it, no "Sıradaki müşteriler" section in fabrika.html, no "→ Sıradaki" text in siparis.html's machine suggestions. Old data: `normalize()` (index) / `norm()` (siparis) DROP a stored `nextCustomer`, so it disappears from Firebase the next time each loom is saved (full `set`) – there is NO mass cleanup write. Do NOT bring it back.
 - **index.html look + orders button (2026-11-09)**: more modern look in a CSS block at the END of `<style>` (page background glow `radial-gradient`, card / stat / badge / warp gradients, rounded 16px cards with hover lift; status tints `s-stopped/yarn/maint` kept). The `📋 Siparişler (N)` button is now a SMALL pill (`.obtn{width:auto;align-self:flex-start;padding:4px 11px}`).
 - **siparis.html edit sheet fixes (2026-11-09)**: clicking OUTSIDE the details sheet no longer closes it (there is no backdrop handler on `#shOv`; ✕ Kapat / Esc still ask to save when dirty; the ☰ menu overlay still closes on outside click). ONE Kaydet button only (sticky header of the sheet); the order screen's inline duplicate was removed (its sticky bar `#svb` appears when there are unsaved changes).
@@ -166,7 +168,7 @@ Ideas proposed to the owner but NOT chosen (do not build unless he asks): sugges
 
 ## 8. Operations
 
-- Deploy: upload changed file(s) via GitHub web UI (Add file → Upload files, same file name) → Commit. Pages updates in about a minute. GitHub Copilot commit-message suggestions were disabled in the owner's settings.
+- Deploy: upload changed file(s) via GitHub web UI (when shared.js changed, upload it too and make sure the pages in the repo are the matching versions) (Add file → Upload files, same file name) → Commit. Pages updates in about a minute. GitHub Copilot commit-message suggestions were disabled in the owner's settings.
 - Backups (owner's routine): orders → "📤 Yedek al" (siparis.html) weekly; machines → "💾 Yedek" (index.html) before big changes; whole database → Firebase console Realtime Database ⋮ → Export JSON monthly.
 - **Testing caveat**: all code is verified only with Node syntax checks and simulated-DOM logic tests (`python3 tests/run_all.py`, 115 checks), never in a real browser by the assistant; the owner tests on the live site and reports back. Login and rule changes were tested live and work.
 
