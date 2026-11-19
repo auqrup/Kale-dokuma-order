@@ -158,6 +158,21 @@ body.dirty main{padding-bottom:90px}
 .td small.lt{color:var(--stop)}
 .rpt tr.on td{background:#fffbea;font-size:.74rem}
 .cn small.no{color:var(--ac);font-weight:800;font-size:.78em;white-space:nowrap}
+.tb b{margin-left:4px;color:var(--stop)}
+.tk-bar{display:flex;gap:8px;margin:0 0 12px}
+.tk-bar button{flex:1;margin:0}
+.tk-row{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--bd);border-radius:12px;padding:11px;margin-bottom:8px}
+.tk-row.late{border-color:rgba(248,113,113,.5)}
+.tk-row input{width:24px;height:24px;flex:none;margin-top:2px}
+.tk-body{flex:1;min-width:0;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.tk-body b{font-size:.92rem;overflow-wrap:anywhere}
+.tk-body span{font-size:.86rem;overflow-wrap:anywhere}
+.tk-body small{color:var(--mu);font-weight:700}
+.tk-body small.lt{color:var(--stop)}
+.undo{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:420px;margin:0 auto;z-index:90;display:none;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--ac);border-radius:12px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.undo.on{display:flex}
+.undo span{flex:1;font-size:.85rem;font-weight:700;overflow-wrap:anywhere}
+.undo button{background:var(--ac);color:var(--ac-d);border:0;border-radius:9px;padding:8px 14px;font-weight:800;cursor:pointer;font-family:inherit}
 .hov{position:fixed;z-index:70;display:none;width:330px;max-width:90vw;max-height:80vh;overflow:auto;background:var(--card2);border:1px solid var(--ac);border-radius:14px;padding:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);pointer-events:none;font-size:.8rem}
 .hov h4{margin:0 0 6px;font-size:1rem;overflow-wrap:anywhere}
 .hov .hs{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);font-weight:800;margin:10px 0 4px}
@@ -242,6 +257,7 @@ body *{visibility:hidden}
 <input type="password" id="loginPass" placeholder="Şifre" autocomplete="current-password" required>
 <div id="loginErr"></div><button type="submit" class="primary" id="loginBtn" style="margin-top:6px">Giriş</button></form></div>
 <div class="toast" id="toast"></div>
+<div class="undo" id="undo"></div>
 <div class="ovl" id="shOv"><div class="shs" id="shBox"></div></div>
 <div class="ovl" id="menuOv"><div class="shs">
   <div class="shh"><h2>Menü</h2><button type="button" class="sx" data-act="menu-close">✕ Kapat</button></div>
@@ -712,10 +728,11 @@ function drawOrders() {
   const sc = k => base.filter(o => info.get(o.id).stt === k).length;
   const hs = $("hst"); if (hs) hs.innerHTML = `<option value="all">Tüm durumlar (${base.length})</option>` + Object.keys(STT).map(k => `<option value="${k}"${S.hst === k ? " selected" : ""}>${STT[k].ico} ${STT[k].t} (${sc(k)})</option>`).join("");
   const shown = byStt.filter(o => F[S.hf](info.get(o.id)));
+  const tn = $("tdn"); if (tn) { const n = todaySteps().filter(x => x.g === "late" || x.g === "today").length; tn.textContent = n ? " " + n : ""; }
   const sh = $("oshown"); sh.textContent = `Gösterilen: ${shown.length} / ${orders.length}`; sh.style.display = shown.length === orders.length ? "none" : "block";
   box.innerHTML = shown.length ? `<div class="ogrid">${sortOrders(shown, S.hs).map(ocard).join("")}</div>` : `<div class="empty">${orders.length ? "Sonuç bulunamadı." : "Henüz kayıtlı sipariş yok."}</div>`;
 }
-const toolsHtml = () => `<button type="button" class="tb pri" data-act="new">➕ Yeni</button>
+const toolsHtml = () => `<button type="button" class="tb pri" data-act="new">➕ Yeni</button><button type="button" class="tb" data-act="today" aria-label="Bugün">📅<b id="tdn"></b></button>
   <div class="hbar" id="ocnt"></div>
   <select class="inp hst hs-sel2" id="hst"></select>
   <div class="tsr"><input class="inp" id="hq" type="search" placeholder="Müşteri ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>`;
@@ -744,6 +761,7 @@ function drawSheet() {
     <h3>➡ Sonraki adımlar (${I.pend.length} bekliyor)</h3>
     ${stepRows}
     <div class="tdadd"><input class="inp st-new" maxlength="140" placeholder="Örn: Kırmızı iplik bekleniyor"><input type="date" class="inp st-d" style="flex:none;width:auto;max-width:150px"><button type="button" data-act="st-add">Ekle</button></div>
+    <button type="button" class="second" data-act="sh-share">📤 Paylaş</button>
     <h3>📝 Müşteri notu</h3><textarea class="inp nt-t" rows="3" maxlength="600">${esc(o.cnote || "")}</textarea>
     <h3>💲 Fiyatlar (USD)</h3>
     ${arr(o.cprices).map(r => `<div class="prow"><input class="inp pr-n" data-id="${esc(r.id)}" maxlength="60" value="${esc(r.n)}"><span class="usd">$</span><input class="inp pr-p" data-id="${esc(r.id)}" inputmode="decimal" maxlength="10" value="${esc(r.p)}"><button type="button" data-act="pr-del" data-id="${esc(r.id)}" aria-label="Sil">✕</button></div>`).join("")}
@@ -775,7 +793,7 @@ function saveSheet(quiet) {
   if (priceChanged) { custPrices[nk] = rows; try { localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {} if (pricesRef) pricesRef.child(nk).set(rows.length ? rows : null).catch(() => toast("Fiyatlar Firebase'e yazılamadı (yerelde saklandı)")); }
   if (fresh) { orders.push(cur); pushOrder(cur); S.isNew = false; }   /* yeni kart: ilk kez burada kaydedilir */
   else { cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)")); }
-  S.sdirty = false; S.draft = mkDraft(cur); drawOrders();
+  S.sdirty = false; S.draft = mkDraft(cur); drawOrders(); if (S.view === "today") render(true);
   if (!quiet) { toast("Kaydedildi ✓" + dupMsg(cur)); drawSheet(); }
   return true;
 }
@@ -802,6 +820,64 @@ function addStep(t) {
 function addStepFromInput() {
   const i = $("shBox").querySelector(".st-new"), t = (i ? i.value : "").trim(); if (!t) return toast("Yazın");
   addStep(t); const n = $("shBox").querySelector(".st-new"); if (n) n.focus();
+}
+/* ---------- "Bugün" ekranı: tüm kartların bekleyen adımları tek listede; paylaşım (WhatsApp / panoya kopyala); işaretle = hemen kaydet + birkaç sn "Geri al" ---------- */
+const shortLbl = o => (o.cust || "") + (o.no ? ` (#${o.no})` : "");
+const dayTxt = d => d === null ? "" : d < 0 ? `${-d} gün gecikti` : d === 0 ? "Bugün" : `${d} gün kaldı`;
+function todaySteps() {
+  const out = [];
+  orders.forEach(o => arr(o.steps).forEach(s => {
+    if (s.ok) return;
+    const d = s.d ? dueDays({ due: s.d }) : null;
+    out.push({ o, s, d, g: d === null ? "none" : d < 0 ? "late" : d === 0 ? "today" : d <= 7 ? "soon" : "later" });
+  }));
+  return out.sort((a, b) => (a.d === null ? 1e9 : a.d) - (b.d === null ? 1e9 : b.d) || (a.o.cust || "").localeCompare(b.o.cust || "", "tr"));
+}
+const clipText = t => t.length > 1500 ? t.slice(0, 1500).replace(/\n[^\n]*$/, "") + "\n…" : t;
+function todayShareText() {   /* sadece adımlar + müşteri adı + sipariş no (fiyat / not YOK) */
+  const L = todaySteps(), out = [`📅 Bugünün işleri — ${new Date().toLocaleDateString("tr-TR")}`];
+  [["late", "⏰ Geciken"], ["today", "📌 Bugün"], ["soon", "🔜 Yaklaşan"]].forEach(([k, t]) => {
+    const rows = L.filter(x => x.g === k); if (!rows.length) return;
+    out.push(t); rows.forEach(x => out.push(`• ${shortLbl(x.o)}: ${x.s.t}${x.d !== null ? " — " + dayTxt(x.d) : ""}`));
+  });
+  if (out.length === 1) out.push("Bekleyen adım yok ✓");
+  return clipText(out.join("\n"));
+}
+function cardShareText(o) {
+  const pend = arr(o.steps).filter(s => !s.ok);
+  return clipText([shortLbl(o)].concat(pend.length ? pend.map(s => `• ${s.t}${s.d ? ` — ${dayTxt(dueDays({ due: s.d }))} (${fmtDue(s.d)})` : ""}`) : ["Bekleyen adım yok ✓"]).join("\n"));
+}
+async function shareOut(text) {   /* telefonun paylaşım menüsü (WhatsApp seçilir); yoksa wa.me; gönder tuşuna kullanıcı basar */
+  try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+}
+async function copyOut(text) { try { await navigator.clipboard.writeText(text); toast("Kopyalandı ✓"); } catch { toast("Kopyalanamadı"); } }
+function todayHtml() {
+  const L = todaySteps();
+  const row = x => `<div class="tk-row${x.g === "late" ? " late" : ""}"><input type="checkbox" data-act="td-done" data-id="${esc(x.o.id)}" data-sid="${esc(x.s.id)}" aria-label="Tamamlandı"><div class="tk-body" data-act="td-open" data-id="${esc(x.o.id)}"><b>${esc(shortLbl(x.o))}</b><span>${esc(x.s.t)}</span>${x.s.d ? `<small class="${x.g === "late" ? "lt" : ""}">${fmtDue(x.s.d)} · ${dayTxt(x.d)}</small>` : ""}</div></div>`;
+  let h = '<h2>📅 Bugün</h2><div class="tk-bar"><button type="button" class="second" data-act="td-share">📤 Paylaş</button><button type="button" class="second" data-act="td-copy">📋 Kopyala</button></div>';
+  if (!L.length) return h + '<div class="empty">Bekleyen adım yok 🎉</div>';
+  [["late", "⏰ Geciken"], ["today", "📌 Bugün"], ["soon", "🔜 Yaklaşan (7 gün)"], ["later", "🗓 Daha sonra"], ["none", "Tarihsiz"]].forEach(([k, t]) => {
+    const rows = L.filter(x => x.g === k); if (rows.length) h += `<h3>${t} (${rows.length})</h3>` + rows.map(row).join("");
+  });
+  return h;
+}
+let undoT = null, undoFn = null;
+function hideUndo() { clearTimeout(undoT); undoFn = null; $("undo").classList.remove("on"); }
+function showUndo(text, fn) { undoFn = fn; $("undo").innerHTML = `<span>${esc(text)}</span><button type="button" data-act="undo">Geri al</button>`; $("undo").classList.add("on"); clearTimeout(undoT); undoT = setTimeout(hideUndo, 6000); }
+function setStepOk(oid, sid, ok) {   /* kartın SADECE adımlarını yazar (Kaydet beklemeden; geri alınabilir) */
+  const o = orders.find(x => x.id === oid), st = o && arr(o.steps).find(x => x.id === sid);
+  if (!st) return false;
+  st.ok = ok; cache();
+  if (ordRef) ordRef.child(o.id).update({ steps: arr(o.steps) }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
+  drawOrders(); if (S.view === "today") render(true);
+  return true;
+}
+function doneStepFromToday(oid, sid) {
+  const o = orders.find(x => x.id === oid), st = o && arr(o.steps).find(x => x.id === sid);
+  if (!st || st.ok) return;
+  const label = String(st.t || "").slice(0, 40);
+  if (setStepOk(oid, sid, true)) showUndo("✓ " + label, () => setStepOk(oid, sid, false));
 }
 function hovHtml(o) {
   const I = ordInfo(o);   /* sadece YAPILACAK adımlar + tarihleri + kalan gün; ürün / sipariş ayrıntısı YOK */
@@ -845,6 +921,8 @@ function render(keep) {
       (S.bk ? `<textarea id="bk" class="inp" rows="5" ${S.bk === "out" ? "readonly" : 'placeholder="Yedek metnini buraya yapıştırın"'}>${S.bk === "out" ? esc(JSON.stringify(orders)) : ""}</textarea>` +
         (S.bk === "in" ? '<button class="second" data-act="bk-apply">Uygula</button>' : "") : "");
     drawOrders();
+  } else if (V === "today") {
+    app.innerHTML = todayHtml();
   } else if (V === "report") {
     app.innerHTML = `<button class="second" data-act="rep-print" style="margin:0 0 12px">🖨️ PDF / Yazdır</button><div class="rep">${reportHtml()}</div>`;
   } else if (V === "custmgr") {
@@ -1007,6 +1085,13 @@ document.addEventListener("click", e => {
   else if (a === "menu") $("menuOv").classList.add("open")
   else if (a === "menu-close") $("menuOv").classList.remove("open")
   else if (a === "hf") { S.hf = S.hf === b.dataset.v ? "all" : b.dataset.v; drawOrders(); }
+  else if (a === "today") go("today")
+  else if (a === "td-done") doneStepFromToday(b.dataset.id, b.dataset.sid)
+  else if (a === "td-open") openSheet(b.dataset.id)
+  else if (a === "td-share") shareOut(todayShareText())
+  else if (a === "td-copy") copyOut(todayShareText())
+  else if (a === "sh-share") shareOut(cardShareText(S.draft))
+  else if (a === "undo") { const f = undoFn; hideUndo(); if (f) f(); }
   else if (a === "st-add") addStepFromInput()
   else if (a === "pr-add") { withOrd(x => { x.cprices = [...arr(x.cprices), { id: uid(), n: "", p: "" }]; }); drawSheet(); const ins = $("shBox").querySelectorAll(".pr-n"); if (ins.length) ins[ins.length - 1].focus(); }
   else if (a === "pr-del") { withOrd(x => { x.cprices = arr(x.cprices).filter(r => r.id !== b.dataset.id); }); drawSheet(); }
@@ -1052,7 +1137,7 @@ document.addEventListener("click", e => {
     persist(); render(true);
   }
   else if (a === "back") {
-    const prev = { report:"home", custmgr:"home", cust:"home", prod: o?.lines.length ? "order" : (o?.saved ? "home" : "cust"), color:"prod", order:"home", res:"order" }[S.view];
+    const prev = { report:"home", today:"home", custmgr:"home", cust:"home", prod: o?.lines.length ? "order" : (o?.saved ? "home" : "cust"), color:"prod", order:"home", res:"order" }[S.view];
     if (!prev) return;
     if (prev === "home") goHome(); else go(prev);
   }
@@ -1191,7 +1276,7 @@ function startData() {
       const fnd = orders.find(o => o.id === S.order.id);
       if (fnd) S.order = clone(fnd); else { S.order = null; if (["order","res","color","prod"].includes(S.view)) S.view = "home"; }
     }
-    if (S.view === "home" && $("olist")) drawOrders(); else if (["home","order","res","report"].includes(S.view)) render(true);
+    if (S.view === "home" && $("olist")) drawOrders(); else if (["home","order","res","report","today"].includes(S.view)) render(true);
     refreshSheet();
   }, e => { toast("Siparişler Firebase'den okunamadı"); denied(e); });
   db.ref("kale_dokuma_live_v2").on("value", s => {
