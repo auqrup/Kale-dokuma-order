@@ -159,6 +159,36 @@ body.dirty main{padding-bottom:90px}
 .rpt tr.on td{background:#fffbea;font-size:.74rem}
 .cn small.no{color:var(--ac);font-weight:800;font-size:.78em;white-space:nowrap}
 .tb b{margin-left:4px;color:var(--stop)}
+.flow{display:none}
+.flow.on{display:block}
+.fhd{display:flex;align-items:center;gap:10px}
+.fname{flex:1;min-width:0;font-size:1.15rem;font-weight:800;color:var(--ac);overflow-wrap:anywhere}
+.fno{display:flex;align-items:center;gap:6px;font-size:.74rem;color:var(--mu);font-weight:800}
+.fno .inp{width:76px;padding:7px 8px;font-size:.9rem;text-align:center;border-radius:10px}
+.fsteps{display:flex;gap:6px;margin-top:8px}
+.fs{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:6px 2px;color:var(--mu);font-size:.64rem;font-weight:800;cursor:pointer;font-family:inherit}
+.fs i{font-style:normal;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg);font-size:.72rem}
+.fs.on{border-color:var(--ac);color:var(--ac);background:linear-gradient(160deg,rgba(240,198,116,.16),var(--card))}
+.fs.on i{background:var(--ac);color:var(--ac-d)}
+.fs.dn i{background:var(--run);color:#06281a}
+.fs:disabled{opacity:.4;cursor:default}
+.fs.on:disabled{opacity:1}
+.svb.nw button{flex:1}
+.svb button:disabled{opacity:.4}
+.qb{flex:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--bd);background:var(--card2);color:var(--tx);font-size:1.25rem;font-weight:800;cursor:pointer;font-family:inherit}
+.qrow .inp.sq{width:72px}
+.pgrid{gap:10px}
+.pcard{background:linear-gradient(160deg,var(--card2),var(--card));border-radius:16px;padding:20px 10px;box-shadow:0 6px 16px rgba(0,0,0,.3);transition:transform .12s}
+.pcard:active{transform:scale(.97)}
+.pcard b{font-size:1.1rem}
+.cbtn{border-radius:12px;background:linear-gradient(160deg,var(--card2),var(--card))}
+.cbtn .dot{width:20px;height:20px}
+.cbtn.sel{border-color:var(--ac);box-shadow:0 0 0 2px rgba(240,198,116,.25);background:linear-gradient(160deg,rgba(240,198,116,.16),var(--card2))}
+.line{background:linear-gradient(160deg,var(--card2),var(--card));border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.dates>div{background:linear-gradient(160deg,var(--card2),var(--card))}
+.primary{background:linear-gradient(180deg,#f6d38a,var(--ac));box-shadow:0 6px 16px rgba(240,198,116,.25)}
+.second{background:linear-gradient(160deg,var(--card2),var(--card))}
+#cin{padding:15px;font-size:1.1rem;border-radius:12px}
 .tk-bar{display:flex;gap:8px;margin:0 0 12px}
 .tk-bar button{flex:1;margin:0}
 .tk-row{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--bd);border-radius:12px;padding:11px;margin-bottom:8px}
@@ -249,6 +279,7 @@ body *{visibility:hidden}
   </div>
   <div class="tools" id="tools"></div>
   <div class="crumbs" id="crumbs"></div>
+  <div class="flow" id="flow"></div>
 </header>
 <main id="app"></main>
 <div id="printSection"></div>
@@ -454,7 +485,7 @@ function allCust() {
   return [...m.values()].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false, isNew:false, hst:"all" };
+let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bk:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false, hst:"all" };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
 /* ÇİFT satır (140 cm iki kanat): color + color2 TEK satırda, tek adet; iki kanat aynı anda çalışır */
@@ -467,11 +498,36 @@ const fmtDue = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); retur
 const clone = x => JSON.parse(JSON.stringify(x));
 /* Kayıtlı siparişte değişiklikler TASLAK olarak S.order (kopya) üzerinde tutulur; Firebase'e SADECE "Kaydet" ile yazılır. */
 const persist = () => { if (S.order?.saved) { S.dirty = true; drawBar(); } };
+/* ---------- YENİ SİPARİŞ AKIŞI: ① Müşteri › ② Ürün › ③ Renk › ④ Özet › ⑤ Makine ---------- */
+const FLOW = [["cust", "Müşteri"], ["prod", "Ürün"], ["color", "Renk"], ["order", "Özet"], ["res", "Makine"]];
+const flowActive = (V, o) => V === "cust" || !!(o && !o.saved && ["prod", "color", "order", "res"].includes(V));
+function flowHtml(V, o) {
+  const idx = FLOW.findIndex(x => x[0] === V);
+  const can = k => k === V ? false : !o ? false : k === "cust" ? o.lines.length === 0 : k === "color" ? !!S.pk : k === "res" ? o.lines.length > 0 : true;   /* ürün varken müşteri değiştirilemez (satırlar kaybolurdu) */
+  return (o ? `<div class="fhd"><b class="fname">${esc(o.cust)}</b><label class="fno">No<input class="inp no-in" maxlength="12" value="${esc(o.no || "")}"></label></div>` : "") +
+    `<div class="fsteps">${FLOW.map(([k, t], i) => `<button type="button" class="fs${i === idx ? " on" : i < idx ? " dn" : ""}" data-act="flow" data-v="${k}"${can(k) ? "" : " disabled"}><i>${i + 1}</i><span>${t}</span></button>`).join("")}</div>`;
+}
+function newBarHtml(V, o) {
+  const n = o.lines.length;
+  if (V === "prod") return `<button type="button" data-act="flow" data-v="cust"${n ? " disabled" : ""}>← Müşteri</button><button type="button" data-act="no-prod">💭 Ürünsüz kaydet</button>` + (n ? '<button type="button" class="vs" data-act="flow" data-v="order">Özet →</button>' : "");
+  if (V === "color") return '<button type="button" data-act="flow" data-v="prod">← Ürün</button><button type="button" class="vs" data-act="addline">Satırları ekle</button>';
+  if (V === "order") return '<button type="button" data-act="addmore">➕ Ürün</button>' + (n ? '<button type="button" data-act="show">🔍 Makineler</button><button type="button" class="vs" data-act="save">💾 Kaydet</button>' : "");
+  return '<button type="button" data-act="flow" data-v="order">← Özet</button><button type="button" class="vs" data-act="save">💾 Kaydet</button>';
+}
 function drawBar() {
-  const on = !!(S.order?.saved && S.dirty);
-  document.body.classList.toggle("dirty", on);
-  $("svb").classList.toggle("on", on);
-  $("svb").innerHTML = on ? '<span>● Kaydedilmemiş değişiklikler var</span><button type="button" data-act="ord-discard">↩ Vazgeç</button><button type="button" class="vs" data-act="ord-save">💾 Kaydet</button>' : "";
+  const o = S.order, V = S.view;
+  const dirtySaved = !!(o?.saved && S.dirty), isNew = !!(o && !o.saved && ["prod", "color", "order", "res"].includes(V));
+  const h = dirtySaved ? '<span>● Kaydedilmemiş değişiklikler var</span><button type="button" data-act="ord-discard">↩ Vazgeç</button><button type="button" class="vs" data-act="ord-save">💾 Kaydet</button>' : isNew ? newBarHtml(V, o) : "";
+  document.body.classList.toggle("dirty", !!h);
+  $("svb").classList.toggle("on", !!h);
+  $("svb").classList.toggle("nw", isNew && !dirtySaved);
+  $("svb").innerHTML = h;
+}
+function commitNew() {   /* yeni siparişi ilk kez kaydeder (Özet'te Kaydet / çıkışta "kaydedilsin mi?") */
+  const o = S.order; o.saved = true;
+  const stored = clone(o); orders.push(stored); pushOrder(stored);
+  S.order = clone(stored); S.dirty = false;
+  return stored;
 }
 function saveOrder(quiet) {
   const o = S.order; if (!o || !o.saved) return;
@@ -741,9 +797,7 @@ function linesInfoHtml(o) {
   const ls = o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return `<div class="hl"><span class="dot" style="background:${dotBg(l)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span></div>`; }).join("");
   return ls || '<div class="hl">Ürün yok</div>';
 }
-function openSheet(id) { const o = orders.find(x => x.id === id); if (!o) return; hideHov(); S.sheet = id; S.isNew = false; S.draft = mkDraft(o); S.sdirty = false; drawSheet(); }
-/* Yeni (ürünsüz) kart: Firebase'e / listeye ANCAK "Kaydet"e basılınca girer; hiçbir şey yazmadan kapatılırsa kart oluşmaz. */
-function openNewCard(o) { hideHov(); S.sheet = o.id; S.isNew = true; S.draft = mkDraft(o); S.sdirty = !!o.no; drawSheet(); }   /* önceden yazılmış numara varsa değişiklik sayılır */
+function openSheet(id) { const o = orders.find(x => x.id === id); if (!o) return; hideHov(); S.sheet = id; S.draft = mkDraft(o); S.sdirty = false; drawSheet(); }
 function drawSheet() {
   const o = S.draft;
   if (!o) { $("shOv").classList.remove("open"); return; }
@@ -761,26 +815,22 @@ function drawSheet() {
     <h3>➡ Sonraki adımlar (${I.pend.length} bekliyor)</h3>
     ${stepRows}
     <div class="tdadd"><input class="inp st-new" maxlength="140" placeholder="Örn: Kırmızı iplik bekleniyor"><input type="date" class="inp st-d" style="flex:none;width:auto;max-width:150px"><button type="button" data-act="st-add">Ekle</button></div>
-    <button type="button" class="second" data-act="sh-share">📤 Paylaş</button>
     <h3>📝 Müşteri notu</h3><textarea class="inp nt-t" rows="3" maxlength="600">${esc(o.cnote || "")}</textarea>
     <h3>💲 Fiyatlar (USD)</h3>
     ${arr(o.cprices).map(r => `<div class="prow"><input class="inp pr-n" data-id="${esc(r.id)}" maxlength="60" value="${esc(r.n)}"><span class="usd">$</span><input class="inp pr-p" data-id="${esc(r.id)}" inputmode="decimal" maxlength="10" value="${esc(r.p)}"><button type="button" data-act="pr-del" data-id="${esc(r.id)}" aria-label="Sil">✕</button></div>`).join("")}
     <button type="button" class="second" data-act="pr-add" style="margin-top:6px">+ Satır ekle</button>
     ${I.nl ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
-    ${I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">' + (S.isNew ? "✕ Vazgeç" : "🗑 Kaydı sil") + '</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
+    ${I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
   $("shOv").classList.add("open");
 }
 function markSheet() { const b = $("shBox"); if (b) b.querySelectorAll(".sv").forEach(x => x.classList.toggle("on", S.sdirty)); }
 /* Pencere SADECE kendi alanlarını yazar (no / stt / pst / steps; + müşteri notu); ürün satırlarına (yapılan adet vb.) dokunmaz. */
 function saveSheet(quiet) {
   if (!S.draft) return true;
-  if (!S.sdirty && !S.isNew) { if (!quiet) toast("Değişiklik yok"); return true; }   /* yeni kartta Kaydet'e açıkça basılırsa değişiklik olmasa da oluşturulur */
+  if (!S.sdirty) { if (!quiet) toast("Değişiklik yok"); return true; }
   const d = S.draft;
-  let cur = orders.find(x => x.id === d.id), fresh = false;
-  if (!cur) {
-    if (!S.isNew) { toast("Sipariş bulunamadı"); return false; }
-    cur = { id: d.id, cust: d.cust, created: d.created, saved: true, lines: [] }; fresh = true;
-  }
+  const cur = orders.find(x => x.id === d.id);
+  if (!cur) { toast("Sipariş bulunamadı"); return false; }
   const nv = String(d.cnote || "").trim(), nk = custKey(cur.cust), noteChanged = nv !== noteOf(cur);   /* müşteri notu: siparişe değil MÜŞTERİYE yazılır */
   const rows = arr(d.cprices).map(r => ({ id: r.id, n: String(r.n || "").trim(), p: String(r.p || "").trim() })).filter(r => r.n || r.p);
   const sig = a => JSON.stringify(a.map(r => [String(r.n || "").trim(), String(r.p || "").trim()]).filter(r => r[0] || r[1]));
@@ -791,8 +841,7 @@ function saveSheet(quiet) {
   if (d.stt && d.stt !== "active") cur.stt = d.stt; else delete cur.stt;
   if (noteChanged) { custNotes[nk] = nv; try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); } catch {} if (notesRef) notesRef.child(nk).set(nv).catch(() => toast("Müşteri notu Firebase'e yazılamadı (yerelde saklandı)")); }
   if (priceChanged) { custPrices[nk] = rows; try { localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {} if (pricesRef) pricesRef.child(nk).set(rows.length ? rows : null).catch(() => toast("Fiyatlar Firebase'e yazılamadı (yerelde saklandı)")); }
-  if (fresh) { orders.push(cur); pushOrder(cur); S.isNew = false; }   /* yeni kart: ilk kez burada kaydedilir */
-  else { cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)")); }
+  cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
   S.sdirty = false; S.draft = mkDraft(cur); drawOrders(); if (S.view === "today") render(true);
   if (!quiet) { toast("Kaydedildi ✓" + dupMsg(cur)); drawSheet(); }
   return true;
@@ -802,10 +851,10 @@ function closeSheet(force) {
     if (confirm("Değişiklikler kaydedilsin mi?")) saveSheet(true);
     else if (!confirm("Kaydetmeden kapatılsın mı? Değişiklikler silinecek.")) return false;
   }
-  S.sheet = null; S.draft = null; S.sdirty = false; S.isNew = false; $("shOv").classList.remove("open"); return true;
+  S.sheet = null; S.draft = null; S.sdirty = false; $("shOv").classList.remove("open"); return true;
 }
 function refreshSheet() {
-  if (!S.sheet || S.sdirty || S.isNew) return;   /* taslak varken uzaktan gelen güncelleme ezmesin */
+  if (!S.sheet || S.sdirty) return;   /* taslak varken uzaktan gelen güncelleme ezmesin */
   const a = document.activeElement;
   if (a && $("shBox").contains(a) && /INPUT|TEXTAREA/.test(a.tagName)) return;   /* yazarken yenileme */
   const o = orders.find(x => x.id === S.sheet); if (!o) { closeSheet(true); return; }
@@ -842,10 +891,6 @@ function todayShareText() {   /* sadece adımlar + müşteri adı + sipariş no 
   });
   if (out.length === 1) out.push("Bekleyen adım yok ✓");
   return clipText(out.join("\n"));
-}
-function cardShareText(o) {
-  const pend = arr(o.steps).filter(s => !s.ok);
-  return clipText([shortLbl(o)].concat(pend.length ? pend.map(s => `• ${s.t}${s.d ? ` — ${dayTxt(dueDays({ due: s.d }))} (${fmtDue(s.d)})` : ""}`) : ["Bekleyen adım yok ✓"]).join("\n"));
 }
 async function shareOut(text) {   /* telefonun paylaşım menüsü (WhatsApp seçilir); yoksa wa.me; gönder tuşuna kullanıcı basar */
   try { if (navigator.share) { await navigator.share({ text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
@@ -910,7 +955,9 @@ function lineHtml(l) {
 
 function render(keep) {
   const o = S.order, V = S.view, app = $("app");
-  $("crumbs").innerHTML = o ? `<span>👤 ${esc(o.cust)}</span>` + (V === "color" && S.pk ? `<span>📐 ${esc(pname(prodOf(S.pk)))}</span>` : "") : "";
+  const fOn = flowActive(V, o);
+  $("crumbs").innerHTML = fOn ? "" : o ? `<span>👤 ${esc(o.cust)}</span>` + (V === "color" && S.pk ? `<span>📐 ${esc(pname(prodOf(S.pk)))}</span>` : "") : "";
+  $("flow").innerHTML = fOn ? flowHtml(V, o) : ""; $("flow").classList.toggle("on", fOn);
 
   document.body.classList.toggle("hm", V === "home");
   if (V !== "home") $("tools").innerHTML = ""; else if (!$("hq")) $("tools").innerHTML = toolsHtml();
@@ -941,7 +988,7 @@ function render(keep) {
     $("cin").oninput = e => { S.cin = e.target.value; drawChips(); };
     drawChips();
   } else if (V === "prod") {
-    let h = "<h2>Ürün / Ebat</h2>" + (o && !o.saved ? `<div class="fg"><small class="hint">Sipariş no</small><input class="inp no-in" id="ono" maxlength="12" value="${esc(o.no || "")}"></div>` : "") + (o && !o.saved ? '<button class="second" data-act="no-prod">💭 Ürün belirlemeden devam (muhtemel / görüşülüyor)</button>' : ""), g = "";
+    let h = "<h2>Ürün / Ebat</h2>", g = "";
     P.filter(p => !p.hidden).forEach(p => {
       if (p.g !== g) { if (g) h += "</div>"; g = p.g; h += `<h3>${esc(g)}</h3><div class="pgrid">`; }
       h += `<button class="pcard" data-act="prod" data-k="${p.k}"><b>${esc(p.name)}</b><small>Makine: ${p.opts.map(o => o.mw).join(" / ")} cm</small></button>`;
@@ -961,16 +1008,15 @@ function render(keep) {
       <h3>${roll ? "Seçilen renkler ve rulo adedi" : "Seçilen renkler ve adetler"}</h3>
       <div id="selbox"></div>
       ${roll ? `<p class="hint">Rulo boyu: ${prodOf(S.pk).opts.map(o => `${o.mw} cm: ${o.len} m`).join(" · ")}</p>` : ""}
-      <button class="primary" data-act="addline">Satırları ekle</button>`;
+      ${o && !o.saved ? "" : '<button class="primary" data-act="addline">Satırları ekle</button>'}`;
     drawSel();
   } else if (V === "order") {
-    app.innerHTML = `<h2>Sipariş: ${esc(lbl(o))}</h2><div class="fg"><small class="hint">Sipariş no</small><input class="inp no-in" maxlength="12" value="${esc(o.no || "")}"></div>` +
+    app.innerHTML = `<h2>${o.saved ? "Sipariş: " + esc(lbl(o)) : "Özet"}</h2>` + (o.saved ? `<div class="fg"><small class="hint">Sipariş no</small><input class="inp no-in" maxlength="12" value="${esc(o.no || "")}"></div>` : "") +
       `<div class="dates"><div><small>Oluşturulma</small><b>${new Date(o.created).toLocaleDateString("tr-TR")}</b></div>` +
       `<div><small>Tahmini bitiş</small><input type="date" class="inp due-in" value="${esc(o.due || "")}"></div></div>` +
       (o.lines.length ? o.lines.map(lineHtml).join("") : '<div class="empty">Henüz ürün eklenmedi.</div>') +
-      `<button class="second" data-act="addmore">➕ Ürün / renk ekle</button>` +
-      (o.lines.length ? '<button class="primary" data-act="show">🔍 Makineleri göster</button>' : "") +
-      (o.saved ? "" : (o.lines.length ? '<button class="second" data-act="save">💾 Siparişi kaydet</button>' : "")) +
+      (o.saved ? `<button class="second" data-act="addmore">➕ Ürün / renk ekle</button>` : "") +
+      (o.saved && o.lines.length ? '<button class="primary" data-act="show">🔍 Makineleri göster</button>' : "") +
       (o.saved ? '<button class="second" data-act="delord" style="color:var(--stop)">🗑 Siparişi sil</button>' : "");
   } else {
     const open = o.lines.filter(l => rem(l) > 0 && prodOf(l.k) && !l.comp);
@@ -1032,7 +1078,7 @@ function chipHtml(r) {
 function drawSel() {
   const b = $("selbox"); if (!b) return;
   const k = Object.keys(S.sel);
-  b.innerHTML = k.length ? k.map(n => { const ps = n.split("|"); return `<div class="qrow selrow"><span class="dot s" style="background:${ps.length > 1 ? pairBg(ps) : hexOf(n)}"></span><b>${ps.map(esc).join(" + ")}</b><input class="inp sq" type="number" inputmode="numeric" min="1" value="${S.sel[n]}" data-c="${esc(n)}"></div>`; }).join("")
+  b.innerHTML = k.length ? k.map(n => { const ps = n.split("|"); return `<div class="qrow selrow"><span class="dot s" style="background:${ps.length > 1 ? pairBg(ps) : hexOf(n)}"></span><b>${ps.map(esc).join(" + ")}</b><button type="button" class="qb" data-act="q-m" data-c="${esc(n)}" aria-label="Azalt">−</button><input class="inp sq" type="number" inputmode="numeric" min="1" value="${S.sel[n]}" data-c="${esc(n)}"><button type="button" class="qb" data-act="q-p" data-c="${esc(n)}" aria-label="Arttır">+</button></div>`; }).join("")
     : '<span class="hint">Henüz renk seçilmedi.</span>';
 }
 function drawChips() {
@@ -1049,7 +1095,10 @@ function startOrder(name) {
 }
 function goHome() {
   if (!leaveOk()) return;
-  if (S.order && !S.order.saved && S.order.lines.length && !confirm("Kaydedilmemiş sipariş silinecek. Çıkılsın mı?")) return;
+  if (S.order && !S.order.saved && S.order.lines.length) {   /* yeni sipariş: kaydet / sil / kal */
+    if (confirm("Sipariş kaydedilsin mi?")) { const st = commitNew(); toast("Sipariş kaydedildi ✓" + dupMsg(st)); }
+    else if (!confirm("Kaydetmeden çıkılsın mı? Sipariş silinecek.")) return;
+  }
   S.order = null; S.bk = null; go("home");
 }
 
@@ -1057,7 +1106,9 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, o = S.order;
   if (b.closest("#menuOv") && a !== "menu-close") $("menuOv").classList.remove("open");   /* menüden bir sayfaya gidince menü kapansın */
-  if (a === "new") { S.order = null; S.cin = ""; go("cust"); }
+  if (a === "flow") { const v = b.dataset.v; if (v === "res" && (!o || !o.lines.length)) return toast("Önce ürün ekleyin"); if (v === "cust") S.cin = ""; go(v); }
+  else if (a === "q-m" || a === "q-p") { const c = b.dataset.c; S.sel[c] = Math.max(1, (parseInt(S.sel[c]) || 1) + (a === "q-p" ? 1 : -1)); drawSel(); }
+  else if (a === "new") { S.order = null; S.cin = ""; go("cust"); }
   else if (a === "pick-cust") startOrder(addCustomer(b.dataset.v) || b.dataset.v);
   else if (a === "cust-ok") { const v = addCustomer(S.cin); if (!v) return toast("Müşteri adı yazın"); startOrder(v); }
   else if (a === "custmgr") go("custmgr");
@@ -1090,7 +1141,6 @@ document.addEventListener("click", e => {
   else if (a === "td-open") openSheet(b.dataset.id)
   else if (a === "td-share") shareOut(todayShareText())
   else if (a === "td-copy") copyOut(todayShareText())
-  else if (a === "sh-share") shareOut(cardShareText(S.draft))
   else if (a === "undo") { const f = undoFn; hideUndo(); if (f) f(); }
   else if (a === "st-add") addStepFromInput()
   else if (a === "pr-add") { withOrd(x => { x.cprices = [...arr(x.cprices), { id: uid(), n: "", p: "" }]; }); drawSheet(); const ins = $("shBox").querySelectorAll(".pr-n"); if (ins.length) ins[ins.length - 1].focus(); }
@@ -1098,10 +1148,9 @@ document.addEventListener("click", e => {
   else if (a === "st-tg") { withOrd(x => { const t = arr(x.steps).find(y => y.id === b.dataset.id); if (t) t.ok = !t.ok; }); drawSheet(); }
   else if (a === "st-del") { withOrd(x => { x.steps = arr(x.steps).filter(y => y.id !== b.dataset.id); }); drawSheet(); }
   else if (a === "stt") { withOrd(x => { if (b.dataset.v === "active") delete x.stt; else x.stt = b.dataset.v; }); drawSheet(); }
-  else if (a === "no-prod") { if (!o || o.saved) return; const nc = { id: o.id, cust: o.cust, created: o.created, lines: [], stt: "pot" }; if (o.no) nc.no = o.no; S.order = null; S.dirty = false; go("home"); openNewCard(nc); }
-  else if (a === "pot-convert") { if (S.isNew) { const d = S.draft; closeSheet(true); S.order = { id: d.id, cust: d.cust, created: d.created, saved: false, lines: [], ...(d.no ? { no: d.no } : {}) }; go("prod"); return; } const x = orders.find(y => y.id === S.sheet); if (!x) return; if (!closeSheet()) return; S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("prod"); }
+  else if (a === "no-prod") { if (!o || o.saved) return; const nc = { id: o.id, cust: o.cust, created: o.created, saved: true, lines: [], stt: "pot" }; if (o.no) nc.no = o.no; orders.push(nc); pushOrder(nc); S.order = null; S.dirty = false; go("home"); toast("Muhtemel kart kaydedildi ✓" + dupMsg(nc)); }   /* açık "Ürünsüz kaydet" düğmesi = bilinçli kayıt */
+  else if (a === "pot-convert") { const x = orders.find(y => y.id === S.sheet); if (!x) return; if (!closeSheet()) return; S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("prod"); }
   else if (a === "pot-del") {
-    if (S.isNew) { closeSheet(true); return; }
     const x = orders.find(y => y.id === S.sheet);
     if (x && confirm("Muhtemel sipariş silinsin mi?")) { closeSheet(true); orders = orders.filter(y => y.id !== x.id); cache(); ordRef?.child(x.id).remove().catch(() => toast("Firebase'den silinemedi")); drawOrders(); toast("Silindi"); }
   }
@@ -1109,11 +1158,10 @@ document.addEventListener("click", e => {
   else if (a === "addmore") go("prod");
   else if (a === "show") go("res");
   else if (a === "more") { S.all[b.dataset.id] = true; render(true); }
-  else if (a === "save") { o.saved = true; orders.push(o); pushOrder(o); S.order = null; go("home"); toast("Sipariş başarıyla eklendi ✓" + dupMsg(o)); }
+  else if (a === "save") { if (!o || o.saved || !o.lines.length) return; const st = commitNew(); render(true); toast("Sipariş kaydedildi ✓" + dupMsg(st)); }   /* kaydedince çıkmaz: Özet / Makine ekranında kalır */
   else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; S.dirty = false; go("home"); } }
   else if (a === "del-line") { o.lines = o.lines.filter(l => l.id !== b.dataset.id && !(l.comp && l.comp.of === b.dataset.id)); persist(); render(true); }
   else if (a === "asg") {
-    if (!o.saved) return toast("Önce siparişi kaydedin");
     const ln = o.lines.find(x => x.id === b.dataset.line), m = b.dataset.m, lm = looms[m]; if (!ln || !lm) return;
     ln.asg = ln.asg || {};
     if (ln.asg[m] !== undefined) {
@@ -1137,7 +1185,7 @@ document.addEventListener("click", e => {
     persist(); render(true);
   }
   else if (a === "back") {
-    const prev = { report:"home", today:"home", custmgr:"home", cust:"home", prod: o?.lines.length ? "order" : (o?.saved ? "home" : "cust"), color:"prod", order:"home", res:"order" }[S.view];
+    const prev = { report:"home", today:"home", custmgr:"home", cust:"home", prod: o?.lines.length ? "order" : (o?.saved ? "home" : "cust"), color:"prod", order: o && !o.saved ? "prod" : "home", res:"order" }[S.view];
     if (!prev) return;
     if (prev === "home") goHome(); else go(prev);
   }
