@@ -130,6 +130,9 @@ body.hm main{max-width:1560px}
 .shbar button{height:34px;padding:0 12px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.45);font-size:.8rem}
 .shbar .sx{padding:0 11px}
 .shtitle{margin:0 0 10px;padding-right:130px;min-height:34px;font-size:1.1rem;overflow-wrap:anywhere}
+.hl>span:nth-child(2){flex:1;min-width:0}
+.hl .tm{flex:none;margin-left:auto;text-align:right;white-space:nowrap;color:var(--ac);font-weight:800;font-size:.78rem}
+.pen{background:transparent;border:0;cursor:pointer;font-size:.9rem;padding:0 4px;vertical-align:middle}
 .prow{display:flex;gap:8px;align-items:center;margin-bottom:6px}
 .prow .pr-n{flex:1;min-width:0}
 .prow .pr-p{flex:none;width:92px;text-align:right}
@@ -617,6 +620,35 @@ function delCustomer(n) {
   toast("Silindi"); render(true);
 }
 
+/* MÜŞTERİ ADI DEĞİŞTİRME (2026-11-21): tüm siparişlerde ad, müşteri listesi (pool), müşteri notu ve fiyatları yeni ada taşınır.
+   Makine kayıtları (currentCustomer) index.html'e aittir → siparis.html onları DEĞİŞTİREMEZ; müşteri bir makinede kayıtlıysa ad değiştirme engellenir (silme kuralıyla aynı). */
+function renameCustomer(oldName, raw) {
+  const nu = cleanName(raw), ol = lc(oldName);
+  if (!nu || nu === "-") return toast("Müşteri adı yazın");
+  if (nu === oldName) return;
+  const clash = allCust().find(n => lc(n) === lc(nu) && lc(n) !== ol);
+  if (clash) return alert(`"${clash}" adlı müşteri zaten var.`);
+  const u = custUse(oldName);
+  if (u.loom) return alert(`"${oldName}" ${u.loom} makinede kayıtlı. Önce makine sayfasında bu müşteriyi o makinelerden kaldırın, sonra adı değiştirin.`);
+  if (!confirm(`"${oldName}" → "${nu}"\n${u.ord} siparişte ad değişecek. Devam edilsin mi?`)) return;
+  const upd = {};
+  orders.forEach(o => { if (lc(o.cust || "") === ol) { o.cust = nu; upd[o.id + "/cust"] = nu; } });
+  if (ordRef && Object.keys(upd).length) ordRef.update(upd).catch(() => toast("Siparişler Firebase'e yazılamadı"));
+  customers = customers.filter(c => lc(c) !== ol); if (!customers.some(c => lc(c) === lc(nu))) customers = [...customers, nu];
+  poolWrite(a => { const rest = a.filter(c => lc(c) !== ol); return rest.some(c => lc(c) === lc(nu)) ? rest : [...rest, nu]; });
+  const ok = custKey(oldName), nk = custKey(nu);
+  if (ok !== nk) [[custNotes, notesRef, CNOTE_CACHE], [custPrices, pricesRef, CPRICE_CACHE]].forEach(([obj, ref, ck]) => {
+    if (!(ok in obj)) return;
+    const v = obj[ok]; obj[nk] = v; delete obj[ok];
+    try { localStorage.setItem(ck, JSON.stringify(obj)); } catch {}
+    if (ref) ref.update({ [ok]: null, [nk]: v }).catch(() => toast("Müşteri verisi taşınamadı"));
+  });
+  if (S.order && lc(S.order.cust || "") === ol) S.order.cust = nu;
+  if (S.draft && lc(S.draft.cust || "") === ol) S.draft.cust = nu;
+  cache(); drawOrders(); if (S.sheet) drawSheet(); if (S.view === "custmgr" || S.view === "today") render(true);
+  toast("Ad değişti ✓");
+}
+
 /* ---------- Rapor ---------- */
 const todayMid = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 const dueDays = o => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(o.due || ""); return m ? Math.round((new Date(+m[1], +m[2] - 1, +m[3]) - todayMid()) / 864e5) : null; };
@@ -793,8 +825,22 @@ const toolsHtml = () => `<button type="button" class="tb pri" data-act="new">➕
   <select class="inp hst hs-sel2" id="hst"></select>
   <div class="tsr"><input class="inp" id="hq" type="search" placeholder="Müşteri ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>`;
 const dateTxt = o => `Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")}${o.due ? ` · Tahmini bitiş: ${fmtDue(o.due)}` : ""}`;
+/* Ürün satırının makinedeki TAHMİNİ süresi: atanmışsa atanan makine(ler)de (kalan metraj ÷ günlük üretim), atanmamışsa en uygun önerilen makinede */
+function lineTimeHtml(l, o, ml) {
+  const p = prodOf(l.k); if (!p || l.comp || rem(l) === 0) return "";
+  const dt = (lm, m) => `≈ ${fmtDays(m / dailyRate(lm))}`, am = Object.keys(l.asg || {}).filter(m => looms[m]);
+  if (am.length) return am.map(m => { const t = lineM(ml, looms[m]); return esc(m) + (t != null ? ` · ${dt(looms[m], t)}` : ""); }).join("<br>");
+  const sg = suggest(l, o), best = sg.find(r => r.match > 0) || sg[0];
+  if (!best) return "";
+  const m = p.roll ? best.total : best.meters;
+  return m ? dt(best.l, m) : "";
+}
 function linesInfoHtml(o) {
-  const ls = o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return `<div class="hl"><span class="dot" style="background:${dotBg(l)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span></div>`; }).join("");
+  const src = o.lines.every(l => l.mt) ? o.lines : (() => { const c = clone(o); prep(c); return c.lines; })();   /* mt (makine başına metre) türetilmiş değilse geçici hesapla */
+  const ls = o.lines.map((l, i) => ({ l, ml: src[i] })).filter(x => !x.l.comp).map(({ l, ml }) => {
+    const p = prodOf(l.k), t = lineTimeHtml(l, o, ml);
+    return `<div class="hl"><span class="dot" style="background:${dotBg(l)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span>${t ? `<span class="tm">${t}</span>` : ""}</div>`;
+  }).join("");
   return ls || '<div class="hl">Ürün yok</div>';
 }
 function openSheet(id) { const o = orders.find(x => x.id === id); if (!o) return; hideHov(); S.sheet = id; S.draft = mkDraft(o); S.sdirty = false; drawSheet(); }
@@ -805,7 +851,7 @@ function drawSheet() {
   const stepRows = I.steps.map(s => `<div class="td${s.ok ? " ok" : ""}"><input type="checkbox" data-act="st-tg" data-id="${esc(s.id)}"${s.ok ? " checked" : ""}><span>${esc(s.t)}</span><input type="date" class="inp st-dd${stepLate(s) ? " lt" : ""}" data-id="${esc(s.id)}" value="${esc(s.d || "")}" aria-label="Tarih"><button type="button" data-act="st-del" data-id="${esc(s.id)}" aria-label="Sil">✕</button></div>`).join("");
   const chips = Object.keys(STT).filter(k => k !== "active" || !I.nl).map(k => `<button type="button" class="${I.stt === k ? "sel" : ""}" data-act="stt" data-v="${k}">${STT[k].ico} ${esc(STT[k].t)}</button>`).join("");
   $("shBox").innerHTML = `<div class="shbar"><button type="button" class="sv${S.sdirty ? " on" : ""}" data-act="sh-save">💾 Kaydet</button><button type="button" class="sx" data-act="sheet-close" aria-label="Kapat">✕</button></div>
-    <h2 class="shtitle">${esc(lbl(o))}</h2>
+    <h2 class="shtitle">${esc(lbl(o))} <button type="button" class="pen" data-act="cust-ren" aria-label="Müşteri adını düzenle">✏️</button></h2>
     <div class="shc"><span class="bd" style="--uc:${I.uc}">${esc(I.txt)}</span><span>${esc(dateTxt(o))}</span></div>
     ${I.nl ? "" : `<div class="pbar"><i style="width:${I.pct}%"></i></div><div class="pnum" style="margin-top:4px"><span>${I.done} / ${I.qty}</span><span>%${I.pct}</span></div>`}
     <h3>🔢 Sipariş no</h3><input class="inp no-t" maxlength="12" value="${esc(o.no || "")}">
@@ -976,8 +1022,8 @@ function render(keep) {
     const list = allCust();
     app.innerHTML = `<h2>Müşteri listesi (${list.length})</h2>
       <div class="cm-add"><input id="cmNew" class="inp" placeholder="Yeni müşteri adı..." maxlength="60" autocomplete="off"><button class="nb" data-act="cm-add">Ekle</button></div>` +
-      (list.length ? list.map(n => { const u = custUse(n); return `<div class="cm-row"><b title="${esc(n)}">${esc(n)}</b><small>${u.ord} sipariş · ${u.loom} makine</small><button class="nb" data-act="cm-del" data-v="${esc(n)}" aria-label="Sil">🗑</button></div>`; }).join("") : '<div class="empty">Henüz müşteri yok. Yukarıdan ekleyin.</div>') +
-      `<small class="hint">Sipariş veya makine kaydı olan müşteri silinemez. Müşteri adı değiştirilemez: yanlışsa doğrusunu ekleyip yanlışı silin.</small>`;
+      (list.length ? list.map(n => { const u = custUse(n); return `<div class="cm-row"><b title="${esc(n)}">${esc(n)}</b><small>${u.ord} sipariş · ${u.loom} makine</small><button class="nb" data-act="cm-ren" data-v="${esc(n)}" aria-label="Adı değiştir">✏️</button><button class="nb" data-act="cm-del" data-v="${esc(n)}" aria-label="Sil">🗑</button></div>`; }).join("") : '<div class="empty">Henüz müşteri yok. Yukarıdan ekleyin.</div>') +
+      `<small class="hint">Sipariş veya makine kaydı olan müşteri silinemez. ✏️ ile ad değiştirilir (makinede kayıtlı müşteri hariç).</small>`;
     $("cmNew").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="cm-add"]').click(); } };
   } else if (V === "cust") {
     app.innerHTML = `<h2>Müşteri</h2>
@@ -1120,6 +1166,8 @@ document.addEventListener("click", e => {
     toast(had ? "Bu müşteri zaten var" : "Eklendi ✓"); render(true); if (n) { const i = $("cmNew"); if (i) i.focus(); }
   }
   else if (a === "cm-del") delCustomer(b.dataset.v)
+  else if (a === "cm-ren") { const v = prompt("Müşteri adı:", b.dataset.v); if (v != null) renameCustomer(b.dataset.v, v); }
+  else if (a === "cust-ren") { const n = S.draft && S.draft.cust; if (n) { const v = prompt("Müşteri adı:", n); if (v != null) renameCustomer(n, v); } }
   else if (a === "prod") { S.pk = b.dataset.k; S.sel = {}; go("color"); }
   else if (a === "color") { const n = b.dataset.v; if (S.sel[n]) delete S.sel[n]; else S.sel[n] = 1; b.classList.toggle("sel", !!S.sel[n]); drawSel(); }
   else if (a === "addline") {
