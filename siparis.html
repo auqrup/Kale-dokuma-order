@@ -237,6 +237,7 @@ body.dirty main{padding-bottom:90px}
 .chg{color:var(--mu);font-size:.82rem;font-weight:600;padding:2px 4px 12px;line-height:1.5}
 .empty{text-align:center;color:var(--mu);padding:24px 6px;font-size:.9rem}
 .bkrow{display:flex;gap:6px;margin-bottom:8px}
+.pd{color:var(--mu);font-size:.66rem;font-weight:700;white-space:nowrap;align-self:center}
 .card{background:var(--card,var(--bg));border:1px solid var(--bd);border-radius:13px;padding:14px;margin-bottom:12px}.card p{margin:6px 0 10px}.card .primary,.card .second{width:100%}.card textarea{margin:8px 0 6px}
 textarea.inp{font-size:.8rem;margin-top:6px}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
@@ -803,7 +804,8 @@ const noteOf = o => { const k = custKey(o.cust); if (k in custNotes) return Stri
    Firebase: kale_siparis_v1/customer_prices/<anahtar> = [satırlar] (boşsa silinir). */
 const CPRICE_CACHE = "kale_customer_prices_cache";
 try { custPrices = JSON.parse(localStorage.getItem(CPRICE_CACHE) || "{}") || {}; } catch {}
-const pricesOf = o => arr(custPrices[custKey(o.cust)]).map(r => ({ id: r.id || uid(), n: String(r.n || ""), p: String(r.p ?? "") }));
+const pricesOf = o => arr(custPrices[custKey(o.cust)]).map(r => ({ id: r.id || uid(), n: String(r.n || ""), p: String(r.p ?? ""), d: String(r.d || "") }));   /* d = fiyatın girildiği / değiştirildiği gün (YYYY-AA-GG) */
+const todayIso = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); };
 const mkDraft = o => { const d = clone(o); d.cnote = noteOf(o); d.cprices = pricesOf(o); delete d.note; return d; };
 const lbl = o => (o.cust || "") + (o.no ? " · No " + o.no : "");   /* müşteri adı + elle girilen sipariş numarası */
 const cleanNo = v => String(v || "").trim().slice(0, 12);
@@ -895,7 +897,7 @@ function drawSheet() {
     <div class="tdadd"><input class="inp st-new" maxlength="140" placeholder="Örn: Kırmızı iplik bekleniyor"><input type="date" class="inp st-d" style="flex:none;width:auto;max-width:150px"><button type="button" data-act="st-add">Ekle</button></div>
     ${o.kind ? "" : `<h3>📝 Müşteri notu</h3><textarea class="inp nt-t" rows="3" maxlength="600">${esc(o.cnote || "")}</textarea>
     <h3>💲 Fiyatlar (USD)</h3>
-    ${arr(o.cprices).map(r => `<div class="prow"><input class="inp pr-n" data-id="${esc(r.id)}" maxlength="60" value="${esc(r.n)}"><span class="usd">$</span><input class="inp pr-p" data-id="${esc(r.id)}" inputmode="decimal" maxlength="10" value="${esc(r.p)}"><button type="button" data-act="pr-del" data-id="${esc(r.id)}" aria-label="Sil">✕</button></div>`).join("")}
+    ${arr(o.cprices).map(r => `<div class="prow"><input class="inp pr-n" data-id="${esc(r.id)}" maxlength="60" value="${esc(r.n)}"><span class="usd">$</span><input class="inp pr-p" data-id="${esc(r.id)}" inputmode="decimal" maxlength="10" value="${esc(r.p)}">${r.d ? `<small class="pd" title="Fiyatın girildiği tarih">${esc(fmtDue(r.d))}</small>` : ""}<button type="button" data-act="pr-del" data-id="${esc(r.id)}" aria-label="Sil">✕</button></div>`).join("")}
     <button type="button" class="second" data-act="pr-add" style="margin-top:6px">+ Satır ekle</button>`}
     ${o.kind ? "" : I.nl ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
     ${o.kind ? (S.isNew ? "" : '<button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>') : I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
@@ -934,7 +936,8 @@ function saveSheet(quiet) {
     if (ordRef) ordRef.child(cur.id).update({ cust: cur.cust, cno: cur.cno || null, amt: cur.amt || null, paid: cur.paid || null, due: cur.due || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
   }
   const nv = String(d.cnote || "").trim(), nk = custKey(cur.cust), noteChanged = !cur.kind && nv !== noteOf(cur);   /* müşteri notu: siparişe değil MÜŞTERİYE yazılır */
-  const rows = arr(d.cprices).map(r => ({ id: r.id, n: String(r.n || "").trim(), p: String(r.p || "").trim() })).filter(r => r.n || r.p);
+  const oldP = new Map(pricesOf(cur).map(r => [r.id, r]));
+  const rows = arr(d.cprices).map(r => { const n = String(r.n || "").trim(), p = String(r.p || "").trim(), o0 = oldP.get(r.id); return { id: r.id, n, p, ...(p ? { d: o0 && o0.p === p && o0.d ? o0.d : todayIso() } : {}) }; }).filter(r => r.n || r.p);   /* fiyat yeni / değişti → bugünün tarihi kaydedilir; değişmediyse eski tarih kalır */
   const sig = a => JSON.stringify(a.map(r => [String(r.n || "").trim(), String(r.p || "").trim()]).filter(r => r[0] || r[1]));
   const priceChanged = !cur.kind && sig(rows) !== sig(pricesOf(cur));   /* fiyatlar da MÜŞTERİYE bağlı */
   cur.steps = clone(arr(d.steps)); delete cur.next; delete cur.pot; delete cur.todos; delete cur.note;
