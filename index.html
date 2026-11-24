@@ -168,7 +168,7 @@ button.stat{color:inherit;cursor:pointer;font:inherit}
 .oi small{color:var(--mu);font-size:.76rem;font-weight:600}
 .oi .os{font-size:.8rem;font-weight:700}
 .oi .ok{color:var(--run)}.oi .mid{color:var(--yarn)}.oi .bad{color:var(--mu)}.oi .warn{color:var(--stop)}
-.b-apply{background:var(--ac);color:var(--ac-d);border:0;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.pinl{color:var(--ac)!important;font-weight:700}
+.b-apply{background:var(--ac);color:var(--ac-d);border:0;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.b-bind{background:var(--card2);color:var(--tx);border:1px solid var(--ac);border-radius:9px;padding:7px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.pinl{color:var(--ac)!important;font-weight:700}
 .osec{font-size:.8rem;font-weight:800;color:var(--ac);margin:12px 0 7px}
 #printSection{display:none}
 @media print{
@@ -577,9 +577,9 @@ function lineM(ln, l) {
 const fits = (ln, l) => { const n = wingsOf(l).length, h = hitOf(ln, l); return h === n || (h > 0 && !ln.full); };
 function ordItems(l) {
   const asg = [], pos = [];
-  Object.values(ordersData).forEach(o => arr(o?.lines).forEach(ln => {
+  Object.entries(ordersData).forEach(([oid, o]) => Object.entries(o?.lines || {}).forEach(([lk, ln]) => {
     const r = (ln.qty || 0) - (ln.done || 0); if (r <= 0) return;
-    const it = { o, ln, r };
+    const it = { o, ln, r, oid, lk };
     it.pinned = !!(ln.pin && ln.pin[l.id]);
     if (ln.asg && ln.asg[l.id] !== undefined) asg.push(it);
     else if (!ln.comp && arr(ln.ok).includes(l.id) && fits(ln, l)) pos.push(it);
@@ -590,6 +590,24 @@ function ordItems(l) {
 const ordCount = l => { const x = ordItems(l); return x.asg.length + x.pos.length; };
 const pinCount = l => ordItems(l).asg.filter(i => i.pinned && !i.ln.comp).length;
 const sinceTxt = t => { const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? "bugün" : d + " gün"; };
+/* Makineden bağlama: SADECE siparişin asg (atama) bilgisini yazar (siparis.html'deki "Bu makineye ata" ile aynı veri). 140'lık makinede diğer kanat için eşlik eden satır da eklenir. */
+function bindLine(oid, lk, on) {
+  const o = ordersData[oid], l = looms[ordId]; if (!o || !l || !ordRef) return;
+  const lines = Object.entries(o.lines || {}), ln = (o.lines || {})[lk]; if (!ln) return;
+  const up = {}, base = `lines/${lk}`;
+  if (on) {
+    up[`${base}/asg/${l.id}`] = wingsOf(l).join("|");
+    if (l.width === 140 && !ln.full && !ln.color2 && !ln.comp) {
+      const w = [l.colors[0], l.colors[3]], other = w.find(c => c !== ln.color);
+      const has = lines.some(([, x]) => x.comp && x.comp.of === ln.id) || lines.some(([, x]) => x !== ln && !x.comp && !x.color2 && x.k === ln.k && x.color === other && (x.qty || 0) - (x.done || 0) > 0);
+      if (other && other !== "0" && !has) up[`lines/comp_${Date.now().toString(36)}`] = { id: "c" + Date.now().toString(36), k: ln.k, color: other, qty: ln.qty, done: ln.done || 0, asg: { [l.id]: wingsOf(l).join("|") }, comp: { of: ln.id, m: l.id } };
+    }
+  } else {
+    up[`${base}/asg/${l.id}`] = null; up[`${base}/pin/${l.id}`] = null;
+    lines.forEach(([k, x]) => { if (x.comp && x.comp.of === ln.id && x.comp.m === l.id) up[`lines/${k}`] = null; });
+  }
+  ordRef.child(oid).update(up).then(() => toast(on ? "Bu makineye bağlandı ✓" : "Bağlantı kaldırıldı")).catch(() => toast("Yazılamadı: yetkiniz yok veya bağlantı yok"));
+}
 function itemHtml(it, l, assigned) {
   const { o, ln, r } = it, w = wingsOf(l), hit = hitOf(ln, l), notes = [], mtr = ln.comp ? null : lineM(ln, l);
   if (!ln.comp && hit > 0 && hit < w.length && !ln.full) notes.push(`<div class="os mid">◐ Diğer kanat ${esc(w.find(c => c !== ln.color))}: müşteri onu da alır</div>`);
@@ -598,8 +616,9 @@ function itemHtml(it, l, assigned) {
   const others = Object.keys(ln.asg || {}).filter(k => k !== l.id);
   return `<div class="oi"><div class="oh"><span class="dot" style="background:${hexOf(ln.color)};width:14px;height:14px"></span>
     <b>${esc(o.cust)}</b><small>Kalan: ${r}</small></div>
-    <small>${esc(ln.pn || ln.k)} · ${esc(ln.color)}${mtr != null ? ` · ≈ ${mtr} m` : ""}</small>${ln.comp ? "<small>↳ Eşlik eden satır (diğer kanat)</small>" : ""}${notes.join("")}
+    <small>${esc(ln.pn || ln.k)} · ${esc(ln.color)}${mtr != null ? ` · ≈ ${mtr} m · ${daysTxt(l, mtr)}` : ""}</small>${ln.comp ? "<small>↳ Eşlik eden satır (diğer kanat)</small>" : ""}${notes.join("")}
     ${it.pinned ? `<small class="pinl">🔒 ${new Date(ln.pin[l.id]).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" })}'den beri bu makinede (${sinceTxt(ln.pin[l.id])})</small>` : ""}
+    ${ln.comp ? "" : `<button type="button" class="b-bind" data-oid="${esc(it.oid)}" data-lk="${esc(it.lk)}" data-on="${assigned ? 0 : 1}">${assigned ? "✕ Bağlantıyı kaldır" : "🔗 Bu makineye bağla"}</button>`}
     ${it.pinned && !ln.comp ? `<button type="button" class="b-apply" data-cust="${esc(o.cust)}">▶ Makineye uygula</button>` : ""}
     ${others.length ? `<small>📌 Ayrıca atandı: ${others.map(esc).join(", ")}</small>` : ""}</div>`;
 }
@@ -984,7 +1003,7 @@ function initUi() {
   $("menuClose").onclick = () => $("menuModal").classList.remove("open");
   ["bkBtn", "actBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
   $("saveBtn").onclick = saveLoom;
-  $("ordBody").addEventListener("click", e => { const b = e.target.closest(".b-apply"); if (b) applyPinned(b.dataset.cust); });
+  $("ordBody").addEventListener("click", e => { const b = e.target.closest(".b-apply"); if (b) applyPinned(b.dataset.cust); const g = e.target.closest(".b-bind"); if (g) bindLine(g.dataset.oid, g.dataset.lk, g.dataset.on === "1"); });
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
   document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("actModal").classList.remove("open"); $("infoModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
