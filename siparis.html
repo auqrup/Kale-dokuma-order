@@ -237,6 +237,8 @@ body.dirty main{padding-bottom:90px}
 .chg{color:var(--mu);font-size:.82rem;font-weight:600;padding:2px 4px 12px;line-height:1.5}
 .empty{text-align:center;color:var(--mu);padding:24px 6px;font-size:.9rem}
 .bkrow{display:flex;gap:6px;margin-bottom:8px}
+.chk{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:700;cursor:pointer}.chk input{width:22px;height:22px;accent-color:var(--ac)}
+.tg{display:inline-block;border-radius:99px;padding:1px 8px;font-size:.7rem;font-weight:800;margin:1px 3px 1px 0}.tg.pay{background:#fbbf2422;color:#fbbf24}.tg.ctn{background:#7dd3fc22;color:#7dd3fc}
 .pd{color:var(--mu);font-size:.66rem;font-weight:700;white-space:nowrap;align-self:center}
 .card{background:var(--card,var(--bg));border:1px solid var(--bd);border-radius:13px;padding:14px;margin-bottom:12px}.card p{margin:6px 0 10px}.card .primary,.card .second{width:100%}.card textarea{margin:8px 0 6px}
 textarea.inp{font-size:.8rem;margin-top:6px}
@@ -299,8 +301,6 @@ body *{visibility:hidden}
   <div class="shh"><h2>Menü</h2><button type="button" class="sx" data-act="menu-close">✕ Kapat</button></div>
   <button type="button" class="mrow" data-act="custmgr"><span class="mi">👥</span><span><b>Müşteri listesi</b><small>Müşteri ekle / sil</small></span></button>
   <button type="button" class="mrow" data-act="report"><span class="mi">📊</span><span><b>Sipariş raporu</b><small>Rapor / PDF / yazdır</small></span></button>
-  <button type="button" class="mrow" data-act="newkind" data-k="container"><span class="mi">🚢</span><span><b>Yeni konteyner</b><small>Yoldaki konteyner kartı</small></span></button>
-  <button type="button" class="mrow" data-act="newkind" data-k="payment"><span class="mi">💵</span><span><b>Yeni beklenen ödeme</b><small>Müşteriden beklenen ödeme kartı</small></span></button>
   <button type="button" class="mrow" data-act="backup"><span class="mi">💾</span><span><b>Yedek</b><small>Tüm veriyi indir / geri yükle</small></span></button>
   <a class="mrow" href="https://auqrup.github.io/Kale-dokuma-order/"><span class="mi">🧵</span><span><b>Makineler</b><small>Makine takip sayfası</small></span></a>
   <a class="mrow" href="fabrika.html"><span class="mi">🏭</span><span><b>Atölye</b><small>Atölye görünümü (sadece okuma)</small></span></a>
@@ -670,9 +670,9 @@ function reportHtml() {
   let unassigned = 0;
   const prog = o => { const L = o.lines.filter(l => !l.comp), q = L.reduce((s, l) => s + (l.qty || 0), 0), d = L.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0); return q ? Math.round(d * 100 / q) : 0; };
   const potO = orders.filter(o => TENT.includes(stOf(o)));
-  const ctnO = orders.filter(o => o.kind === "container" && stOf(o) !== "ship_done"), payO = orders.filter(o => o.kind === "payment" && stOf(o) !== "pay_done");
-  const payTotal = payO.reduce((s, o) => s + Math.max(0, num(o.amt) - num(o.paid)), 0);
-  const dRow = o => { const d = dueDays(o); return d === null ? "—" : d < 0 ? `<span class="bad">${-d} gün gecikti</span>` : d === 0 ? "Bugün" : `${d} gün kaldı`; };
+  const ctnO = orders.filter(o => ctnOf(o)), payO = orders.filter(payWait);
+  const payTotal = payO.reduce((s, o) => s + (payRest(o) || 0), 0);
+  const dRow = d => { const n = d ? dueDays({ due: d }) : null; return n === null ? "—" : n < 0 ? `<span class="bad">${-n} gün gecikti</span>` : n === 0 ? "Bugün" : `${n} gün kaldı`; };
   const stepLateList = [];
   orders.forEach(o => ordInfo(o).pend.filter(stepLate).forEach(s => stepLateList.push(`${lbl(o)}: ${s.t} (${fmtDue(s.d)})`)));
   const pendTotal = orders.reduce((n, o) => n + ordInfo(o).pend.length, 0);
@@ -714,8 +714,8 @@ function reportHtml() {
     <div class="kpis">${kpi(open.length, "Açık sipariş")}${kpi(open.reduce((s, o) => s + remO(o), 0), "Toplam kalan adet")}${kpi("≈ " + totalM + " m", "Atanan toplam metraj")}${kpi(unassigned, "Atanmamış satır", unassigned ? "bad" : "")}${kpi(late.length, "Geciken sipariş", late.length ? "bad" : "")}${kpi(doneO.length, "Tamamlanan sipariş")}${kpi(potO.length, "Görüşmede / muhtemel")}${kpi(pendTotal, "Bekleyen adım", stepLateList.length ? "bad" : "")}</div>
     <h2>Dikkat gerektirenler</h2>${attn ? `<ul class="alist">${attn}</ul>` : '<p class="okc">Dikkat gerektiren durum yok ✓</p>'}
     <h2>Açık siparişler</h2>${open.length ? `<table class="rpt"><thead><tr><th>Ürün · Renk</th><th>Sipariş</th><th>Yapılan</th><th>Kalan</th><th>Makine · ≈ metre · ≈ süre</th></tr></thead><tbody>${orderRows}</tbody></table>` : "<p>Açık sipariş yok.</p>"}
-    ${ctnO.length ? `<h2>🚢 Yoldaki konteynerler (${ctnO.length})</h2><table class="rpt"><thead><tr><th>Konteyner</th><th>Durum</th><th>Varış</th><th>Sonraki adımlar</th></tr></thead><tbody>${ctnO.map(o => { const I = ordInfo(o); return `<tr><td><b>${esc(o.cust)}</b>${o.cno ? "<br>" + esc(o.cno) : ""}</td><td>${STT[I.stt].ico} ${esc(STT[I.stt].t)}</td><td>${o.due ? esc(fmtDue(o.due)) + "<br>" : ""}${dRow(o)}</td><td>${I.pend.map(s => esc(s.t) + (s.d ? ` (${esc(fmtDue(s.d))})` : "")).join("<br>") || "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
-    ${payO.length ? `<h2>💵 Beklenen ödemeler (${payO.length}) · kalan ${money(payTotal)}</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Tutar</th><th>Alınan</th><th>Kalan</th><th>Vade</th></tr></thead><tbody>${payO.map(o => `<tr><td><b>${esc(o.cust)}</b>${o.cno ? "<br>" + esc(o.cno) : ""}</td><td>${money(o.amt)}</td><td>${money(o.paid)}</td><td><b>${money(Math.max(0, num(o.amt) - num(o.paid)))}</b></td><td>${o.due ? esc(fmtDue(o.due)) + "<br>" : ""}${dRow(o)}</td></tr>`).join("")}</tbody></table>` : ""}
+    ${ctnO.length ? `<h2>🚢 Yoldaki konteynerler (${ctnO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Konteyner</th><th>Varış</th><th>Sonraki adımlar</th></tr></thead><tbody>${ctnO.map(o => { const I = ordInfo(o), c = ctnOf(o); return `<tr><td><b>${esc(o.cust)}</b></td><td>${esc(c.no || "—")}</td><td>${c.eta ? esc(fmtDue(c.eta)) + "<br>" : ""}${dRow(c.eta)}</td><td>${I.pend.map(s => esc(s.t) + (s.d ? ` (${esc(fmtDue(s.d))})` : "")).join("<br>") || "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
+    ${payO.length ? `<h2>💵 Beklenen ödemeler (${payO.length}) · kalan ${money(payTotal)}</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Tutar</th><th>Alınan</th><th>Kalan</th></tr></thead><tbody>${payO.map(o => { const p = payOf(o); return `<tr><td><b>${esc(lbl(o))}</b></td><td>${num(p.amt) ? money(p.amt) : "—"}</td><td>${money(p.paid)}</td><td><b>${payRest(o) != null ? money(payRest(o)) : "—"}</b></td></tr>`; }).join("")}</tbody></table>` : ""}
     ${potO.length ? `<h2>💭 Görüşmedeki / muhtemel siparişler (${potO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Durum</th><th>Sonraki adımlar</th><th>Ürün / Müşteri notu</th></tr></thead><tbody>${potO.map(o => { const I = ordInfo(o); return `<tr><td><b>${esc(o.cust)}</b><br>${new Date(o.created).toLocaleDateString("tr-TR")}</td><td>${esc(STT[I.stt].ico + " " + STT[I.stt].t)}${o.pst ? `<br>“${esc(o.pst)}”` : ""}</td><td>${I.pend.map((s, i) => `${i + 1}) ${esc(s.t)}${s.d ? ` (${fmtDue(s.d)})` : ""}${stepLate(s) ? ' <span class="bad">⏰</span>' : ""}`).join("<br>") || "—"}</td><td>${[I.nl ? "" : esc(o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return (p ? pname(p) : l.k) + " " + colName(l) + " × " + l.qty; }).join("; ")), noteOf(o) ? "📝 " + esc(noteOf(o)) : ""].filter(Boolean).join("<br>") || "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
     <h2>Makine iş yükü (atanmış açık satırlar)</h2>${loadRows ? `<table class="rpt"><thead><tr><th>Makine</th><th>En</th><th>Özellik</th><th>Günlük hız</th><th>Satır</th><th>Toplam metraj</th><th>Tahmini süre</th></tr></thead><tbody>${loadRows}</tbody></table>` : "<p>Henüz makineye atanmış satır yok.</p>"}
     <h2>Tamamlanan siparişler (${doneO.length})</h2><p>${doneO.length ? doneO.slice(0, 20).map(o => esc(lbl(o))).join(", ") + (doneO.length > 20 ? " …" : "") : "—"}</p>
@@ -788,6 +788,11 @@ const STT = {
 const KIND_DEF = { container: { ico: "🚢", t: "Konteyner", def: "ship" }, payment: { ico: "💵", t: "Ödeme", def: "pay" } };
 const DONE_STT = ["done", "ship_done", "pay_done"];
 const num = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) ? n : 0; };
+/* ÖDEME / KONTEYNER İŞARETİ (normal kartta): o.pay = {amt, paid} (USD) = ödeme bekleniyor; o.ctn = {no, eta} = konteyner yolda. (Eski ayrı kartlar kind=payment/container de aynı yardımcılarla okunur.) */
+const payOf = o => o.kind === "payment" ? { amt: o.amt, paid: o.paid } : o.pay || null;
+const payWait = o => { const p = payOf(o); if (!p) return false; const a = num(p.amt); return !(a > 0 && num(p.paid) >= a); };
+const payRest = o => { const p = payOf(o); const a = p ? num(p.amt) : 0; return a > 0 ? Math.max(0, a - num(p.paid)) : null; };
+const ctnOf = o => o.kind === "container" ? (stOf(o) === "ship_done" ? null : { no: o.cno, eta: o.due }) : o.ctn || null;
 const money = v => "$" + num(v).toLocaleString("tr-TR", { maximumFractionDigits: 2 });
 const TENT = ["pot", "talk", "quote", "sample", "think"];   /* henüz kesin sipariş olmayanlar (raporda ayrı bölüm) */
 const stOf = o => {
@@ -828,7 +833,8 @@ function ocard(o) {
   const kd = o.kind ? (o.kind === "container" ? `🚢 ${esc(o.cno || "Konteyner")}` : `💵 ${o.amt ? money(o.amt) : "tutar yok"}${num(o.paid) ? ` · alınan ${money(o.paid)}` : ""}`) : "";
   const prod = o.kind ? kd : I.nl ? "" : (I.names.length ? esc(I.names[0]) + (I.names.length > 1 ? ` +${I.names.length - 1}` : "") + ` · ${I.colors} renk` : "Ürün yok");
   const pn = [...new Set(o.lines.flatMap(pinsOf))];
-  const ps = [prod, pn.length ? `🔒 ${pn.map(esc).join(", ")}` : "", I.pst ? `“${esc(I.pst)}”` : ""].filter(Boolean).join("<br>") || (I.nl && !o.kind ? "Ürün belirlenmedi" : "");
+  const tg = [payWait(o) ? `<span class="tg pay">💵 ${payRest(o) != null ? money(payRest(o)) : "ödeme"}</span>` : "", ctnOf(o) ? `<span class="tg ctn">🚢 ${esc((ctnOf(o).no || "yolda") + (ctnOf(o).eta ? " · " + fmtDue(ctnOf(o).eta) : ""))}</span>` : ""].join("");
+  const ps = [prod, tg, pn.length ? `🔒 ${pn.map(esc).join(", ")}` : "", I.pst ? `“${esc(I.pst)}”` : ""].filter(Boolean).join("<br>") || (I.nl && !o.kind ? "Ürün belirlenmedi" : "");
   const nx = f ? `<div class="nxb${I.stLate ? " late" : ""}">${I.stLate ? "⏰" : "➡"} ${esc(f.t)}${f.d ? ` · ${fmtDue(f.d)}` : ""}${I.pend.length > 1 ? ` <b>+${I.pend.length - 1}</b>` : ""}</div>` : '<div class="nxb add">+ Sonraki adım ekle</div>';
   const prog = I.nl || o.kind ? "" : `<span class="pbar"><i style="width:${I.pct}%"></i></span><span class="pnum"><span>${I.done} / ${I.qty}</span></span>`;
   return `<button type="button" class="oc${I.isDone ? " done" : ""}" style="--uc:${I.uc}" data-act="sheet" data-id="${esc(o.id)}">
@@ -843,13 +849,13 @@ function drawOrders() {
   const box = $("olist"); if (!box) return;
   const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q) || lc(String(o.no || "")).includes(q) || lc(String(o.cno || "")).includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
   const byStt = base.filter(o => S.hst === "all" || info.get(o.id).stt === S.hst);
-  const F = { all: () => true, late: i => i.late, next: i => !i.isDone && i.pend.length > 0 };
-  const cnt = k => byStt.filter(o => F[k](info.get(o.id))).length;
-  $("ocnt").innerHTML = [["all", "Tümü"], ["late", "Geciken"], ["next", "Adımı var"]].map(([k, t]) =>
+  const F = { all: () => true, late: i => i.late, next: i => !i.isDone && i.pend.length > 0, pay: (i, o) => payWait(o), ctn: (i, o) => !!ctnOf(o) };
+  const cnt = k => byStt.filter(o => F[k](info.get(o.id), o)).length;
+  $("ocnt").innerHTML = [["all", "Tümü"], ["late", "Geciken"], ["next", "Adımı var"], ["pay", "💵 Ödeme"], ["ctn", "🚢 Konteyner"]].map(([k, t]) =>
     `<button type="button" class="hc${S.hf === k ? " on" : ""}" data-act="hf" data-v="${k}"><b>${cnt(k)}</b><span>${t}</span></button>`).join("");
   const sc = k => base.filter(o => info.get(o.id).stt === k).length;
   const hs = $("hst"); if (hs) hs.innerHTML = `<option value="all">Tüm durumlar (${base.length})</option>` + Object.keys(STT).map(k => `<option value="${k}"${S.hst === k ? " selected" : ""}>${STT[k].ico} ${STT[k].t} (${sc(k)})</option>`).join("");
-  const shown = byStt.filter(o => F[S.hf](info.get(o.id)));
+  const shown = byStt.filter(o => F[S.hf](info.get(o.id), o));
   const tn = $("tdn"); if (tn) { const n = todaySteps().filter(x => x.g === "late" || x.g === "today").length; tn.textContent = n ? " " + n : ""; }
   const sh = $("oshown"); sh.textContent = `Gösterilen: ${shown.length} / ${orders.length}`; sh.style.display = shown.length === orders.length ? "none" : "block";
   box.innerHTML = shown.length ? `<div class="ogrid">${sortOrders(shown, S.hs).map(ocard).join("")}</div>` : `<div class="empty">${orders.length ? "Sonuç bulunamadı." : "Henüz kayıtlı sipariş yok."}</div>`;
@@ -892,6 +898,7 @@ function drawSheet() {
     <h3>📌 Durum (kartın etiketi)</h3>
     <div class="qk" style="margin-top:0">${chips}</div>
     <input class="inp ps-t" style="margin-top:8px" maxlength="140" placeholder="Durum notu (isteğe bağlı) — örn: Fiyat bekliyor, 15 gün" value="${esc(I.pst)}">
+    ${o.kind ? "" : payCtnHtml(o)}
     <h3>➡ Sonraki adımlar (${I.pend.length} bekliyor)</h3>
     ${stepRows}
     <div class="tdadd"><input class="inp st-new" maxlength="140" placeholder="Örn: Kırmızı iplik bekleniyor"><input type="date" class="inp st-d" style="flex:none;width:auto;max-width:150px"><button type="button" data-act="st-add">Ekle</button></div>
@@ -902,6 +909,14 @@ function drawSheet() {
     ${o.kind ? "" : I.nl ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
     ${o.kind ? (S.isNew ? "" : '<button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>') : I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
   $("shOv").classList.add("open");
+}
+function payCtnHtml(o) {
+  const p = o.pay, c = o.ctn, rest = p && num(p.amt) > 0 ? ` · kalan <b>${money(Math.max(0, num(p.amt) - num(p.paid)))}</b>` : "";
+  return `<h3>💵 Ödeme / 🚢 Konteyner</h3>
+    <label class="chk"><input type="checkbox" data-act="pay-tg"${p ? " checked" : ""}><span>💵 Ödeme bekleniyor${rest}</span></label>
+    ${p ? `<div class="prow"><span class="usd">$</span><input class="inp pay-amt" inputmode="decimal" maxlength="12" placeholder="Beklenen tutar" value="${esc(p.amt || "")}"><input class="inp pay-paid" inputmode="decimal" maxlength="12" placeholder="Alınan (varsa)" value="${esc(p.paid || "")}"></div>` : ""}
+    <label class="chk"><input type="checkbox" data-act="ctn-tg"${c ? " checked" : ""}><span>🚢 Konteyner yolda</span></label>
+    ${c ? `<div class="prow"><input class="inp ctn-no" maxlength="80" placeholder="Konteyner no / not" value="${esc(c.no || "")}"><input type="date" class="inp ctn-eta" style="flex:none;width:auto;max-width:150px" value="${esc(c.eta || "")}"></div>` : ""}`;
 }
 function kindFields(o) {
   const c = o.kind === "container", rest = c ? "" : (num(o.amt) ? ` · kalan ${money(Math.max(0, num(o.amt) - num(o.paid)))}` : "");
@@ -944,9 +959,13 @@ function saveSheet(quiet) {
   if (d.no) cur.no = d.no; else delete cur.no;
   const pst = String(d.pst || "").trim(); if (pst) cur.pst = pst; else delete cur.pst;
   if (d.stt && d.stt !== "active") cur.stt = d.stt; else delete cur.stt;
+  if (!cur.kind) {
+    if (d.pay) cur.pay = { amt: String(d.pay.amt || "").trim(), paid: String(d.pay.paid || "").trim() }; else delete cur.pay;
+    if (d.ctn) cur.ctn = { no: String(d.ctn.no || "").trim(), eta: String(d.ctn.eta || "") }; else delete cur.ctn;
+  }
   if (noteChanged) { custNotes[nk] = nv; try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); } catch {} if (notesRef) notesRef.child(nk).set(nv).catch(() => toast("Müşteri notu Firebase'e yazılamadı (yerelde saklandı)")); }
   if (priceChanged) { custPrices[nk] = rows; try { localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {} if (pricesRef) pricesRef.child(nk).set(rows.length ? rows : null).catch(() => toast("Fiyatlar Firebase'e yazılamadı (yerelde saklandı)")); }
-  cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
+  cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null, pay: cur.pay || null, ctn: cur.ctn || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
   S.sdirty = false; S.draft = mkDraft(cur); drawOrders(); if (S.view === "today") render(true);
   if (!quiet) { toast("Kaydedildi ✓" + dupMsg(cur)); drawSheet(); }
   return true;
@@ -1342,6 +1361,8 @@ document.addEventListener("click", e => {
   else if (a === "save") { if (!o || o.saved || !o.lines.length) return; const st = commitNew(); render(true); toast("Sipariş kaydedildi ✓" + dupMsg(st)); }   /* kaydedince çıkmaz: Özet / Makine ekranında kalır */
   else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; S.dirty = false; go("home"); } }
   else if (a === "del-line") { o.lines = o.lines.filter(l => l.id !== b.dataset.id && !(l.comp && l.comp.of === b.dataset.id)); persist(); render(true); }
+  else if (a === "pay-tg") { withOrd(x => { if (x.pay) delete x.pay; else x.pay = { amt: "", paid: "" }; }); drawSheet(); }
+  else if (a === "ctn-tg") { withOrd(x => { if (x.ctn) delete x.ctn; else x.ctn = { no: "", eta: "" }; }); drawSheet(); }
   else if (a === "pin") {
     const ln = o.lines.find(x => x.id === b.dataset.line), m = b.dataset.m; if (!ln || !(ln.asg && ln.asg[m] !== undefined)) return toast("Önce makineye atayın");
     const on = !isPinned(ln, m), grp = o.lines.filter(x => x === ln || (x.comp && x.comp.of === ln.id && x.comp.m === m));   /* eşlik eden satır birlikte */
@@ -1412,6 +1433,8 @@ document.addEventListener("input", e => {
   else if (e.target.classList && e.target.classList.contains("no-in") && S.order) { const v = cleanNo(e.target.value); if (v) S.order.no = v; else delete S.order.no; persist(); }
   else if (S.sheet && S.draft && e.target.classList) {   /* pencere: yazarken taslak güncellenir → Kaydet düğmesi hemen yanar (blur/change beklenmez) */
     const c = e.target.classList, v = e.target.value;
+    if (c.contains("pay-amt") || c.contains("pay-paid")) { const q = v.replace(/[^\d.,]/g, ""); if (q !== v) e.target.value = q; withOrd(o => { o.pay = o.pay || {}; o.pay[c.contains("pay-amt") ? "amt" : "paid"] = q; }); return; }
+    if (c.contains("ctn-no") || c.contains("ctn-eta")) { withOrd(o => { o.ctn = o.ctn || {}; o.ctn[c.contains("ctn-no") ? "no" : "eta"] = v; }); return; }
     const kf = ["kc-cust", "kc-no", "kc-amt", "kc-paid", "kc-due"].find(k => c.contains(k));
     if (kf) { const f = { "kc-cust": "cust", "kc-no": "cno", "kc-amt": "amt", "kc-paid": "paid", "kc-due": "due" }[kf]; withOrd(o => { o[f] = v; }); if (kf === "kc-amt" || kf === "kc-paid") { const I = $("shBox").querySelector(".shc .bd"); if (I && S.draft && !S.draft.stt) { const x = ordInfo(S.draft); I.textContent = x.txt; } } }
     else if (c.contains("ps-t")) withOrd(o => { o.pst = v; });
