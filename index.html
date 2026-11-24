@@ -168,6 +168,7 @@ button.stat{color:inherit;cursor:pointer;font:inherit}
 .oi small{color:var(--mu);font-size:.76rem;font-weight:600}
 .oi .os{font-size:.8rem;font-weight:700}
 .oi .ok{color:var(--run)}.oi .mid{color:var(--yarn)}.oi .bad{color:var(--mu)}.oi .warn{color:var(--stop)}
+.b-apply{background:var(--ac);color:var(--ac-d);border:0;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.pinl{color:var(--ac)!important;font-weight:700}
 .osec{font-size:.8rem;font-weight:800;color:var(--ac);margin:12px 0 7px}
 #printSection{display:none}
 @media print{
@@ -550,7 +551,7 @@ function cardHtml(l) {
       <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
     </div>
     ${colorsHtml(l)}
-    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}</button>
+    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}${pinCount(l) ? ` 🔒${pinCount(l)}` : ""}</button>
   </div>
   <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
 }
@@ -579,6 +580,7 @@ function ordItems(l) {
   Object.values(ordersData).forEach(o => arr(o?.lines).forEach(ln => {
     const r = (ln.qty || 0) - (ln.done || 0); if (r <= 0) return;
     const it = { o, ln, r };
+    it.pinned = !!(ln.pin && ln.pin[l.id]);
     if (ln.asg && ln.asg[l.id] !== undefined) asg.push(it);
     else if (!ln.comp && arr(ln.ok).includes(l.id) && fits(ln, l)) pos.push(it);
   }));
@@ -586,6 +588,8 @@ function ordItems(l) {
   return { asg, pos };
 }
 const ordCount = l => { const x = ordItems(l); return x.asg.length + x.pos.length; };
+const pinCount = l => ordItems(l).asg.filter(i => i.pinned && !i.ln.comp).length;
+const sinceTxt = t => { const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? "bugün" : d + " gün"; };
 function itemHtml(it, l, assigned) {
   const { o, ln, r } = it, w = wingsOf(l), hit = hitOf(ln, l), notes = [], mtr = ln.comp ? null : lineM(ln, l);
   if (!ln.comp && hit > 0 && hit < w.length && !ln.full) notes.push(`<div class="os mid">◐ Diğer kanat ${esc(w.find(c => c !== ln.color))}: müşteri onu da alır</div>`);
@@ -595,18 +599,26 @@ function itemHtml(it, l, assigned) {
   return `<div class="oi"><div class="oh"><span class="dot" style="background:${hexOf(ln.color)};width:14px;height:14px"></span>
     <b>${esc(o.cust)}</b><small>Kalan: ${r}</small></div>
     <small>${esc(ln.pn || ln.k)} · ${esc(ln.color)}${mtr != null ? ` · ≈ ${mtr} m` : ""}</small>${ln.comp ? "<small>↳ Eşlik eden satır (diğer kanat)</small>" : ""}${notes.join("")}
+    ${it.pinned ? `<small class="pinl">🔒 ${new Date(ln.pin[l.id]).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" })}'den beri bu makinede (${sinceTxt(ln.pin[l.id])})</small>` : ""}
+    ${it.pinned && !ln.comp ? `<button type="button" class="b-apply" data-cust="${esc(o.cust)}">▶ Makineye uygula</button>` : ""}
     ${others.length ? `<small>📌 Ayrıca atandı: ${others.map(esc).join(", ")}</small>` : ""}</div>`;
 }
 function renderOrd() {
   const l = looms[ordId]; if (!l) return;
   $("ordTitle").textContent = `${l.id} Siparişleri`;
-  const { asg, pos } = ordItems(l);
+  const all = ordItems(l), pin = all.asg.filter(i => i.pinned), asg = all.asg.filter(i => !i.pinned), pos = all.pos;
+  const pm = pin.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null), pinTotal = pm.length ? Math.round(pm.reduce((a, b) => a + b, 0) * 10) / 10 : null;
   /* eşlik eden satır aynı tezgahta aynı anda üretilir: metraja tekrar eklenmez */
   const mts = asg.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null);
   const asgTotal = mts.length ? Math.round(mts.reduce((a, b) => a + b, 0) * 10) / 10 : null;
-  $("ordBody").innerHTML = (asg.length ? `<div class="osec">📌 Bu makineye atananlar (${asg.length})${asgTotal != null ? ` · toplam ≈ ${asgTotal} m · ${daysTxt(l, asgTotal)}` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
+  $("ordBody").innerHTML = (pin.length ? `<div class="osec">🔒 Bu makinede çalışıyor (${pin.length})${pinTotal != null ? ` · toplam ≈ ${pinTotal} m · ${daysTxt(l, pinTotal)}` : ""}</div>` + pin.map(i => itemHtml(i, l, true)).join("") : "")
+    + (asg.length ? `<div class="osec">📌 Bu makineye atananlar (${asg.length})${asgTotal != null ? ` · toplam ≈ ${asgTotal} m · ${daysTxt(l, asgTotal)}` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
     + (pos.length ? `<div class="osec">Şu anki renkle yapılabilir (${pos.length})</div>` + pos.map(i => itemHtml(i, l, false)).join("") : "")
     || '<div class="empty">Şu anki renge uygun bekleyen sipariş yok.</div>';
+}
+function applyPinned(cust) {
+  const id = ordId; $("ordModal").classList.remove("open"); openModal(id);
+  fillCustSelect($("fCur"), cust); toast("Müşteri dolduruldu — Kaydet'e basın");
 }
 function openOrd(id) { ordId = id; renderOrd(); $("ordModal").classList.add("open"); }
 
@@ -724,7 +736,7 @@ function loomEvents(old, nu) {
 function checkNewOrders() {   /* siparisleri sadece OKUR; yeni gorulenler icin olay yazar */
   const idsNow = Object.keys(ordersData || {}), seen = lsGet(EV_SEEN_ORD, null);
   if (!Array.isArray(seen)) { lsSet(EV_SEEN_ORD, idsNow); return; }   /* ilk çalıştırma: mevcut siparişler sessizce "görüldü" sayılır */
-  const S = new Set(seen), fresh = idsNow.filter(id => !S.has(id));
+  const S = new Set(seen), fresh = idsNow.filter(id => !S.has(id) && !(ordersData[id] || {}).kind);
   if (fresh.length) emitEvents(fresh.map(id => {
     const o = ordersData[id] || {}, n = Object.values(o.lines || {}).length;
     return { key: "ord_" + id, t: o.created || Date.now(), u: "", k: "order", m: "", x: `Yeni sipariş: ${o.cust || "?"} · ${n} satır` };
@@ -972,6 +984,7 @@ function initUi() {
   $("menuClose").onclick = () => $("menuModal").classList.remove("open");
   ["bkBtn", "actBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
   $("saveBtn").onclick = saveLoom;
+  $("ordBody").addEventListener("click", e => { const b = e.target.closest(".b-apply"); if (b) applyPinned(b.dataset.cust); });
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
   document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("actModal").classList.remove("open"); $("infoModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });
