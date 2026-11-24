@@ -240,6 +240,8 @@ body.dirty main{padding-bottom:90px}
 .chk{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:700;cursor:pointer}.chk input{width:22px;height:22px;accent-color:var(--ac)}
 .tg{display:inline-block;border-radius:99px;padding:1px 8px;font-size:.7rem;font-weight:800;margin:1px 3px 1px 0}.tg.pay{background:#fbbf2422;color:#fbbf24}.tg.ctn{background:#7dd3fc22;color:#7dd3fc}
 .pd{color:var(--mu);font-size:.66rem;font-weight:700;white-space:nowrap;align-self:center}
+.bn{background:var(--stop);color:#fff;border-radius:99px;font-size:.62rem;font-weight:800;padding:1px 6px;margin-left:4px}
+.ac-row{display:flex;gap:10px;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--bd);margin-bottom:6px;font-size:.86rem}.ac-row.new{border-color:var(--ac)}.ac-t{color:var(--mu);font-weight:700;font-size:.74rem;flex:none;padding-top:2px}
 .card{background:var(--card,var(--bg));border:1px solid var(--bd);border-radius:13px;padding:14px;margin-bottom:12px}.card p{margin:6px 0 10px}.card .primary,.card .second{width:100%}.card textarea{margin:8px 0 6px}
 textarea.inp{font-size:.8rem;margin-top:6px}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
@@ -283,6 +285,7 @@ body *{visibility:hidden}
     <button class="nb" data-act="back">← Geri</button>
     <button class="nb" data-act="home">🏠 Ana sayfa</button>
     <button class="nb" data-act="menu">☰ Menü</button>
+    <button class="nb" data-act="bell" aria-label="Hareketler">🔔<span id="bellN" class="bn" style="display:none"></span></button>
   </div>
   <div class="tools" id="tools"></div>
   <div class="crumbs" id="crumbs"></div>
@@ -538,7 +541,7 @@ function drawBar() {
 function commitNew() {   /* yeni siparişi ilk kez kaydeder (Özet'te Kaydet / çıkışta "kaydedilsin mi?") */
   const o = S.order; o.saved = true;
   const stored = clone(o); orders.push(stored); pushOrder(stored);
-  S.order = clone(stored); S.dirty = false;
+  S.order = clone(stored); S.dirty = false; logAct(`Yeni sipariş: ${lbl(stored)} (${stored.lines.length} satır)`);
   return stored;
 }
 function saveOrder(quiet) {
@@ -547,6 +550,7 @@ function saveOrder(quiet) {
   const stored = clone(o), i = orders.findIndex(x => x.id === o.id);
   if (stored.lines.length && stored.stt === "pot") delete stored.stt;   /* ürün eklendi: "Muhtemel" etiketi kalkar (otomatik Sipariş/Tamamlandı) */
   delete stored.pot;
+  if (i >= 0) orderDiff(orders[i], stored).forEach(logAct);
   if (i >= 0) orders[i] = stored; else orders.push(stored);
   pushOrder(stored); S.order = clone(stored); S.dirty = false; drawBar(); drawOrders();
   if (!quiet) toast("Kaydedildi ✓" + dupMsg(stored));
@@ -945,6 +949,7 @@ function saveSheet(quiet) {
     orders.push(nc); pushOrder(nc); S.isNew = false; S.sdirty = false; S.draft = mkDraft(nc); drawOrders(); toast("Kaydedildi ✓"); drawSheet(); return true;
   }
   if (!cur) { toast("Sipariş bulunamadı"); return false; }
+  const before = clone(cur);
   if (cur.kind) {
     if (!String(d.cust || "").trim()) { toast("Başlık / müşteri boş olamaz"); return false; }
     cur.cust = cleanName(d.cust); ["cno", "amt", "paid", "due"].forEach(k => { const v = String(d[k] || "").trim(); if (v) cur[k] = v; else delete cur[k]; });
@@ -963,6 +968,10 @@ function saveSheet(quiet) {
     if (d.pay) cur.pay = { amt: String(d.pay.amt || "").trim(), paid: String(d.pay.paid || "").trim() }; else delete cur.pay;
     if (d.ctn) cur.ctn = { no: String(d.ctn.no || "").trim(), eta: String(d.ctn.eta || "") }; else delete cur.ctn;
   }
+  orderDiff(before, cur).forEach(logAct);
+  if (priceChanged) { const ob = new Map([...oldP.values()].map(r => [r.id, r])), nb = new Map(rows.map(r => [r.id, r]));
+    rows.forEach(r => { const q = ob.get(r.id); if (!q || (!q.p && r.p)) { if (r.p) logAct(`${cur.cust}: fiyat eklendi — ${r.n || "?"} $${r.p}`); } else if (q.p !== r.p) logAct(`${cur.cust}: fiyat değişti — ${r.n || "?"} $${q.p || "—"} → $${r.p || "—"}`); });
+    oldP.forEach(q => { if (!nb.has(q.id) && q.p) logAct(`${cur.cust}: fiyat silindi — ${q.n || "?"}`); }); }
   if (noteChanged) { custNotes[nk] = nv; try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); } catch {} if (notesRef) notesRef.child(nk).set(nv).catch(() => toast("Müşteri notu Firebase'e yazılamadı (yerelde saklandı)")); }
   if (priceChanged) { custPrices[nk] = rows; try { localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {} if (pricesRef) pricesRef.child(nk).set(rows.length ? rows : null).catch(() => toast("Fiyatlar Firebase'e yazılamadı (yerelde saklandı)")); }
   cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null, pay: cur.pay || null, ctn: cur.ctn || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
@@ -1037,7 +1046,7 @@ function showUndo(text, fn) { undoFn = fn; $("undo").innerHTML = `<span>${esc(te
 function setStepOk(oid, sid, ok) {   /* kartın SADECE adımlarını yazar (Kaydet beklemeden; geri alınabilir) */
   const o = orders.find(x => x.id === oid), st = o && arr(o.steps).find(x => x.id === sid);
   if (!st) return false;
-  st.ok = ok; cache();
+  st.ok = ok; cache(); logAct(`${lbl(o)}: adım ${ok ? "tamamlandı" : "tekrar açıldı"} — ${st.t}`);
   if (ordRef) ordRef.child(o.id).update({ steps: arr(o.steps) }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
   drawOrders(); if (S.view === "today") render(true);
   return true;
@@ -1091,6 +1100,8 @@ function render(keep) {
     drawOrders();
   } else if (V === "today") {
     app.innerHTML = todayHtml();
+  } else if (V === "acts") {
+    app.innerHTML = actsHtml();
   } else if (V === "backup") {
     app.innerHTML = backupHtml();
   } else if (V === "report") {
@@ -1216,6 +1227,46 @@ function go(v) { S.view = v; render(); }
 function startOrder(name) {
   S.order = { id: uid(), cust: name, created: Date.now(), saved: false, lines: [] }; go("prod");
 }
+/* ---------- HAREKET KAYDI + 🔔 BİLDİRİM: kale_siparis_v1/activity/<push-id> = {t, u, x}; 3 hesap için ortak; 10 günden eskiler sayfa açılınca silinir ---------- */
+const ACT_DAYS = 10, ACT_READ = "kale_act_read";
+let actRef = null, acts = {}, actCleaned = false;
+const meName = () => { try { return (firebase.auth().currentUser?.email || "").split("@")[0] || "?"; } catch { return "?"; } };
+function logAct(x) { if (!actRef || !x) return; try { actRef.push({ t: Date.now(), u: meName(), x: String(x).slice(0, 200) }); } catch {} }
+const actList = () => Object.values(acts || {}).filter(a => a && a.t >= Date.now() - ACT_DAYS * 864e5).sort((a, b) => b.t - a.t);
+const actRead = () => { try { return +localStorage.getItem(ACT_READ) || 0; } catch { return 0; } };
+const actUnread = () => actList().filter(a => a.t > actRead() && a.u !== meName()).length;
+function updateBell() { const b = $("bellN"); if (!b) return; const n = actUnread(); b.textContent = n > 99 ? "99+" : String(n); b.style.display = n ? "inline-block" : "none"; }
+function actsHtml() {
+  const L = actList(), seen = S.actSeen || 0, me = meName(); let day = "", h = `<h2>🔔 Hareketler <small class="hint">(son ${ACT_DAYS} gün · ${L.length})</small></h2>`;
+  if (!L.length) return h + '<div class="empty">Kayıtlı hareket yok.</div>';
+  L.forEach(a => {
+    const d = new Date(a.t), dl = d.toLocaleDateString("tr-TR", { day: "2-digit", month: "long", weekday: "short" });
+    if (dl !== day) { day = dl; h += `<h3>${esc(dl)}</h3>`; }
+    h += `<div class="ac-row${a.t > seen && a.u !== me ? " new" : ""}"><span class="ac-t">${d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span><div><b>${esc(a.u || "?")}</b> · ${esc(a.x || "")}</div></div>`;
+  });
+  return h;
+}
+function orderDiff(a, b) {   /* iki kart durumu arasındaki fark → hareket cümleleri */
+  const L = lbl(b), out = [], sa = new Map(arr(a.steps).map(s => [s.id, s]));
+  arr(b.steps).forEach(s => { const p = sa.get(s.id); if (!p) out.push(`${L}: adım eklendi — ${s.t}`); else if (!p.ok && s.ok) out.push(`${L}: adım tamamlandı — ${s.t}`); else if (p.ok && !s.ok) out.push(`${L}: adım tekrar açıldı — ${s.t}`); });
+  const sta = stOf(a), stb = stOf(b); if (sta !== stb) out.push(`${L}: durum → ${STT[stb].t}`);
+  if (!a.pay && b.pay) out.push(`${L}: 💵 ödeme bekleniyor işaretlendi`); else if (a.pay && !b.pay) out.push(`${L}: 💵 ödeme işareti kaldırıldı`);
+  else if (a.pay && b.pay) {
+    if (String(a.pay.amt || "") !== String(b.pay.amt || "")) out.push(`${L}: 💵 beklenen tutar → ${money(b.pay.amt)}`);
+    if (String(a.pay.paid || "") !== String(b.pay.paid || "")) out.push(`${L}: 💵 alınan ${money(b.pay.paid)}${num(b.pay.amt) ? " / " + money(b.pay.amt) : ""}`);
+    if (payWait(a) && !payWait(b)) out.push(`${L}: 💵 ödeme tamamlandı ✓`);
+  }
+  if (!a.ctn && b.ctn) out.push(`${L}: 🚢 konteyner yolda işaretlendi${b.ctn.no ? " (" + b.ctn.no + ")" : ""}`); else if (a.ctn && !b.ctn) out.push(`${L}: 🚢 konteyner işareti kaldırıldı`);
+  else if (a.ctn && b.ctn && (String(a.ctn.no || "") !== String(b.ctn.no || "") || String(a.ctn.eta || "") !== String(b.ctn.eta || ""))) out.push(`${L}: 🚢 konteyner bilgisi güncellendi${b.ctn.no ? " (" + b.ctn.no + ")" : ""}`);
+  const keys = (o, f) => new Set(o.lines.flatMap(l => Object.keys(l[f] || {}).map(m => l.id + "|" + m)));
+  const nm = (o, id) => { const l = o.lines.find(x => x.id === id), p = l && prodOf(l.k); return l ? `${p ? pname(p) : l.k} · ${colName(l)}` : ""; };
+  [["asg", "makineye atandı", "atama kaldırıldı"], ["pin", "🔒 şu an çalışıyor işaretlendi", "🔒 sabitleme kaldırıldı"]].forEach(([f, add, del]) => {
+    const ka = keys(a, f), kb = keys(b, f);
+    kb.forEach(k => { if (!ka.has(k)) { const [id, m] = k.split("|"); if (!(f === "asg" && b.lines.find(x => x.id === id)?.comp)) out.push(`${L}: ${nm(b, id)} → ${m}: ${add}`); } });
+    ka.forEach(k => { if (!kb.has(k)) { const [id, m] = k.split("|"); if (!(f === "asg" && a.lines.find(x => x.id === id)?.comp)) out.push(`${L}: ${nm(a, id)} → ${m}: ${del}`); } });
+  });
+  return out;
+}
 /* ---------- YEDEK (☰ Menü → Yedek): siparişler + müşteri listesi + müşteri notları + müşteri fiyatları ----------
    Makine verisi (index.html) burada YOK ve yazılmaz. Geri yükleme birleştirir (aynı id → yedektekiyle değişir; yedekte olmayan kayıt silinmez),
    öncesinde mevcut durumun güvenlik kopyası alınır (kale_pre_restore_snapshot) ve "Geri al" ile eski hale dönülebilir. */
@@ -1273,7 +1324,7 @@ function bkApply() {
   if (!confirm(`${p.orders.length} sipariş, ${p.customers.length} müşteri, ${Object.keys(p.notes).length} not, ${Object.keys(p.prices).length} fiyat listesi geri yüklensin mi?\nŞimdiki durumun güvenlik kopyası alınır.`)) return;
   const snap = { ...buildBackup(), added: p.orders.map(o => o.id).filter(id => !orders.some(q => q.id === id)), addedNotes: Object.keys(p.notes).filter(k => !(k in custNotes)), addedPrices: Object.keys(p.prices).filter(k => !(k in custPrices)) };
   try { localStorage.setItem(SNAP_KEY, JSON.stringify(snap)); } catch { if (!confirm("Güvenlik kopyası saklanamadı (yer yok). Yine de devam edilsin mi?")) return; }
-  applyBackupData(p); S.bkp = null; toast("Geri yüklendi ✓"); render(true);
+  applyBackupData(p); logAct(`Yedekten geri yüklendi (${p.orders.length} sipariş)`); S.bkp = null; toast("Geri yüklendi ✓"); render(true);
 }
 function bkUndo() {
   let snap; try { snap = JSON.parse(localStorage.getItem(SNAP_KEY) || "null"); } catch {}
@@ -1284,7 +1335,7 @@ function bkUndo() {
   (snap.addedNotes || []).forEach(k => { delete custNotes[k]; if (notesRef) notesRef.child(k).remove().catch(() => {}); });
   (snap.addedPrices || []).forEach(k => { delete custPrices[k]; if (pricesRef) pricesRef.child(k).remove().catch(() => {}); });
   try { localStorage.removeItem(SNAP_KEY); localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {}
-  toast("Geri alındı ✓"); render(true);
+  logAct("Yedekten geri yükleme geri alındı"); toast("Geri alındı ✓"); render(true);
 }
 document.addEventListener("change", e => {
   if (e.target.id !== "bkfile") return;
@@ -1348,18 +1399,18 @@ document.addEventListener("click", e => {
   else if (a === "st-tg") { withOrd(x => { const t = arr(x.steps).find(y => y.id === b.dataset.id); if (t) t.ok = !t.ok; }); drawSheet(); }
   else if (a === "st-del") { withOrd(x => { x.steps = arr(x.steps).filter(y => y.id !== b.dataset.id); }); drawSheet(); }
   else if (a === "stt") { withOrd(x => { if (b.dataset.v === "active") delete x.stt; else x.stt = b.dataset.v; }); drawSheet(); }
-  else if (a === "no-prod") { if (!o || o.saved) return; const nc = { id: o.id, cust: o.cust, created: o.created, saved: true, lines: [], stt: "pot" }; if (o.no) nc.no = o.no; orders.push(nc); pushOrder(nc); S.order = null; S.dirty = false; go("home"); toast("Muhtemel kart kaydedildi ✓" + dupMsg(nc)); }   /* açık "Ürünsüz kaydet" düğmesi = bilinçli kayıt */
+  else if (a === "no-prod") { if (!o || o.saved) return; const nc = { id: o.id, cust: o.cust, created: o.created, saved: true, lines: [], stt: "pot" }; if (o.no) nc.no = o.no; orders.push(nc); pushOrder(nc); logAct(`Ürünsüz kart oluşturuldu: ${lbl(nc)}`); S.order = null; S.dirty = false; go("home"); toast("Muhtemel kart kaydedildi ✓" + dupMsg(nc)); }   /* açık "Ürünsüz kaydet" düğmesi = bilinçli kayıt */
   else if (a === "pot-convert") { const x = orders.find(y => y.id === S.sheet); if (!x) return; if (!closeSheet()) return; S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("prod"); }
   else if (a === "pot-del") {
     const x = orders.find(y => y.id === S.sheet);
-    if (x && confirm("Muhtemel sipariş silinsin mi?")) { closeSheet(true); orders = orders.filter(y => y.id !== x.id); cache(); ordRef?.child(x.id).remove().catch(() => toast("Firebase'den silinemedi")); drawOrders(); toast("Silindi"); }
+    if (x && confirm("Muhtemel sipariş silinsin mi?")) { logAct(`Silindi: ${lbl(x)}`); closeSheet(true); orders = orders.filter(y => y.id !== x.id); cache(); ordRef?.child(x.id).remove().catch(() => toast("Firebase'den silinemedi")); drawOrders(); toast("Silindi"); }
   }
   else if (a === "open") { const x = orders.find(y => y.id === b.dataset.id); S.order = x ? clone(x) : null; S.dirty = false; go("order"); }
   else if (a === "addmore") go("prod");
   else if (a === "show") go("res");
   else if (a === "more") { S.all[b.dataset.id] = true; render(true); }
   else if (a === "save") { if (!o || o.saved || !o.lines.length) return; const st = commitNew(); render(true); toast("Sipariş kaydedildi ✓" + dupMsg(st)); }   /* kaydedince çıkmaz: Özet / Makine ekranında kalır */
-  else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; S.dirty = false; go("home"); } }
+  else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { logAct(`Silindi: ${lbl(o)}`); orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; S.dirty = false; go("home"); } }
   else if (a === "del-line") { o.lines = o.lines.filter(l => l.id !== b.dataset.id && !(l.comp && l.comp.of === b.dataset.id)); persist(); render(true); }
   else if (a === "pay-tg") { withOrd(x => { if (x.pay) delete x.pay; else x.pay = { amt: "", paid: "" }; }); drawSheet(); }
   else if (a === "ctn-tg") { withOrd(x => { if (x.ctn) delete x.ctn; else x.ctn = { no: "", eta: "" }; }); drawSheet(); }
@@ -1393,12 +1444,13 @@ document.addEventListener("click", e => {
     persist(); render(true);
   }
   else if (a === "back") {
-    const prev = { backup:"home", report:"home", today:"home", custmgr:"home", cust:"home", prod: o?.lines.length ? "order" : (o?.saved ? "home" : "cust"), color:"prod", order: o && !o.saved ? "prod" : "home", res:"order" }[S.view];
+    const prev = { acts:"home", backup:"home", report:"home", today:"home", custmgr:"home", cust:"home", prod: o?.lines.length ? "order" : (o?.saved ? "home" : "cust"), color:"prod", order: o && !o.saved ? "prod" : "home", res:"order" }[S.view];
     if (!prev) return;
     if (prev === "home") goHome(); else go(prev);
   }
   else if (a === "home") goHome();
   else if (a === "newkind") { if (!leaveOk()) return; S.order = null; go("home"); openNewCard(b.dataset.k); }
+  else if (a === "bell") { if (!leaveOk()) return; S.order = null; S.actSeen = actRead(); try { localStorage.setItem(ACT_READ, String(Date.now())); } catch {} updateBell(); go("acts"); }
   else if (a === "backup") { S.bkp = null; go("backup"); }
   else if (a === "bk-dl") { const f = buildBackup(); downloadText(`kale-yedek-${ymdNow()}.json`, JSON.stringify(f)); toast(`Yedek indirildi ✓ (${f.orders.length} sipariş)`); }
   else if (a === "bk-pick") $("bkfile").click();
@@ -1554,6 +1606,12 @@ function startData() {
   notesRef.on("value", s => { custNotes = s.val() || {}; try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); } catch {} drawOrders(); refreshSheet(); }, denied);
   pricesRef = db.ref("kale_siparis_v1/customer_prices");
   pricesRef.on("value", s => { custPrices = s.val() || {}; try { localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {} refreshSheet(); }, denied);
+  actRef = db.ref("kale_siparis_v1/activity");
+  actRef.on("value", s => {
+    acts = s.val() || {};
+    { const lim = Date.now() - ACT_DAYS * 864e5; Object.keys(acts).forEach(k => { if (!acts[k] || !(acts[k].t >= lim)) actRef.child(k).remove().catch(() => {}); }); }
+    updateBell(); if (S.view === "acts") render(true);
+  }, denied);
   custRef = db.ref("kale_customers_pool_v2");
   custRef.on("value", s => {
     const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; if (S.view === "custmgr") render(true); else drawChips();
