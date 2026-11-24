@@ -551,7 +551,7 @@ function cardHtml(l) {
       <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
     </div>
     ${colorsHtml(l)}
-    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}${pinCount(l) ? ` 🔒${pinCount(l)}` : ""}</button>
+    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}${pinCount(l) ? ` 🔒${pinCount(l)}` : ""}${asgDays(l) ? ` · ⏱ ≈ ${asgDays(l)}` : ""}</button>
   </div>
   <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
 }
@@ -588,6 +588,7 @@ function ordItems(l) {
   return { asg, pos };
 }
 const ordCount = l => { const x = ordItems(l); return x.asg.length + x.pos.length; };
+const asgDays = l => { const m = ordItems(l).asg.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null).reduce((a, b) => a + b, 0); return m > 0 ? fmtDays(m / dailyRate(l)) : ""; };
 const pinCount = l => ordItems(l).asg.filter(i => i.pinned && !i.ln.comp).length;
 const sinceTxt = t => { const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? "bugün" : d + " gün"; };
 /* Makineden bağlama: SADECE siparişin asg (atama) bilgisini yazar (siparis.html'deki "Bu makineye ata" ile aynı veri). 140'lık makinede diğer kanat için eşlik eden satır da eklenir. */
