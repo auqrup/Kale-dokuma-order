@@ -59,7 +59,7 @@ button.stat{color:inherit;cursor:pointer;font:inherit}
 .search{flex:1;min-width:0;min-height:44px;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:10px 13px;border-radius:11px;font-size:.9rem}
 .search::placeholder{color:var(--mu)}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;width:100%}
-@media(min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:18px;max-width:1400px;margin:0 auto}}
+@media(min-width:1024px){.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:18px;max-width:1700px;margin:0 auto}}
 .empty{grid-column:1/-1;text-align:center;color:var(--mu);padding:30px 0;font-size:.9rem}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;cursor:pointer;min-width:0;overflow:hidden;text-align:left;color:inherit;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .card:active{transform:scale(.97)}
@@ -79,7 +79,7 @@ button.stat{color:inherit;cursor:pointer;font:inherit}
 .badge{flex:1;min-width:0;text-align:center;background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:4px 6px;font-size:.92rem;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .w{font-size:.68rem;font-weight:800;padding:3px 6px;border-radius:5px;color:#fff}
 .w140{background:#2f7fb5}.w160{background:#7c5cc9}.w200{background:#c27a1e}
-.st{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.st{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;border-radius:6px;padding:3px 7px;font-size:.6rem;font-weight:800;letter-spacing:.03em;white-space:nowrap;border:1px solid currentColor}.st.running{color:var(--run);background:rgba(52,211,153,.13)}.st.stopped{color:var(--stop);background:rgba(248,113,113,.14)}.st.yarn{color:var(--yarn);background:rgba(255,154,77,.14)}.st.maint{color:var(--mnt);background:rgba(196,163,255,.14)}
 .box{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .main{display:flex;align-items:center;gap:8px;background:var(--card2);padding:5px 7px;border-radius:6px;min-width:0}
 .dot{border-radius:50%;border:1px solid rgba(255,255,255,.45);flex-shrink:0}
@@ -224,6 +224,12 @@ body{background:radial-gradient(900px 420px at 12% -8%,rgba(52,211,153,.13),tran
       <button class="filter-btn" data-filter="140">140 cm</button>
       <button class="filter-btn" data-filter="160">160 cm</button>
       <button class="filter-btn" data-filter="200">200 cm</button>
+    </div>
+    <span class="csep"></span>
+    <div class="size-bar" id="extraBar">
+      <button class="filter-btn active" data-extra="all">Tüm Tipler</button>
+      <button class="filter-btn" data-extra="simli">✨ SİMLİ</button>
+      <button class="filter-btn" data-extra="spingel">⬜ ŞPİNGEL</button>
     </div>
   </div>
 </div>
@@ -426,6 +432,7 @@ const TOTAL = Object.values(BRANCHES).reduce((s, b) => s + b.count, 0);
 const COLORS = { "0": NO_COLOR_HEX, ...FIXED_COLORS };
 const STATUS_COLOR = { running:"var(--run)", stopped:"var(--stop)", yarn:"var(--yarn)", maint:"var(--mnt)" };
 const STATUS_LABEL = { stopped:"DURUŞ", yarn:"İPLİK YOK", maint:"BAKIM" };
+const STATUS_PILL = { running:"▶ ÇALIŞIYOR", stopped:"■ DURUŞ", yarn:"🧶 İPLİK YOK", maint:"🔧 BAKIM" };
 const hexOf = n => COLORS[n] || COLORS["0"];
 const warpHex = n => WARPS[n] || WARPS["SİYAH"];
 
@@ -503,13 +510,14 @@ allIds().forEach(id => { looms[id] = normalize(cached?.[id] ?? defaults[id], id)
 let customers = store.get(CUST_KEY, []);
 
 let selectedId = null, selectedStatus = "running";
-let branch = "all", widthFilter = "all", statusFilter = "all", query = "";
+let branch = "all", widthFilter = "all", extraFilter = "all", statusFilter = "all", query = "";
 let loomsRef = null, custRef = null, ordRef = null, ordersData = {}, ordId = null;
 
 /* ---------- Render ---------- */
 function visible(l, skipStatus) {
   if (branch !== "all" && l.branch !== branch) return false;
   if (widthFilter !== "all" && String(l.width) !== widthFilter) return false;
+  if (extraFilter !== "all" && l.extra !== extraFilter) return false;
   if (!skipStatus && statusFilter !== "all" && l.status !== statusFilter) return false;
   if (query) {
     /* Arama: müşteri, makine no, ANA renk ve ilk ALT renk (140'lıkta iki kanat için: 0,1 ve 3,4). Harfler gevşek eşleşir (ş=s, ı=i...). */
@@ -543,11 +551,10 @@ function cardHtml(l) {
   return `
   <div class="stripe" style="background:${stripe}"></div>
   <div class="body">
-    ${STATUS_LABEL[l.status] ? `<div class="stlab ${esc(l.status)}">${STATUS_LABEL[l.status]}</div>` : ""}
     <div class="badge full" title="${esc(cur)}">${esc(cur)}</div>
     <div class="top">
       <span class="id">${esc(l.id)}</span>
-      <span class="st" style="background:${STATUS_COLOR[l.status] || "var(--mu)"}"></span>
+      <span class="st ${esc(l.status in STATUS_PILL ? l.status : "running")}">${STATUS_PILL[l.status] || STATUS_PILL.running}</span>
       <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
     </div>
     ${colorsHtml(l)}
@@ -956,9 +963,13 @@ function initUi() {
     document.querySelectorAll(".branch-btn").forEach(x => x.classList.toggle("active", x === b));
     branch = b.dataset.branch; refresh();
   };
-  document.querySelectorAll(".filter-btn").forEach(btn => btn.onclick = () => {
-    document.querySelectorAll(".filter-btn").forEach(x => x.classList.toggle("active", x === btn));
+  document.querySelectorAll(".filter-btn[data-filter]").forEach(btn => btn.onclick = () => {
+    document.querySelectorAll(".filter-btn[data-filter]").forEach(x => x.classList.toggle("active", x === btn));
     widthFilter = btn.dataset.filter; refresh();
+  });
+  document.querySelectorAll(".filter-btn[data-extra]").forEach(btn => btn.onclick = () => {
+    document.querySelectorAll(".filter-btn[data-extra]").forEach(x => x.classList.toggle("active", x === btn));
+    extraFilter = btn.dataset.extra; refresh();
   });
   document.querySelectorAll(".stat").forEach(b => b.onclick = () => { statusFilter = statusFilter === b.dataset.st ? "all" : b.dataset.st; refresh(); });
   let timer;
