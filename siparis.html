@@ -46,14 +46,16 @@ body.wide main{max-width:1120px}
 .cfl{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 10px;-webkit-overflow-scrolling:touch}.cfl::-webkit-scrollbar{display:none}
 .cfc{flex:none;background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:999px;padding:8px 13px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}.cfc b{color:var(--mu);margin-left:4px}.cfc.on{background:var(--ac);color:var(--ac-d);border-color:var(--ac)}.cfc.on b{color:var(--ac-d)}
 .cmg{margin:6px 0 14px}.cmgh{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--bd);font-size:1rem}.cmgh span{font-size:1.25rem}.cmgh small{margin-left:auto;color:var(--mu);font-weight:600;font-size:.75rem}
-.cm-grid{display:grid;grid-template-columns:1fr;gap:8px}
-@media(min-width:760px){.cm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(min-width:1050px){.cm-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin-top:4px}
+@media(min-width:760px){.cm-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}}
 .cmc{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--bd);border-radius:13px;padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
 .cmc-t{display:flex;align-items:flex-start;gap:8px;min-width:0}.cmc-t b{flex:1;min-width:0;font-size:.98rem;font-weight:800;overflow-wrap:anywhere;line-height:1.25}
 .cflag{flex:none;max-width:48%;background:var(--bg);border:1px solid var(--bd);color:var(--tx);border-radius:999px;padding:4px 10px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cflag.none{color:var(--mu);border-style:dashed}
 .cmc-m{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.78rem;color:var(--mu);font-weight:600}.cmc-m b{color:var(--tx)}
-.cmc{cursor:pointer;transition:border-color .15s}.cmc:hover{border-color:var(--ac)}
+.cmc{cursor:pointer;transition:border-color .15s;aspect-ratio:1;justify-content:center;align-items:center;text-align:center;padding:10px 8px;gap:6px}.cmc:hover{border-color:var(--ac)}.cmc.act{border-color:rgba(240,198,116,.45)}
+.cmc b{font-size:.92rem;font-weight:800;line-height:1.2;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#cmlist{margin-bottom:14px}
+.cmc-o{font-size:.7rem;color:var(--mu);font-weight:700}.cmc.act .cmc-o{color:var(--ac)}.cmc .tg{margin:0}
 .cmc-s{font-size:.76rem;color:var(--tx);opacity:.85;font-weight:600;overflow-wrap:anywhere}
 .cmc-go{margin-left:auto;color:var(--ac);font-size:1.2rem;font-weight:800;line-height:1}
 .pf-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--mu);font-weight:600;margin-bottom:6px}.pf-top b{color:var(--tx)}
@@ -1277,7 +1279,7 @@ function custMgrHtml() {
       <select class="inp cm-sort" id="cms" aria-label="Sıralama"><option value="name"${S.cms === "name" ? " selected" : ""}>A → Z</option><option value="open"${S.cms === "open" ? " selected" : ""}>Açık sipariş</option><option value="ord"${S.cms === "ord" ? " selected" : ""}>Sipariş sayısı</option></select></div>
     <div class="cfl" id="cmf"></div>
     <div id="cmlist"></div>
-    <small class="hint">Müşteri kartına dokunun: profil (iletişim, not, fiyatlar, siparişler) açılır. Ülke için kartın üzerindeki ülke düğmesine dokunun.</small>`;
+    <small class="hint">Müşteriye dokunun: profil açılır (ülke, iletişim, not, fiyatlar, siparişler).</small>`;
 }
 function custStats(n) {
   const k = lc(n), os = orders.filter(o => lc(o.cust || "") === k);
@@ -1285,12 +1287,11 @@ function custStats(n) {
   return { ord: os.length, open: os.filter(o => stOf(o) !== "done").length, loom: Object.values(looms).filter(l => lc(l.currentCustomer || "") === k).length,
     pay, rest, ctn: os.some(o => ctnOf(o)), shp: os.some(o => shpOf(o)), smp: os.some(o => smpOf(o)) };
 }
-function custRowHtml(x, u) {
-  const n = x.n, f = infoOf(n), tags = [u.pay ? `<span class="tg pay">💵 ${u.rest ? money(u.rest) : "ödeme"}</span>` : "", u.ctn ? '<span class="tg ctn">🚢</span>' : "", u.shp ? '<span class="tg shp">📦</span>' : "", u.smp ? '<span class="tg smp">🧵</span>' : ""].join("");
-  const sub = [f.firma && lc(f.firma) !== lc(n) ? `🏢 ${esc(f.firma)}` : "", f.kisi ? `👤 ${esc(f.kisi)}` : "", f.tel ? `📞 ${esc(f.tel)}` : ""].filter(Boolean).join(" · ");
-  return `<div class="cmc" data-act="cm-open" data-v="${esc(n)}" role="button" tabindex="0"><div class="cmc-t"><b>${esc(n)}</b><button type="button" class="cflag${x.c ? "" : " none"}" data-act="cm-country" data-v="${esc(n)}">${flagOf(x.c)} ${esc(x.c || "Ülke seç")}</button></div>
-    ${sub ? `<div class="cmc-s">${sub}</div>` : ""}
-    <div class="cmc-m"><span>${u.ord ? `${u.ord} sipariş${u.open ? ` · <b>${u.open} açık</b>` : ""}` : "Sipariş yok"}${u.loom ? ` · 🏭 ${u.loom} makinede` : ""}</span>${tags}<span class="cmc-go">›</span></div></div>`;
+function custRowHtml(x, u) {   /* küçük kare kart: ad + sipariş durumu + bekleyen ödeme */
+  const n = x.n;
+  return `<div class="cmc${u.open ? " act" : ""}" data-act="cm-open" data-v="${esc(n)}" role="button" tabindex="0"><b>${esc(n)}</b>
+    <span class="cmc-o">${u.ord ? (u.open ? `📦 ${u.open} açık sipariş` : `✓ ${u.ord} sipariş`) : "Sipariş yok"}</span>
+    ${u.pay ? `<span class="tg pay">💵 ${u.rest ? money(u.rest) : "ödeme"}</span>` : ""}</div>`;
 }
 function drawCustList() {
   const box = $("cmlist"); if (!box) return;
@@ -1303,9 +1304,9 @@ function drawCustList() {
   $("cmn").textContent = `(${all.length})`;
   $("cmf").innerHTML = `<button type="button" class="cfc${S.cmf === "all" ? " on" : ""}" data-act="cm-f" data-v="all">🌐 Tümü <b>${hit.length}</b></button>` +
     G.map(g => `<button type="button" class="cfc${S.cmf === g.k ? " on" : ""}" data-act="cm-f" data-v="${esc(g.k)}">${flagOf(g.c)} ${esc(g.c || NO_COUNTRY)} <b>${g.list.length}</b></button>`).join("");
-  const show = G.filter(g => g.list.length && (S.cmf === "all" || g.k === S.cmf)), st = new Map(hit.map(x => [x.n, custStats(x.n)]));
+  const list = hit.filter(x => S.cmf === "all" || ckey(x.c) === S.cmf), st = new Map(list.map(x => [x.n, custStats(x.n)]));
   const byName = (a, b) => a.n.localeCompare(b.n, "tr"), srt = S.cms === "ord" ? (a, b) => st.get(b.n).ord - st.get(a.n).ord || byName(a, b) : S.cms === "open" ? (a, b) => st.get(b.n).open - st.get(a.n).open || byName(a, b) : byName;
-  box.innerHTML = show.length ? show.map(g => `<section class="cmg"><h3 class="cmgh"><span>${flagOf(g.c)}</span>${esc(g.c || NO_COUNTRY)}<small>${g.list.length} müşteri</small></h3><div class="cm-grid">${[...g.list].sort(srt).map(x => custRowHtml(x, st.get(x.n))).join("")}</div></section>`).join("")
+  box.innerHTML = list.length ? `<div class="cm-grid">${list.sort(srt).map(x => custRowHtml(x, st.get(x.n))).join("")}</div>`
     : `<div class="empty">${all.length ? "Sonuç bulunamadı." : "Henüz müşteri yok. ＋ Yeni müşteri ile ekleyin."}</div>`;
 }
 /* ---------- MÜŞTERİ PROFİLİ penceresi: iletişim + müşteri notu + fiyatlar (tarihli) + siparişler. Taslak; 💾 Kaydet ile yazılır ve kapanır. ---------- */
