@@ -1164,13 +1164,13 @@ function render(keep) {
   } else if (V === "custmgr") {
     app.innerHTML = custMgrHtml(); drawCustList();
     $("cmq").oninput = e => { S.cmq = e.target.value; drawCustList(); };
-    const ni = $("cmNew"); if (ni) { ni.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="cm-add"]').click(); } }; if (S.cmAdd === "focus") { S.cmAdd = true; setTimeout(() => ni.focus(), 0); } }
+    const ni = $("cmNew"); if (ni) { ni.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="cm-add"]').click(); } }; if (S.cmPre) { ni.value = S.cmPre; S.cmPre = ""; } if (S.cmAdd === "focus") { S.cmAdd = true; setTimeout(() => ni.focus(), 0); } }
   } else if (V === "cust") {
     app.innerHTML = `<h2>Müşteri</h2>
-      <input id="cin" class="inp" placeholder="Müşteri adını yazın..." value="${esc(S.cin)}" autocomplete="off">
+      <input id="cin" class="inp" placeholder="Müşteri ara ve seçin..." value="${esc(S.cin)}" autocomplete="off">
       <div class="chips" id="chips"></div>
       <button class="primary" data-act="cust-ok">Tamam</button>
-      <button class="second" data-act="custmgr">👥 Müşteri listesini düzenle</button>`;
+      <button class="second" data-act="cust-new">👥 Yeni müşteri ekle (Müşteriler sayfası)</button>`;
     $("cin").oninput = e => { S.cin = e.target.value; drawChips(); };
     drawChips();
   } else if (V === "prod") {
@@ -1411,7 +1411,7 @@ function drawChips() {
   const q = foldTr(S.cin.trim());
   const list = allCust().filter(n => !q || foldTr(n).includes(q) || foldTr(countryOf(n)).includes(q)).slice(0, 40);
   box.innerHTML = list.length ? list.map(n => `<button class="chip" data-act="pick-cust" data-v="${esc(n)}">${countryOf(n) ? flagOf(countryOf(n)) + " " : ""}${esc(n)}</button>`).join("")
-    : '<span class="hint">Kayıtlı müşteri yok — adı yazıp Tamam\'a basın.</span>';
+    : '<span class="hint">Bu adla kayıtlı müşteri yok. Yeni müşteri sadece 👥 Müşteriler sayfasından eklenir.</span>';
 }
 function toast(m) { const t = $("toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2000); }
 function go(v) { S.view = v; render(); }
@@ -1573,7 +1573,14 @@ document.addEventListener("click", e => {
   else if (a === "q-m" || a === "q-p") { const c = b.dataset.c; S.sel[c] = Math.max(1, (parseInt(S.sel[c]) || 1) + (a === "q-p" ? 1 : -1)); drawSel(); }
   else if (a === "new") { S.retSheet = null; S.order = null; S.cin = ""; go("cust"); }
   else if (a === "pick-cust") startOrder(addCustomer(b.dataset.v) || b.dataset.v);
-  else if (a === "cust-ok") { const v = addCustomer(S.cin); if (!v) return toast("Müşteri adı yazın"); startOrder(v); }
+  else if (a === "cust-ok") {   /* sipariş akışında YENİ müşteri eklenemez: sadece listedeki müşteri seçilir (yeni müşteri = 👥 Müşteriler sayfası) */
+    const t = cleanName(S.cin); if (!t) return toast("Müşteri seçin");
+    const all = allCust(), ex = all.find(n => lc(n) === lc(t)), m = all.filter(n => foldTr(n).includes(foldTr(t)) || foldTr(countryOf(n)).includes(foldTr(t)));
+    const v = ex || (m.length === 1 ? m[0] : null);
+    if (!v) return toast(m.length ? "Listeden bir müşteri seçin" : "Bu müşteri listede yok — 👥 Müşteriler sayfasından ekleyin");
+    startOrder(addCustomer(v) || v);
+  }
+  else if (a === "cust-new") { S.cmAdd = "focus"; S.cmPre = cleanName(S.cin); go("custmgr"); }
   else if (a === "custmgr") go("custmgr");
   else if (a === "report") go("report");
   else if (a === "rep-print") { $("printSection").innerHTML = `<div class="rep">${reportHtml()}</div>`; window.print(); }
