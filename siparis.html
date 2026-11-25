@@ -38,6 +38,25 @@ h3{font-size:.8rem;color:var(--ac);font-weight:800;margin:16px 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
 .chip{background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:8px 14px;font-size:.88rem;font-weight:700;cursor:pointer}
 .primary{width:100%;background:var(--ac);color:var(--ac-d);border:0;border-radius:12px;padding:14px;font-size:1rem;font-weight:800;cursor:pointer;margin-top:10px}
+body.wide main{max-width:1120px}
+.cmh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.cmh h2{margin:0}.cmh small{color:var(--mu);font-weight:700;font-size:.85rem}
+.primary.cm-newb{width:auto;margin:0;padding:10px 16px;font-size:.9rem;flex:none}
+.cm-addf{display:flex;flex-direction:column;gap:8px}.cm-addf .primary{margin-top:2px}
+.cm-tools{display:flex;gap:8px;margin-bottom:8px}.cm-tools #cmq{flex:1;min-width:0}.cm-tools .cm-sort{flex:none;width:auto;max-width:44%}
+.cfl{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 10px;-webkit-overflow-scrolling:touch}.cfl::-webkit-scrollbar{display:none}
+.cfc{flex:none;background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:999px;padding:8px 13px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}.cfc b{color:var(--mu);margin-left:4px}.cfc.on{background:var(--ac);color:var(--ac-d);border-color:var(--ac)}.cfc.on b{color:var(--ac-d)}
+.cmg{margin:6px 0 14px}.cmgh{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--bd);font-size:1rem}.cmgh span{font-size:1.25rem}.cmgh small{margin-left:auto;color:var(--mu);font-weight:600;font-size:.75rem}
+.cm-grid{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:760px){.cm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1050px){.cm-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cmc{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--bd);border-radius:13px;padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.cmc-t{display:flex;align-items:flex-start;gap:8px;min-width:0}.cmc-t b{flex:1;min-width:0;font-size:.98rem;font-weight:800;overflow-wrap:anywhere;line-height:1.25}
+.cflag{flex:none;max-width:48%;background:var(--bg);border:1px solid var(--bd);color:var(--tx);border-radius:999px;padding:4px 10px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cflag.none{color:var(--mu);border-style:dashed}
+.cmc-m{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.78rem;color:var(--mu);font-weight:600}.cmc-m b{color:var(--tx)}
+.cmc-a{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.cmc-a button{background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 10px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit}
+.cph{margin:0;font-size:1.05rem;overflow-wrap:anywhere}.cph small{display:block;color:var(--mu);font-size:.75rem;font-weight:700;margin-top:3px}
+.cpl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}
+.cpc{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);border-radius:11px;padding:11px 10px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;min-width:0}.cpc span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cpc small{color:var(--mu);font-size:.72rem}.cpc.on{border-color:var(--ac);background:rgba(240,198,116,.13)}.cpc.add,.cpc.none{grid-column:1/-1;justify-content:center}.cpc.none{color:var(--stop)}.cpf{font-size:1.25rem;line-height:1}
 .cm-add{display:flex;gap:8px;margin-bottom:12px}
 .cm-add .inp{flex:1}
 .cm-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:6px}
@@ -303,9 +322,10 @@ body *{visibility:hidden}
 <div class="toast" id="toast"></div>
 <div class="undo" id="undo"></div>
 <div class="ovl" id="shOv"><div class="shs" id="shBox"></div></div>
+<div class="ovl" id="cpOv"><div class="shs" id="cpBox"></div></div>
 <div class="ovl" id="menuOv"><div class="shs">
   <div class="shh"><h2>Menü</h2><button type="button" class="sx" data-act="menu-close">✕ Kapat</button></div>
-  <button type="button" class="mrow" data-act="custmgr"><span class="mi">👥</span><span><b>Müşteri listesi</b><small>Müşteri ekle / sil</small></span></button>
+  <button type="button" class="mrow" data-act="custmgr"><span class="mi">👥</span><span><b>Müşteriler</b><small>Ülkelere göre liste · ara · ekle / düzenle</small></span></button>
   <button type="button" class="mrow" data-act="report"><span class="mi">📊</span><span><b>Sipariş raporu</b><small>Rapor / PDF / yazdır</small></span></button>
   <button type="button" class="mrow" data-act="backup"><span class="mi">💾</span><span><b>Yedek</b><small>Tüm veriyi indir / geri yükle</small></span></button>
   <a class="mrow" href="https://auqrup.github.io/Kale-dokuma-order/"><span class="mi">🧵</span><span><b>Makineler</b><small>Makine takip sayfası</small></span></a>
@@ -499,7 +519,7 @@ function allCust() {
   return [...m.values()].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bkp:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false, hst:"all" };
+let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bkp:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false, hst:"all", cmq:"", cmf:"all", cms:"name", cmAdd:false, cpFor:null, cpq:"" };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
 /* ÜÇ KAT: 📌 ÖNERİ (ln.asg[m]: merkez "bu satır bu makinede yapılsın" diye önerir) → 🔗 BAĞLI (ln.bound[m] = zaman: merkez bu makinede yapılacağını ONAYLADI; atölye bunu emir sayar) → FİİLİ durum = makinedeki "Mevcut müşteri" (atölyedekiler ELLE girer; bu sayfa makine verisine yazmaz).
@@ -633,7 +653,8 @@ function delCustomer(n) {
   if (!confirm(`"${n}" silinsin mi?`)) return;
   customers = customers.filter(c => lc(c) !== lc(n));
   poolWrite(a => a.filter(c => lc(c) !== lc(n)));
-  toast("Silindi"); render(true);
+  const ck = custKey(n); if (ck in custCountry) { delete custCountry[ck]; try { localStorage.setItem(CCOUNTRY_CACHE, JSON.stringify(custCountry)); } catch {} if (countryRef) countryRef.child(ck).remove().catch(() => {}); }
+  logAct(`Müşteri silindi: ${n}`); toast("Silindi"); render(true);
 }
 
 /* MÜŞTERİ ADI DEĞİŞTİRME (2026-11-21): tüm siparişlerde ad, müşteri listesi (pool), müşteri notu ve fiyatları yeni ada taşınır.
@@ -653,7 +674,7 @@ function renameCustomer(oldName, raw) {
   customers = customers.filter(c => lc(c) !== ol); if (!customers.some(c => lc(c) === lc(nu))) customers = [...customers, nu];
   poolWrite(a => { const rest = a.filter(c => lc(c) !== ol); return rest.some(c => lc(c) === lc(nu)) ? rest : [...rest, nu]; });
   const ok = custKey(oldName), nk = custKey(nu);
-  if (ok !== nk) [[custNotes, notesRef, CNOTE_CACHE], [custPrices, pricesRef, CPRICE_CACHE]].forEach(([obj, ref, ck]) => {
+  if (ok !== nk) [[custNotes, notesRef, CNOTE_CACHE], [custPrices, pricesRef, CPRICE_CACHE], [custCountry, countryRef, CCOUNTRY_CACHE]].forEach(([obj, ref, ck]) => {
     if (!(ok in obj)) return;
     const v = obj[ok]; obj[nk] = v; delete obj[ok];
     try { localStorage.setItem(ck, JSON.stringify(obj)); } catch {}
@@ -807,6 +828,32 @@ const CPRICE_CACHE = "kale_customer_prices_cache";
 try { custPrices = JSON.parse(localStorage.getItem(CPRICE_CACHE) || "{}") || {}; } catch {}
 const pricesOf = o => arr(custPrices[custKey(o.cust)]).map(r => ({ id: r.id || uid(), n: String(r.n || ""), p: String(r.p ?? ""), d: String(r.d || "") }));   /* d = fiyatın girildiği / değiştirildiği gün (YYYY-AA-GG) */
 const todayIso = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); };
+/* MÜŞTERİ ÜLKESİ (2026-11-26): kale_siparis_v1/customer_country/<custKey> = "Irak" (yok = Belirtilmemiş). Müşteri listesi (pool, sadece adlar) DEĞİŞMEZ; index.html etkilenmez. */
+const COUNTRIES = [["Türkiye", "🇹🇷"], ["Irak", "🇮🇶"], ["Suriye", "🇸🇾"], ["Suudi Arabistan", "🇸🇦"], ["Libya", "🇱🇾"], ["Cezayir", "🇩🇿"], ["Mısır", "🇪🇬"], ["Ürdün", "🇯🇴"], ["Lübnan", "🇱🇧"], ["Yemen", "🇾🇪"],
+  ["BAE", "🇦🇪"], ["Katar", "🇶🇦"], ["Kuveyt", "🇰🇼"], ["Umman", "🇴🇲"], ["Bahreyn", "🇧🇭"], ["Fas", "🇲🇦"], ["Tunus", "🇹🇳"], ["Sudan", "🇸🇩"], ["Filistin", "🇵🇸"], ["Azerbaycan", "🇦🇿"], ["İran", "🇮🇷"], ["Almanya", "🇩🇪"]];
+const NO_COUNTRY = "Belirtilmemiş", CCOUNTRY_CACHE = "kale_customer_country_cache";
+let custCountry = {}, countryRef = null;
+try { custCountry = JSON.parse(localStorage.getItem(CCOUNTRY_CACHE) || "{}") || {}; } catch {}
+const foldTr = t => String(t || "").replace(/[İIı]/g, "i").toLowerCase().replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u").replace(/â/g, "a").replace(/î/g, "i").replace(/û/g, "u");   /* gevşek arama: Yılmaz = Yilmaz */
+const countryOf = n => String(custCountry[custKey(n)] || "").trim();
+const flagOf = c => { if (!c) return "❔"; const f = COUNTRIES.find(x => foldTr(x[0]) === foldTr(c)); return f ? f[1] : "🌍"; };
+function countryChoices() {   /* kullanılan ülkeler + hazır liste (tekrarsız) */
+  const m = new Map();
+  Object.values(custCountry).forEach(c => { c = String(c || "").trim(); if (c && !m.has(foldTr(c))) m.set(foldTr(c), c); });
+  COUNTRIES.forEach(([c]) => { if (!m.has(foldTr(c))) m.set(foldTr(c), c); });
+  return [...m.values()];
+}
+const canonCountry = v => { const c = cleanName(v).slice(0, 40); return c ? (countryChoices().find(x => foldTr(x) === foldTr(c)) || c) : ""; };
+function setCountry(name, raw, quiet) {
+  const c = canonCountry(raw), k = custKey(name), old = countryOf(name);
+  if (c === old) return false;
+  if (c) custCountry[k] = c; else delete custCountry[k];
+  try { localStorage.setItem(CCOUNTRY_CACHE, JSON.stringify(custCountry)); } catch {}
+  if (countryRef) countryRef.child(k).set(c || null).catch(() => toast("Ülke kaydedilemedi: yetkiniz yok veya bağlantı yok"));
+  logAct(`${name}: ülke → ${c || NO_COUNTRY}`);
+  if (!quiet) toast(`${flagOf(c)} ${c || NO_COUNTRY} ✓`);
+  return true;
+}
 const mkDraft = o => { const d = clone(o); d.cnote = noteOf(o); d.cprices = pricesOf(o); delete d.note; return d; };
 const lbl = o => (o.cust || "") + (o.no ? " · No " + o.no : "");   /* müşteri adı + elle girilen sipariş numarası */
 const cleanNo = v => String(v || "").trim().slice(0, 12);
@@ -842,7 +889,7 @@ function sortOrders(list, mode) {
 }
 function drawOrders() {
   const box = $("olist"); if (!box) return;
-  const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q) || lc(String(o.no || "")).includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
+  const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q) || lc(String(o.no || "")).includes(q) || (q.length > 1 && foldTr(countryOf(o.cust)).includes(foldTr(q)))), info = new Map(base.map(o => [o.id, ordInfo(o)]));
   const byStt = base.filter(o => S.hst === "all" || info.get(o.id).stt === S.hst);
   const F = { all: () => true, late: i => i.late, next: i => !i.isDone && i.pend.length > 0, pay: (i, o) => payWait(o), ctn: (i, o) => !!ctnOf(o), shp: (i, o) => !!shpOf(o), smp: (i, o) => !!smpOf(o) };
   const cnt = k => byStt.filter(o => F[k](info.get(o.id), o)).length;
@@ -858,7 +905,7 @@ function drawOrders() {
 const toolsHtml = () => `<button type="button" class="tb pri" data-act="new">➕ Yeni</button><button type="button" class="tb" data-act="today" aria-label="Bugün">📅<b id="tdn"></b></button>
   <div class="hbar" id="ocnt"></div>
   <select class="inp hst hs-sel2" id="hst"></select>
-  <div class="tsr"><input class="inp" id="hq" type="search" placeholder="Müşteri ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>`;
+  <div class="tsr"><input class="inp" id="hq" type="search" placeholder="Müşteri / ülke ara…" value="${esc(S.hq)}"><select class="inp hs-sel" id="hs"><option value="due"${S.hs === "due" ? " selected" : ""}>Teslim tarihi</option><option value="new"${S.hs === "new" ? " selected" : ""}>En yeni</option><option value="name"${S.hs === "name" ? " selected" : ""}>Ad</option></select></div>`;
 const dateTxt = o => `Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")}${o.due ? ` · Tahmini bitiş: ${fmtDue(o.due)}` : ""}`;
 /* Ürün satırının makinedeki TAHMİNİ süresi: atanmışsa atanan makine(ler)de (kalan metraj ÷ günlük üretim), atanmamışsa en uygun önerilen makinede */
 function lineTimeHtml(l, o, ml) {
@@ -1074,6 +1121,7 @@ function render(keep) {
   $("flow").innerHTML = fOn ? flowHtml(V, o) : ""; $("flow").classList.toggle("on", fOn);
 
   document.body.classList.toggle("hm", V === "home");
+  document.body.classList.toggle("wide", V === "custmgr");
   if (V !== "home") $("tools").innerHTML = ""; else if (!$("hq")) $("tools").innerHTML = toolsHtml();
   if (V === "home") {
     app.innerHTML = `<div class="hshown" id="oshown" style="display:none"></div><div id="olist"></div>` +
@@ -1088,12 +1136,9 @@ function render(keep) {
   } else if (V === "report") {
     app.innerHTML = `<button class="second" data-act="rep-print" style="margin:0 0 12px">🖨️ PDF / Yazdır</button><div class="rep">${reportHtml()}</div>`;
   } else if (V === "custmgr") {
-    const list = allCust();
-    app.innerHTML = `<h2>Müşteri listesi (${list.length})</h2>
-      <div class="cm-add"><input id="cmNew" class="inp" placeholder="Yeni müşteri adı..." maxlength="60" autocomplete="off"><button class="nb" data-act="cm-add">Ekle</button></div>` +
-      (list.length ? list.map(n => { const u = custUse(n); return `<div class="cm-row"><b title="${esc(n)}">${esc(n)}</b><small>${u.ord} sipariş · ${u.loom} makine</small><button class="nb" data-act="cm-ren" data-v="${esc(n)}" aria-label="Adı değiştir">✏️</button><button class="nb" data-act="cm-del" data-v="${esc(n)}" aria-label="Sil">🗑</button></div>`; }).join("") : '<div class="empty">Henüz müşteri yok. Yukarıdan ekleyin.</div>') +
-      `<small class="hint">Sipariş veya makine kaydı olan müşteri silinemez. ✏️ ile ad değiştirilir (makinede kayıtlı müşteri hariç).</small>`;
-    $("cmNew").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="cm-add"]').click(); } };
+    app.innerHTML = custMgrHtml(); drawCustList();
+    $("cmq").oninput = e => { S.cmq = e.target.value; drawCustList(); };
+    const ni = $("cmNew"); if (ni) { ni.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); document.querySelector('[data-act="cm-add"]').click(); } }; if (S.cmAdd === "focus") { S.cmAdd = true; setTimeout(() => ni.focus(), 0); } }
   } else if (V === "cust") {
     app.innerHTML = `<h2>Müşteri</h2>
       <input id="cin" class="inp" placeholder="Müşteri adını yazın..." value="${esc(S.cin)}" autocomplete="off">
@@ -1196,11 +1241,76 @@ function drawSel() {
   b.innerHTML = k.length ? k.map(n => { const ps = n.split("|"); return `<div class="qrow selrow"><span class="dot s" style="background:${ps.length > 1 ? pairBg(ps) : hexOf(n)}"></span><b>${ps.map(esc).join(" + ")}</b><button type="button" class="qb" data-act="q-m" data-c="${esc(n)}" aria-label="Azalt">−</button><input class="inp sq" type="number" inputmode="numeric" min="1" value="${S.sel[n]}" data-c="${esc(n)}"><button type="button" class="qb" data-act="q-p" data-c="${esc(n)}" aria-label="Arttır">+</button></div>`; }).join("")
     : '<span class="hint">Henüz renk seçilmedi.</span>';
 }
+/* ---------- MÜŞTERİLER ekranı: ülkelere göre gruplar, arama, ülke süzgeci, sıralama; ülke bayrağa dokunarak seçilir ---------- */
+function custMgrHtml() {
+  const defC = S.cmf !== "all" && S.cmf !== "__none" ? (countryChoices().find(c => foldTr(c) === S.cmf) || "") : "";
+  return `<div class="cmh"><h2>👥 Müşteriler <small id="cmn"></small></h2><button type="button" class="primary cm-newb" data-act="cm-new">${S.cmAdd ? "✕ Kapat" : "＋ Yeni müşteri"}</button></div>
+    ${S.cmAdd ? `<div class="card cm-addf"><b>Yeni müşteri</b>
+      <input id="cmNew" class="inp" placeholder="Müşteri adı" maxlength="60" autocomplete="off">
+      <input id="cmNewC" class="inp" list="cmCl" placeholder="Ülke (isteğe bağlı)" maxlength="40" value="${esc(defC)}" autocomplete="off"><datalist id="cmCl">${countryChoices().map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+      <button type="button" class="primary" data-act="cm-add">＋ Ekle</button></div>` : ""}
+    <div class="cm-tools"><input id="cmq" class="inp" type="search" placeholder="🔍 Müşteri veya ülke ara…" value="${esc(S.cmq)}" autocomplete="off">
+      <select class="inp cm-sort" id="cms" aria-label="Sıralama"><option value="name"${S.cms === "name" ? " selected" : ""}>A → Z</option><option value="open"${S.cms === "open" ? " selected" : ""}>Açık sipariş</option><option value="ord"${S.cms === "ord" ? " selected" : ""}>Sipariş sayısı</option></select></div>
+    <div class="cfl" id="cmf"></div>
+    <div id="cmlist"></div>
+    <small class="hint">Ülke seçmek / değiştirmek için müşterinin yanındaki ülke düğmesine dokunun. Siparişi veya makine kaydı olan müşteri silinemez; makinede kayıtlı müşterinin adı değiştirilemez.</small>`;
+}
+function custStats(n) {
+  const k = lc(n), os = orders.filter(o => lc(o.cust || "") === k);
+  let rest = 0, pay = false; os.forEach(o => { if (payWait(o)) { pay = true; rest += payRest(o) || 0; } });
+  return { ord: os.length, open: os.filter(o => stOf(o) !== "done").length, loom: Object.values(looms).filter(l => lc(l.currentCustomer || "") === k).length,
+    pay, rest, ctn: os.some(o => ctnOf(o)), shp: os.some(o => shpOf(o)), smp: os.some(o => smpOf(o)) };
+}
+function custRowHtml(x, u) {
+  const n = x.n, tags = [u.pay ? `<span class="tg pay">💵 ${u.rest ? money(u.rest) : "ödeme"}</span>` : "", u.ctn ? '<span class="tg ctn">🚢</span>' : "", u.shp ? '<span class="tg shp">📦</span>' : "", u.smp ? '<span class="tg smp">🧵</span>' : ""].join("");
+  return `<div class="cmc"><div class="cmc-t"><b>${esc(n)}</b><button type="button" class="cflag${x.c ? "" : " none"}" data-act="cm-country" data-v="${esc(n)}">${flagOf(x.c)} ${esc(x.c || "Ülke seç")}</button></div>
+    <div class="cmc-m"><span>${u.ord ? `${u.ord} sipariş${u.open ? ` · <b>${u.open} açık</b>` : ""}` : "Sipariş yok"}${u.loom ? ` · 🏭 ${u.loom} makinede` : ""}</span>${tags}</div>
+    <div class="cmc-a">${u.ord ? `<button type="button" data-act="cm-orders" data-v="${esc(n)}">📋 Siparişleri</button>` : ""}<button type="button" data-act="cm-neword" data-v="${esc(n)}">➕ Sipariş</button><button type="button" data-act="cm-ren" data-v="${esc(n)}" aria-label="Adı değiştir">✏️</button>${u.ord || u.loom ? "" : `<button type="button" data-act="cm-del" data-v="${esc(n)}" aria-label="Sil">🗑</button>`}</div></div>`;
+}
+function drawCustList() {
+  const box = $("cmlist"); if (!box) return;
+  const all = allCust().map(n => ({ n, c: countryOf(n) })), q = foldTr(S.cmq.trim());
+  const hit = all.filter(x => !q || foldTr(x.n).includes(q) || foldTr(x.c || NO_COUNTRY).includes(q));
+  const groups = new Map();
+  hit.forEach(x => { const k = x.c ? foldTr(x.c) : "__none"; if (!groups.has(k)) groups.set(k, { k, c: x.c, list: [] }); groups.get(k).list.push(x); });
+  const G = [...groups.values()].sort((a, b) => (a.k === "__none") - (b.k === "__none") || b.list.length - a.list.length || a.c.localeCompare(b.c, "tr"));   /* en çok müşterili ülke önde, Belirtilmemiş en sonda */
+  if (S.cmf !== "all" && !groups.has(S.cmf)) G.push({ k: S.cmf, c: S.cmf === "__none" ? "" : (countryChoices().find(c => foldTr(c) === S.cmf) || S.cmf), list: [] });
+  $("cmn").textContent = `(${all.length})`;
+  $("cmf").innerHTML = `<button type="button" class="cfc${S.cmf === "all" ? " on" : ""}" data-act="cm-f" data-v="all">🌐 Tümü <b>${hit.length}</b></button>` +
+    G.map(g => `<button type="button" class="cfc${S.cmf === g.k ? " on" : ""}" data-act="cm-f" data-v="${esc(g.k)}">${flagOf(g.c)} ${esc(g.c || NO_COUNTRY)} <b>${g.list.length}</b></button>`).join("");
+  const show = G.filter(g => g.list.length && (S.cmf === "all" || g.k === S.cmf)), st = new Map(hit.map(x => [x.n, custStats(x.n)]));
+  const byName = (a, b) => a.n.localeCompare(b.n, "tr"), srt = S.cms === "ord" ? (a, b) => st.get(b.n).ord - st.get(a.n).ord || byName(a, b) : S.cms === "open" ? (a, b) => st.get(b.n).open - st.get(a.n).open || byName(a, b) : byName;
+  box.innerHTML = show.length ? show.map(g => `<section class="cmg"><h3 class="cmgh"><span>${flagOf(g.c)}</span>${esc(g.c || NO_COUNTRY)}<small>${g.list.length} müşteri</small></h3><div class="cm-grid">${[...g.list].sort(srt).map(x => custRowHtml(x, st.get(x.n))).join("")}</div></section>`).join("")
+    : `<div class="empty">${all.length ? "Sonuç bulunamadı." : "Henüz müşteri yok. ＋ Yeni müşteri ile ekleyin."}</div>`;
+}
+/* Ülke seçici (alttan açılan pencere) */
+function openCountry(name) { S.cpFor = name; S.cpq = ""; drawCountry(); $("cpOv").classList.add("open"); }
+function closeCountry() { S.cpFor = null; $("cpOv").classList.remove("open"); }
+function drawCountry() {
+  if (S.cpFor == null) return;
+  const c = countryOf(S.cpFor);
+  $("cpBox").innerHTML = `<div class="shh"><h2 class="cph">🌍 ${esc(S.cpFor)}<small>Şu an: ${flagOf(c)} ${esc(c || NO_COUNTRY)}</small></h2><button type="button" class="sx" data-act="cp-close">✕ Kapat</button></div>
+    <input id="cpq" class="inp" placeholder="Ülke ara veya yeni ülke yaz…" autocomplete="off"><div class="cpl" id="cpl"></div>`;
+  $("cpq").oninput = e => { S.cpq = e.target.value; drawCountryList(); };
+  $("cpq").onkeydown = e => { if (e.key === "Enter" && S.cpq.trim()) { e.preventDefault(); const f = $("cpl").querySelector(".cpc"); if (f) f.click(); } };
+  drawCountryList();
+}
+function drawCountryList() {
+  const box = $("cpl"); if (!box || S.cpFor == null) return;
+  const cur = foldTr(countryOf(S.cpFor)), cnt = {}, t = cleanName(S.cpq), q = foldTr(t);
+  allCust().forEach(m => { const c = foldTr(countryOf(m)); if (c) cnt[c] = (cnt[c] || 0) + 1; });
+  const L = countryChoices().filter(c => !q || foldTr(c).includes(q)).sort((a, b) => (cnt[foldTr(b)] || 0) - (cnt[foldTr(a)] || 0));   /* kullanılanlar önde; gerisi hazır liste sırasıyla */
+  box.innerHTML = L.map(c => `<button type="button" class="cpc${foldTr(c) === cur ? " on" : ""}" data-act="cp-pick" data-v="${esc(c)}"><span class="cpf">${flagOf(c)}</span><span>${esc(c)}</span>${cnt[foldTr(c)] ? `<small>${cnt[foldTr(c)]}</small>` : ""}</button>`).join("")
+    + (t && !L.length ? `<button type="button" class="cpc add" data-act="cp-pick" data-v="${esc(t)}">➕ “${esc(t)}” ülkesini ekle</button>` : "")
+    + (cur ? `<button type="button" class="cpc none" data-act="cp-pick" data-v="">❔ Ülkeyi kaldır (Belirtilmemiş)</button>` : "");
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.cpFor != null) closeCountry(); });
+document.addEventListener("change", e => { if (e.target.id === "cms") { S.cms = e.target.value; drawCustList(); } });
 function drawChips() {
   const box = $("chips"); if (!box) return;
-  const q = lc(S.cin.trim());
-  const list = allCust().filter(n => !q || lc(n).includes(q)).slice(0, 40);
-  box.innerHTML = list.length ? list.map(n => `<button class="chip" data-act="pick-cust" data-v="${esc(n)}">${esc(n)}</button>`).join("")
+  const q = foldTr(S.cin.trim());
+  const list = allCust().filter(n => !q || foldTr(n).includes(q) || foldTr(countryOf(n)).includes(q)).slice(0, 40);
+  box.innerHTML = list.length ? list.map(n => `<button class="chip" data-act="pick-cust" data-v="${esc(n)}">${countryOf(n) ? flagOf(countryOf(n)) + " " : ""}${esc(n)}</button>`).join("")
     : '<span class="hint">Kayıtlı müşteri yok — adı yazıp Tamam\'a basın.</span>';
 }
 function toast(m) { const t = $("toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2000); }
@@ -1274,7 +1384,7 @@ function buildBackup() {
   return {
     app: "kale-siparis", v: 2, at: new Date().toISOString(),
     orders: orders.map(o => { const c = JSON.parse(JSON.stringify(o)); delete c.saved; return c; }),
-    customers: allCust(), notes: JSON.parse(JSON.stringify(custNotes || {})), prices: JSON.parse(JSON.stringify(custPrices || {}))
+    customers: allCust(), notes: JSON.parse(JSON.stringify(custNotes || {})), prices: JSON.parse(JSON.stringify(custPrices || {})), countries: JSON.parse(JSON.stringify(custCountry || {}))
   };
 }
 function downloadText(name, text) {
@@ -1288,7 +1398,7 @@ function bkLoad(text) {
   try { d = JSON.parse(text); } catch { return toast("Geçersiz yedek dosyası"); }
   if (Array.isArray(d)) d = { orders: d, customers: [], notes: {}, prices: {} };   /* eski biçim: sadece sipariş listesi */
   if (!d || typeof d !== "object" || !Array.isArray(d.orders) || d.orders.some(x => !x || typeof x !== "object" || !x.id || !Array.isArray(x.lines))) return toast("Geçersiz yedek dosyası");
-  S.bkp = { at: d.at || "", orders: d.orders, customers: arr(d.customers).filter(x => typeof x === "string"), notes: d.notes && typeof d.notes === "object" ? d.notes : {}, prices: d.prices && typeof d.prices === "object" ? d.prices : {} };
+  S.bkp = { at: d.at || "", orders: d.orders, customers: arr(d.customers).filter(x => typeof x === "string"), notes: d.notes && typeof d.notes === "object" ? d.notes : {}, prices: d.prices && typeof d.prices === "object" ? d.prices : {}, countries: d.countries && typeof d.countries === "object" ? d.countries : {} };
   render(true);
 }
 function backupHtml() {
@@ -1302,7 +1412,7 @@ function backupHtml() {
   if (p) {
     const nn = Object.keys(p.notes).length, np = Object.keys(p.prices).length, ex = new Set(orders.map(o => o.id)), nw = p.orders.filter(o => !ex.has(o.id)).length;
     h += `<div class="card bk-prev"><b>Seçilen yedek${p.at ? " · " + esc(String(p.at).slice(0, 16).replace("T", " ")) : ""}</b>
-      <p>${p.orders.length} sipariş (${nw} yeni, ${p.orders.length - nw} mevcut olan değişecek) · ${p.customers.length} müşteri · ${nn} not · ${np} fiyat listesi</p>
+      <p>${p.orders.length} sipariş (${nw} yeni, ${p.orders.length - nw} mevcut olan değişecek) · ${p.customers.length} müşteri · ${nn} not · ${np} fiyat listesi${Object.keys(p.countries || {}).length ? ` · ${Object.keys(p.countries).length} ülke bilgisi` : ""}</p>
       <p class="hint">Yedekte olmayan mevcut kayıtlar silinmez. Uygulamadan önce şimdiki durumun güvenlik kopyası alınır.</p>
       <button class="primary" data-act="bk-apply">✔ Geri yükle</button> <button class="nb" data-act="bk-cancel">Vazgeç</button></div>`;
   }
@@ -1315,12 +1425,13 @@ function applyBackupData(d) {
   if (names.length) poolWrite(a => { const out = [...a]; names.forEach(n => { if (!out.some(c => lc(c) === lc(n))) out.push(n); }); return out; });
   Object.keys(d.notes).forEach(k => { custNotes[k] = d.notes[k]; if (notesRef) notesRef.child(k).set(d.notes[k]).catch(() => toast("Not yazılamadı")); });
   Object.keys(d.prices).forEach(k => { custPrices[k] = d.prices[k]; if (pricesRef) pricesRef.child(k).set(d.prices[k]).catch(() => toast("Fiyat yazılamadı")); });
-  try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {}
+  Object.keys(d.countries || {}).forEach(k => { custCountry[k] = d.countries[k]; if (countryRef) countryRef.child(k).set(d.countries[k]).catch(() => toast("Ülke yazılamadı")); });
+  try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); localStorage.setItem(CCOUNTRY_CACHE, JSON.stringify(custCountry)); } catch {}
 }
 function bkApply() {
   const p = S.bkp; if (!p) return;
   if (!confirm(`${p.orders.length} sipariş, ${p.customers.length} müşteri, ${Object.keys(p.notes).length} not, ${Object.keys(p.prices).length} fiyat listesi geri yüklensin mi?\nŞimdiki durumun güvenlik kopyası alınır.`)) return;
-  const snap = { ...buildBackup(), added: p.orders.map(o => o.id).filter(id => !orders.some(q => q.id === id)), addedNotes: Object.keys(p.notes).filter(k => !(k in custNotes)), addedPrices: Object.keys(p.prices).filter(k => !(k in custPrices)) };
+  const snap = { ...buildBackup(), added: p.orders.map(o => o.id).filter(id => !orders.some(q => q.id === id)), addedNotes: Object.keys(p.notes).filter(k => !(k in custNotes)), addedPrices: Object.keys(p.prices).filter(k => !(k in custPrices)), addedCountries: Object.keys(p.countries || {}).filter(k => !(k in custCountry)) };
   try { localStorage.setItem(SNAP_KEY, JSON.stringify(snap)); } catch { if (!confirm("Güvenlik kopyası saklanamadı (yer yok). Yine de devam edilsin mi?")) return; }
   applyBackupData(p); logAct(`Yedekten geri yüklendi (${p.orders.length} sipariş)`); S.bkp = null; toast("Geri yüklendi ✓"); render(true);
 }
@@ -1329,10 +1440,11 @@ function bkUndo() {
   if (!snap) return;
   if (!confirm("Son geri yükleme geri alınsın mı? Yeni eklenen siparişler silinir, değişenler eski haline döner.")) return;
   (snap.added || []).forEach(id => { orders = orders.filter(o => o.id !== id); if (ordRef) ordRef.child(id).remove().catch(() => {}); });
-  applyBackupData({ orders: snap.orders, customers: [], notes: snap.notes || {}, prices: snap.prices || {} });
+  applyBackupData({ orders: snap.orders, customers: [], notes: snap.notes || {}, prices: snap.prices || {}, countries: snap.countries || {} });
+  (snap.addedCountries || []).forEach(k => { delete custCountry[k]; if (countryRef) countryRef.child(k).remove().catch(() => {}); });
   (snap.addedNotes || []).forEach(k => { delete custNotes[k]; if (notesRef) notesRef.child(k).remove().catch(() => {}); });
   (snap.addedPrices || []).forEach(k => { delete custPrices[k]; if (pricesRef) pricesRef.child(k).remove().catch(() => {}); });
-  try { localStorage.removeItem(SNAP_KEY); localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {}
+  try { localStorage.removeItem(SNAP_KEY); localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); localStorage.setItem(CCOUNTRY_CACHE, JSON.stringify(custCountry)); } catch {}
   logAct("Yedekten geri yükleme geri alındı"); toast("Geri alındı ✓"); render(true);
 }
 document.addEventListener("change", e => {
@@ -1365,9 +1477,22 @@ document.addEventListener("click", e => {
   else if (a === "rep-print") { $("printSection").innerHTML = `<div class="rep">${reportHtml()}</div>`; window.print(); }
   else if (a === "cm-add") {
     const raw = $("cmNew").value, nm = cleanName(raw); if (!nm || nm === "-") return toast("Müşteri adı yazın");
-    const had = allCust().some(n => lc(n) === lc(nm)), n = addCustomer(raw);
-    toast(had ? "Bu müşteri zaten var" : "Eklendi ✓"); render(true); if (n) { const i = $("cmNew"); if (i) i.focus(); }
+    const had = allCust().find(n => lc(n) === lc(nm));
+    if (had) { toast(`"${had}" zaten listede`); return; }
+    const sim = allCust().find(n => foldTr(n) === foldTr(nm));
+    if (sim && !confirm(`"${sim}" adlı çok benzer bir müşteri var (yalnızca harf farkı).\nYine de "${nm}" ayrı müşteri olarak eklensin mi?`)) return;
+    const n = addCustomer(raw), cv = ($("cmNewC") || {}).value || "";
+    if (n && cleanName(cv)) setCountry(n, cv, true);
+    logAct(`Yeni müşteri: ${n}${cleanName(cv) ? " (" + canonCountry(cv) + ")" : ""}`);
+    toast(`Eklendi ✓ ${cleanName(cv) ? flagOf(canonCountry(cv)) : ""}`); S.cmAdd = "focus"; render(true);
   }
+  else if (a === "cm-new") { S.cmAdd = S.cmAdd ? false : "focus"; render(true); }
+  else if (a === "cm-f") { S.cmf = b.dataset.v; drawCustList(); }
+  else if (a === "cm-country") openCountry(b.dataset.v);
+  else if (a === "cp-close") closeCountry();
+  else if (a === "cp-pick") { const n = S.cpFor; closeCountry(); if (n != null) setCountry(n, b.dataset.v); drawCustList(); }
+  else if (a === "cm-orders") { S.hq = b.dataset.v; S.hf = "all"; S.hst = "all"; goHome(); }
+  else if (a === "cm-neword") { S.retSheet = null; startOrder(b.dataset.v); }
   else if (a === "cm-del") delCustomer(b.dataset.v)
   else if (a === "cm-ren") { const v = prompt("Müşteri adı:", b.dataset.v); if (v != null) renameCustomer(b.dataset.v, v); }
   else if (a === "cust-ren") { const n = S.draft && S.draft.cust; if (n) { const v = prompt("Müşteri adı:", n); if (v != null) renameCustomer(n, v); } }
@@ -1624,9 +1749,11 @@ function startData() {
     { const lim = Date.now() - ACT_DAYS * 864e5; Object.keys(acts).forEach(k => { if (!acts[k] || !(acts[k].t >= lim)) actRef.child(k).remove().catch(() => {}); }); }
     updateBell(); if (S.view === "acts") render(true);
   }, denied);
+  countryRef = db.ref("kale_siparis_v1/customer_country");
+  countryRef.on("value", s => { custCountry = s.val() || {}; try { localStorage.setItem(CCOUNTRY_CACHE, JSON.stringify(custCountry)); } catch {} if (S.view === "custmgr") drawCustList(); else if (S.view === "cust") drawChips(); if (S.cpFor != null) drawCountryList(); }, denied);
   custRef = db.ref("kale_customers_pool_v2");
   custRef.on("value", s => {
-    const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; if (S.view === "custmgr") render(true); else drawChips();
+    const v = s.val(); customers = v ? Object.values(v).filter(Boolean) : []; if (S.view === "custmgr") drawCustList(); else drawChips();
   }, denied);
 }
 render(); initFb();
