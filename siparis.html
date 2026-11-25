@@ -126,6 +126,7 @@ body.hm main{max-width:1560px}
 .tdadd button{flex:none;background:var(--ac);color:var(--ac-d);border:0;border-radius:10px;padding:0 16px;font-weight:800;cursor:pointer;font-family:inherit}
 .hl{display:flex;gap:7px;align-items:flex-start;margin:4px 0;font-size:.84rem;font-weight:600}
 .hl .dot{margin-top:3px;flex:none}
+.sl{border:1px solid var(--bd);border-radius:10px;padding:6px 8px;margin:6px 0}.slq{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;font-weight:700;color:var(--mu)}.slq .inp{width:68px;padding:6px;text-align:center;font-weight:800;margin-left:4px}.slr{margin-left:auto;color:var(--tx)}.slq button{background:transparent;border:0;cursor:pointer;font-size:1rem;padding:2px 4px}
 .shbar{position:sticky;top:0;z-index:3;height:0;display:flex;justify-content:flex-end;gap:6px;overflow:visible}
 .shbar button{height:34px;padding:0 12px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.45);font-size:.8rem}
 .shbar .sx{padding:0 11px}
@@ -238,7 +239,7 @@ body.dirty main{padding-bottom:90px}
 .empty{text-align:center;color:var(--mu);padding:24px 6px;font-size:.9rem}
 .bkrow{display:flex;gap:6px;margin-bottom:8px}
 .chk{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:700;cursor:pointer}.chk input{width:22px;height:22px;accent-color:var(--ac)}
-.tg{display:inline-block;border-radius:99px;padding:1px 8px;font-size:.7rem;font-weight:800;margin:1px 3px 1px 0}.tg.shp{background:#a78bfa22;color:#c4a3ff}.tg.pay{background:#fbbf2422;color:#fbbf24}.tg.ctn{background:#7dd3fc22;color:#7dd3fc}
+.tg{display:inline-block;border-radius:99px;padding:1px 8px;font-size:.7rem;font-weight:800;margin:1px 3px 1px 0}.tg.smp{background:#5eead422;color:#5eead4}.tg.shp{background:#a78bfa22;color:#c4a3ff}.tg.pay{background:#fbbf2422;color:#fbbf24}.tg.ctn{background:#7dd3fc22;color:#7dd3fc}
 .pd{color:var(--mu);font-size:.66rem;font-weight:700;white-space:nowrap;align-self:center}
 .bn{background:var(--stop);color:#fff;border-radius:99px;font-size:.62rem;font-weight:800;padding:1px 6px;margin-left:4px}
 .ac-row{display:flex;gap:10px;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--bd);margin-bottom:6px;font-size:.86rem}.ac-row.new{border-color:var(--ac)}.ac-t{color:var(--mu);font-weight:700;font-size:.74rem;flex:none;padding-top:2px}
@@ -487,7 +488,7 @@ function pushOrder(o) {
   if (ordRef) ordRef.child(o.id).set(JSON.parse(JSON.stringify(o))).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
 }
 const arr = x => Array.isArray(x) ? x : Object.values(x || {});
-const normOrder = x => ({ ...x, saved: true, todos: undefined, stt: x.stt === "pot" ? "talk" : (x.stt || (x.pot ? "talk" : undefined)), pot: undefined, steps: x.steps ? arr(x.steps) : (x.next && (x.next.t || x.next.d) ? [{ id: "n0", t: x.next.t || "Hatırlatma", d: x.next.d || "", ok: false }] : []), next: undefined, lines: arr(x.lines).map(l => ({ ...l, ok: arr(l.ok), asg: l.asg || {} })) });
+const normOrder = x => ({ ...x, ...(x.stt === "sample" ? { smp: x.smp || { t: "", d: "" } } : {}), saved: true, todos: undefined, stt: x.stt === "pot" ? "talk" : x.stt === "sample" ? (arr(x.lines).length ? undefined : "talk") : (x.stt || (x.pot ? "talk" : undefined)), pot: undefined, steps: x.steps ? arr(x.steps) : (x.next && (x.next.t || x.next.d) ? [{ id: "n0", t: x.next.t || "Hatırlatma", d: x.next.d || "", ok: false }] : []), next: undefined, lines: arr(x.lines).map(l => ({ ...l, ok: arr(l.ok), asg: l.asg || {} })) });
 
 function allCust() {
   const m = new Map();
@@ -676,7 +677,7 @@ function reportHtml() {
   let unassigned = 0;
   const prog = o => { const L = o.lines.filter(l => !l.comp), q = L.reduce((s, l) => s + (l.qty || 0), 0), d = L.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0); return q ? Math.round(d * 100 / q) : 0; };
   const potO = orders.filter(o => TENT.includes(stOf(o)));
-  const shpO = orders.filter(o => shpOf(o)).sort((a, b) => (shpOf(a).d || "9").localeCompare(shpOf(b).d || "9")), ctnO = orders.filter(o => ctnOf(o)), payO = orders.filter(payWait);
+  const smpO = orders.filter(o => smpOf(o)), shpO = orders.filter(o => shpOf(o)).sort((a, b) => (shpOf(a).d || "9").localeCompare(shpOf(b).d || "9")), ctnO = orders.filter(o => ctnOf(o)), payO = orders.filter(payWait);
   const payTotal = payO.reduce((s, o) => s + (payRest(o) || 0), 0);
   const dRow = d => { const n = d ? dueDays({ due: d }) : null; return n === null ? "—" : n < 0 ? `<span class="bad">${-n} gün gecikti</span>` : n === 0 ? "Bugün" : `${n} gün kaldı`; };
   const stepLateList = [];
@@ -720,6 +721,7 @@ function reportHtml() {
     <div class="kpis">${kpi(open.length, "Açık sipariş")}${kpi(open.reduce((s, o) => s + remO(o), 0), "Toplam kalan adet")}${kpi("≈ " + totalM + " m", "Atanan toplam metraj")}${kpi(unassigned, "Atanmamış satır", unassigned ? "bad" : "")}${kpi(late.length, "Geciken sipariş", late.length ? "bad" : "")}${kpi(doneO.length, "Tamamlanan sipariş")}${kpi(potO.length, "Görüşmede / muhtemel")}${kpi(pendTotal, "Bekleyen adım", stepLateList.length ? "bad" : "")}</div>
     <h2>Dikkat gerektirenler</h2>${attn ? `<ul class="alist">${attn}</ul>` : '<p class="okc">Dikkat gerektiren durum yok ✓</p>'}
     <h2>Açık siparişler</h2>${open.length ? `<table class="rpt"><thead><tr><th>Ürün · Renk</th><th>Sipariş</th><th>Yapılan</th><th>Kalan</th><th>Makine · ≈ metre · ≈ süre</th></tr></thead><tbody>${orderRows}</tbody></table>` : "<p>Açık sipariş yok.</p>"}
+    ${smpO.length ? `<h2>🧵 Numune bekleyenler (${smpO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Numune</th><th>Tarih</th></tr></thead><tbody>${smpO.map(o => { const h = smpOf(o); return `<tr><td><b>${esc(lbl(o))}</b></td><td>${esc(h.t || "—")}</td><td>${h.d ? esc(fmtDue(h.d)) + "<br>" + dRow(h.d) : "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
     ${shpO.length ? `<h2>📦 Planlanan sevkiyatlar (${shpO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Tarih</th><th>Not</th></tr></thead><tbody>${shpO.map(o => { const h = shpOf(o); return `<tr><td><b>${esc(lbl(o))}</b></td><td>${h.d ? esc(fmtDue(h.d)) + "<br>" + dRow(h.d) : "—"}</td><td>${esc(h.no || "—")}</td></tr>`; }).join("")}</tbody></table>` : ""}
     ${ctnO.length ? `<h2>🚢 Yoldaki konteynerler (${ctnO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Konteyner</th><th>Varış</th><th>Sonraki adımlar</th></tr></thead><tbody>${ctnO.map(o => { const I = ordInfo(o), c = ctnOf(o); return `<tr><td><b>${esc(o.cust)}</b></td><td>${esc(c.no || "—")}</td><td>${c.eta ? esc(fmtDue(c.eta)) + "<br>" : ""}${dRow(c.eta)}</td><td>${I.pend.map(s => esc(s.t) + (s.d ? ` (${esc(fmtDue(s.d))})` : "")).join("<br>") || "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
     ${payO.length ? `<h2>💵 Beklenen ödemeler (${payO.length}) · kalan ${money(payTotal)}</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Tutar</th><th>Alınan</th><th>Kalan</th></tr></thead><tbody>${payO.map(o => { const p = payOf(o); return `<tr><td><b>${esc(lbl(o))}</b></td><td>${num(p.amt) ? money(p.amt) : "—"}</td><td>${money(p.paid)}</td><td><b>${payRest(o) != null ? money(payRest(o)) : "—"}</b></td></tr>`; }).join("")}</tbody></table>` : ""}
@@ -777,7 +779,6 @@ const STT = {
   active: { t: "Sipariş (devam ediyor)", ico: "📦" },
   talk:   { t: "İletişimde", ico: "💬", c: "#7dd3fc" },
   quote:  { t: "Teklif bekliyor", ico: "🧾", c: "#fbbf24" },
-  sample: { t: "Numune", ico: "🧵", c: "#5eead4" },
   think:  { t: "Müşteri düşünüyor", ico: "🤔", c: "#f9a8d4" },
   hold:   { t: "Beklemede", ico: "⏸", c: "#94a3b8" },
   done:   { t: "Tamamlandı", ico: "✓", c: "var(--run)" }
@@ -788,9 +789,10 @@ const payOf = o => o.pay || null;
 const payWait = o => { const p = payOf(o); if (!p) return false; const a = num(p.amt); return !(a > 0 && num(p.paid) >= a); };
 const payRest = o => { const p = payOf(o); const a = p ? num(p.amt) : 0; return a > 0 ? Math.max(0, a - num(p.paid)) : null; };
 const ctnOf = o => o.ctn || null;
-const shpOf = o => o.shp || null;   /* 📦 PLANLANAN SEVKİYAT: o.shp = {d: tarih, no: not} */
+const shpOf = o => o.shp || null;
+const smpOf = o => o.smp || null;   /* 🧵 NUMUNE BEKLENİYOR: o.smp = {t: hangi numune, d: tarih} */   /* 📦 PLANLANAN SEVKİYAT: o.shp = {d: tarih, no: not} */
 const money = v => "$" + num(v).toLocaleString("tr-TR", { maximumFractionDigits: 2 });
-const TENT = ["talk", "quote", "sample", "think"];   /* henüz kesin sipariş olmayanlar (raporda ayrı bölüm) */
+const TENT = ["talk", "quote", "think"];   /* henüz kesin sipariş olmayanlar (raporda ayrı bölüm) */
 const stOf = o => {
   const s = o.stt && STT[o.stt] ? o.stt : (o.stt === "pot" ? "talk" : ""); if (s && s !== "active") return s; if (!o.lines.length) return "talk"; return o.lines.every(l => rem(l) === 0) ? "done" : "active"; };
 /* MÜŞTERİ NOTU: müşteriye bağlıdır (o müşterinin TÜM siparişlerinde aynıdır), siparişe değil. Firebase: kale_siparis_v1/customer_notes/<anahtar> = metin ("" = silindi).
@@ -826,7 +828,7 @@ function ocard(o) {
   const I = ordInfo(o), f = I.pend[0];
   const prod = I.nl ? "" : (I.names.length ? esc(I.names[0]) + (I.names.length > 1 ? ` +${I.names.length - 1}` : "") + ` · ${I.colors} renk` : "Ürün yok");
   const pn = [...new Set(o.lines.flatMap(boundOf))];
-  const tg = [payWait(o) ? `<span class="tg pay">💵 ${payRest(o) != null ? money(payRest(o)) : "ödeme"}</span>` : "", ctnOf(o) ? `<span class="tg ctn">🚢 ${esc((ctnOf(o).no || "yolda") + (ctnOf(o).eta ? " · " + fmtDue(ctnOf(o).eta) : ""))}</span>` : "", shpOf(o) ? `<span class="tg shp">📦 ${esc((shpOf(o).d ? fmtDue(shpOf(o).d) : "tarih yok") + (shpOf(o).no ? " · " + shpOf(o).no : ""))}</span>` : ""].join("");
+  const tg = [payWait(o) ? `<span class="tg pay">💵 ${payRest(o) != null ? money(payRest(o)) : "ödeme"}</span>` : "", ctnOf(o) ? `<span class="tg ctn">🚢 ${esc((ctnOf(o).no || "yolda") + (ctnOf(o).eta ? " · " + fmtDue(ctnOf(o).eta) : ""))}</span>` : "", smpOf(o) ? `<span class="tg smp">🧵 ${esc(smpOf(o).t || "numune")}${smpOf(o).d ? " · " + fmtDue(smpOf(o).d) : ""}</span>` : "", shpOf(o) ? `<span class="tg shp">📦 ${esc((shpOf(o).d ? fmtDue(shpOf(o).d) : "tarih yok") + (shpOf(o).no ? " · " + shpOf(o).no : ""))}</span>` : ""].join("");
   const ps = [prod, tg, pn.length ? `🔗 ${pn.map(esc).join(", ")}` : "", I.pst ? `“${esc(I.pst)}”` : ""].filter(Boolean).join("<br>") || (I.nl ? "Ürün belirlenmedi" : "");
   const nx = f ? `<div class="nxb${I.stLate ? " late" : ""}">${I.stLate ? "⏰" : "➡"} ${esc(f.t)}${f.d ? ` · ${fmtDue(f.d)}` : ""}${I.pend.length > 1 ? ` <b>+${I.pend.length - 1}</b>` : ""}</div>` : '<div class="nxb add">+ Sonraki adım ekle</div>';
   const prog = I.nl ? "" : `<span class="pbar"><i style="width:${I.pct}%"></i></span><span class="pnum"><span>${I.done} / ${I.qty}</span></span>`;
@@ -842,9 +844,9 @@ function drawOrders() {
   const box = $("olist"); if (!box) return;
   const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q) || lc(String(o.no || "")).includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
   const byStt = base.filter(o => S.hst === "all" || info.get(o.id).stt === S.hst);
-  const F = { all: () => true, late: i => i.late, next: i => !i.isDone && i.pend.length > 0, pay: (i, o) => payWait(o), ctn: (i, o) => !!ctnOf(o), shp: (i, o) => !!shpOf(o) };
+  const F = { all: () => true, late: i => i.late, next: i => !i.isDone && i.pend.length > 0, pay: (i, o) => payWait(o), ctn: (i, o) => !!ctnOf(o), shp: (i, o) => !!shpOf(o), smp: (i, o) => !!smpOf(o) };
   const cnt = k => byStt.filter(o => F[k](info.get(o.id), o)).length;
-  $("ocnt").innerHTML = [["all", "Tümü"], ["late", "Geciken"], ["next", "Adımı var"], ["pay", "💵 Ödeme"], ["ctn", "🚢 Konteyner"], ["shp", "📦 Sevkiyat"]].map(([k, t]) =>
+  $("ocnt").innerHTML = [["all", "Tümü"], ["late", "Geciken"], ["next", "Adımı var"], ["pay", "💵 Ödeme"], ["ctn", "🚢 Konteyner"], ["shp", "📦 Sevkiyat"], ["smp", "🧵 Numune"]].map(([k, t]) =>
     `<button type="button" class="hc${S.hf === k ? " on" : ""}" data-act="hf" data-v="${k}"><b>${cnt(k)}</b><span>${t}</span></button>`).join("");
   const sc = k => base.filter(o => info.get(o.id).stt === k).length;
   const hs = $("hst"); if (hs) hs.innerHTML = `<option value="all">Tüm durumlar (${base.length})</option>` + Object.keys(STT).map(k => `<option value="${k}"${S.hst === k ? " selected" : ""}>${STT[k].ico} ${STT[k].t} (${sc(k)})</option>`).join("");
@@ -872,7 +874,8 @@ function linesInfoHtml(o) {
   const src = o.lines.every(l => l.mt) ? o.lines : (() => { const c = clone(o); prep(c); return c.lines; })();   /* mt (makine başına metre) türetilmiş değilse geçici hesapla */
   const ls = o.lines.map((l, i) => ({ l, ml: src[i] })).filter(x => !x.l.comp).map(({ l, ml }) => {
     const p = prodOf(l.k), t = lineTimeHtml(l, o, ml);
-    return `<div class="hl"><span class="dot" style="background:${dotBg(l)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))} — ${Math.min(l.done || 0, l.qty || 0)} / ${l.qty}</span>${t ? `<span class="tm">${t}</span>` : ""}</div>`;
+    return `<div class="sl"><div class="hl"><span class="dot" style="background:${dotBg(l)}"></span><span>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))}</span>${t ? `<span class="tm">${t}</span>` : ""}</div>
+      <div class="slq"><label>Sipariş <input class="inp sl-q" type="number" inputmode="numeric" min="1" value="${l.qty}" data-id="${esc(l.id)}"></label><label>Yapılan <input class="inp sl-d" type="number" inputmode="numeric" min="0" max="${l.qty}" value="${l.done || 0}" data-id="${esc(l.id)}"></label><span class="slr">${rem(l) ? `Kalan <b>${rem(l)}</b>` : "✓ Bitti"}</span><button type="button" data-act="sl-del" data-id="${esc(l.id)}" aria-label="Satırı sil">🗑</button></div></div>`;
   }).join("");
   return ls || '<div class="hl">Ürün yok</div>';
 }
@@ -900,16 +903,24 @@ function drawSheet() {
     ${arr(o.cprices).map(r => `<div class="prow"><input class="inp pr-n" data-id="${esc(r.id)}" maxlength="60" value="${esc(r.n)}"><span class="usd">$</span><input class="inp pr-p" data-id="${esc(r.id)}" inputmode="decimal" maxlength="10" value="${esc(r.p)}">${r.d ? `<small class="pd" title="Fiyatın girildiği tarih">${esc(fmtDue(r.d))}</small>` : ""}<button type="button" data-act="pr-del" data-id="${esc(r.id)}" aria-label="Sil">✕</button></div>`).join("")}
     <button type="button" class="second" data-act="pr-add" style="margin-top:6px">+ Satır ekle</button>
     ${I.nl ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
-    ${I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
+    ${I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Ürün ekle / makine ata</button>'}`;
   $("shOv").classList.add("open");
+}
+/* pencerede adet / yapılan: eşlik eden satır(lar) asıl satırla birlikte değişir (siparis ekranındaki kural ile aynı) */
+function setLineNum(o, id, f, n) {
+  const l = o.lines.find(x => x.id === id); if (!l) return;
+  if (f === "qty") { l.qty = Math.max(1, n); l.done = Math.min(l.done || 0, l.qty); o.lines.forEach(x => { if (x.comp && x.comp.of === l.id) { x.qty = l.qty; x.done = l.done; } }); }
+  else { l.done = Math.min(l.qty, Math.max(0, n)); o.lines.forEach(x => { if (x.comp && x.comp.of === l.id) x.done = Math.min(x.qty, l.done); }); }
 }
 function payCtnHtml(o) {
   const p = o.pay, c = o.ctn, rest = p && num(p.amt) > 0 ? ` · kalan <b>${money(Math.max(0, num(p.amt) - num(p.paid)))}</b>` : "";
-  return `<h3>💵 Ödeme / 🚢 Konteyner</h3>
+  return `<h3>💵 Ödeme / 🚢 Konteyner / 🧵 Numune / 📦 Sevkiyat</h3>
     <label class="chk"><input type="checkbox" data-act="pay-tg"${p ? " checked" : ""}><span>💵 Ödeme bekleniyor${rest}</span></label>
     ${p ? `<div class="prow"><span class="usd">$</span><input class="inp pay-amt" inputmode="decimal" maxlength="12" placeholder="Beklenen tutar" value="${esc(p.amt || "")}"><input class="inp pay-paid" inputmode="decimal" maxlength="12" placeholder="Alınan (varsa)" value="${esc(p.paid || "")}"></div>` : ""}
     <label class="chk"><input type="checkbox" data-act="ctn-tg"${c ? " checked" : ""}><span>🚢 Konteyner yolda</span></label>
     ${c ? `<div class="prow"><input class="inp ctn-no" maxlength="80" placeholder="Konteyner no / not" value="${esc(c.no || "")}"><input type="date" class="inp ctn-eta" style="flex:none;width:auto;max-width:150px" value="${esc(c.eta || "")}"></div>` : ""}
+    <label class="chk"><input type="checkbox" data-act="smp-tg"${o.smp ? " checked" : ""}><span>🧵 Numune bekleniyor</span></label>
+    ${o.smp ? `<div class="prow"><input class="inp smp-t" maxlength="80" placeholder="Hangi numune (ürün / renk)" value="${esc(o.smp.t || "")}"><input type="date" class="inp smp-d" style="flex:none;width:auto;max-width:150px" value="${esc(o.smp.d || "")}"></div>` : ""}
     <label class="chk"><input type="checkbox" data-act="shp-tg"${o.shp ? " checked" : ""}><span>📦 Sevkiyat planı</span></label>
     ${o.shp ? `<div class="prow"><input type="date" class="inp shp-d" style="flex:none;width:auto;max-width:150px" value="${esc(o.shp.d || "")}"><input class="inp shp-no" maxlength="80" placeholder="Not (nereye / hangi araç)" value="${esc(o.shp.no || "")}"></div>` : ""}`;
 }
@@ -932,6 +943,10 @@ function saveSheet(quiet) {
   const pst = String(d.pst || "").trim(); if (pst) cur.pst = pst; else delete cur.pst;
   if (d.stt && d.stt !== "active") cur.stt = d.stt; else delete cur.stt;
   if (d.pay) cur.pay = { amt: String(d.pay.amt || "").trim(), paid: String(d.pay.paid || "").trim() }; else delete cur.pay;
+  const lsig = L => JSON.stringify(arr(L).map(l => [l.id, l.qty, l.done || 0]));
+  const linesChanged = lsig(d.lines) !== lsig(cur.lines);
+  if (linesChanged) { const keep = new Set(d.lines.map(l => l.id)); cur.lines = cur.lines.filter(l => keep.has(l.id)).map(l => { const n = d.lines.find(x => x.id === l.id); return { ...l, qty: n.qty, done: n.done || 0 }; }); }
+  if (d.smp) cur.smp = { t: String(d.smp.t || "").trim(), d: String(d.smp.d || "") }; else delete cur.smp;
   if (d.shp) cur.shp = { d: String(d.shp.d || ""), no: String(d.shp.no || "").trim() }; else delete cur.shp;
   if (d.ctn) cur.ctn = { no: String(d.ctn.no || "").trim(), eta: String(d.ctn.eta || "") }; else delete cur.ctn;
   orderDiff(before, cur).forEach(logAct);
@@ -940,7 +955,7 @@ function saveSheet(quiet) {
     oldP.forEach(q => { if (!nb.has(q.id) && q.p) logAct(`${cur.cust}: fiyat silindi — ${q.n || "?"}`); }); }
   if (noteChanged) { custNotes[nk] = nv; try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); } catch {} if (notesRef) notesRef.child(nk).set(nv).catch(() => toast("Müşteri notu Firebase'e yazılamadı (yerelde saklandı)")); }
   if (priceChanged) { custPrices[nk] = rows; try { localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {} if (pricesRef) pricesRef.child(nk).set(rows.length ? rows : null).catch(() => toast("Fiyatlar Firebase'e yazılamadı (yerelde saklandı)")); }
-  cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null, pay: cur.pay || null, ctn: cur.ctn || null, shp: cur.shp || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
+  cache(); if (ordRef) ordRef.child(cur.id).update({ no: cur.no || null, steps: cur.steps.length ? cur.steps : null, next: null, pot: null, todos: null, note: null, pst: cur.pst || null, stt: cur.stt || null, pay: cur.pay || null, ctn: cur.ctn || null, shp: cur.shp || null, smp: cur.smp || null, ...(linesChanged ? { lines: JSON.parse(JSON.stringify(cur.lines)) } : {}) }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
   S.sdirty = false; S.draft = mkDraft(cur); drawOrders(); if (S.view === "today") render(true);
   if (!quiet) { toast("Kaydedildi ✓" + dupMsg(cur)); closeSheet(true); }   /* Kaydet → pencere kendiliğinden kapanır */
   return true;
@@ -1233,8 +1248,14 @@ function orderDiff(a, b) {   /* iki kart durumu arasındaki fark → hareket cü
   }
   if (!a.ctn && b.ctn) out.push(`${L}: 🚢 konteyner yolda işaretlendi${b.ctn.no ? " (" + b.ctn.no + ")" : ""}`); else if (a.ctn && !b.ctn) out.push(`${L}: 🚢 konteyner işareti kaldırıldı`);
   else if (a.ctn && b.ctn && (String(a.ctn.no || "") !== String(b.ctn.no || "") || String(a.ctn.eta || "") !== String(b.ctn.eta || ""))) out.push(`${L}: 🚢 konteyner bilgisi güncellendi${b.ctn.no ? " (" + b.ctn.no + ")" : ""}`);
+  if (!a.smp && b.smp) out.push(`${L}: 🧵 numune bekleniyor${b.smp.t ? " — " + b.smp.t : ""}`); else if (a.smp && !b.smp) out.push(`${L}: 🧵 numune işareti kaldırıldı`);
+  else if (a.smp && b.smp && (String(a.smp.t || "") !== String(b.smp.t || "") || String(a.smp.d || "") !== String(b.smp.d || ""))) out.push(`${L}: 🧵 numune bilgisi güncellendi`);
   if (!a.shp && b.shp) out.push(`${L}: 📦 sevkiyat planı eklendi${b.shp.d ? " (" + fmtDue(b.shp.d) + ")" : ""}`); else if (a.shp && !b.shp) out.push(`${L}: 📦 sevkiyat planı kaldırıldı`);
   else if (a.shp && b.shp && (String(a.shp.d || "") !== String(b.shp.d || "") || String(a.shp.no || "") !== String(b.shp.no || ""))) out.push(`${L}: 📦 sevkiyat planı güncellendi${b.shp.d ? " (" + fmtDue(b.shp.d) + ")" : ""}`);
+  a.lines.filter(l => !l.comp).forEach(l => { const n = b.lines.find(x => x.id === l.id), p = prodOf(l.k), nmL = `${p ? pname(p) : l.k} · ${colName(l)}`;
+    if (!n) out.push(`${L}: ürün silindi — ${nmL}`);
+    else { if ((n.qty || 0) !== (l.qty || 0)) out.push(`${L}: ${nmL} adet ${l.qty} → ${n.qty}`); if ((n.done || 0) !== (l.done || 0)) out.push(`${L}: ${nmL} yapılan ${l.done || 0} → ${n.done || 0} / ${n.qty}`); } });
+  b.lines.filter(l => !l.comp && !a.lines.some(x => x.id === l.id)).forEach(l => { const p = prodOf(l.k); out.push(`${L}: ürün eklendi — ${p ? pname(p) : l.k} · ${colName(l)} × ${l.qty}`); });
   const keys = (o, f) => new Set(o.lines.flatMap(l => Object.keys(l[f] || {}).map(m => l.id + "|" + m)));
   const nm = (o, id) => { const l = o.lines.find(x => x.id === id), p = l && prodOf(l.k); return l ? `${p ? pname(p) : l.k} · ${colName(l)}` : ""; };
   [["asg", "makineye önerildi", "öneri kaldırıldı"], ["bound", "🔗 makineye bağlandı (onaylandı)", "🔗 onay kaldırıldı"]].forEach(([f, add, del]) => {
@@ -1325,7 +1346,9 @@ function goHome() {
     if (confirm("Sipariş kaydedilsin mi?")) { const st = commitNew(); toast("Sipariş kaydedildi ✓" + dupMsg(st)); }
     else if (!confirm("Kaydetmeden çıkılsın mı? Sipariş silinecek.")) return;
   }
+  const r = S.retSheet; S.retSheet = null;
   S.order = null; S.bkp = null; go("home");
+  if (r && orders.some(x => x.id === r)) openSheet(r);   /* "Ürün ekle / makine ata" ekranından çıkınca kartın penceresine geri dönülür */
 }
 
 document.addEventListener("click", e => {
@@ -1334,7 +1357,7 @@ document.addEventListener("click", e => {
   if (b.closest("#menuOv") && a !== "menu-close") $("menuOv").classList.remove("open");   /* menüden bir sayfaya gidince menü kapansın */
   if (a === "flow") { const v = b.dataset.v; if (v === "res" && (!o || !o.lines.length)) return toast("Önce ürün ekleyin"); if (v === "cust") S.cin = ""; go(v); }
   else if (a === "q-m" || a === "q-p") { const c = b.dataset.c; S.sel[c] = Math.max(1, (parseInt(S.sel[c]) || 1) + (a === "q-p" ? 1 : -1)); drawSel(); }
-  else if (a === "new") { S.order = null; S.cin = ""; go("cust"); }
+  else if (a === "new") { S.retSheet = null; S.order = null; S.cin = ""; go("cust"); }
   else if (a === "pick-cust") startOrder(addCustomer(b.dataset.v) || b.dataset.v);
   else if (a === "cust-ok") { const v = addCustomer(S.cin); if (!v) return toast("Müşteri adı yazın"); startOrder(v); }
   else if (a === "custmgr") go("custmgr");
@@ -1358,7 +1381,7 @@ document.addEventListener("click", e => {
   else if (a === "sheet") openSheet(b.dataset.id)
   else if (a === "sheet-close") closeSheet()
   else if (a === "sh-save") saveSheet()
-  else if (a === "sheet-open") { const x = orders.find(y => y.id === S.sheet); if (!closeSheet()) return; if (x) { S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("order"); } }
+  else if (a === "sheet-open") { const x = orders.find(y => y.id === S.sheet); if (!closeSheet()) return; if (x) { S.retSheet = x.id; S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("order"); } }
   else if (a === "ord-save") saveOrder()
   else if (a === "ord-discard") { if (confirm("Değişiklikler silinsin mi?")) { const x = orders.find(y => y.id === (o && o.id)); S.dirty = false; if (x) { S.order = clone(x); render(true); } else goHome(); } }
   else if (a === "menu") $("menuOv").classList.add("open")
@@ -1377,7 +1400,7 @@ document.addEventListener("click", e => {
   else if (a === "st-del") { withOrd(x => { x.steps = arr(x.steps).filter(y => y.id !== b.dataset.id); }); drawSheet(); }
   else if (a === "stt") { withOrd(x => { if (b.dataset.v === "active") delete x.stt; else x.stt = b.dataset.v; }); drawSheet(); }
   else if (a === "no-prod") { if (!o || o.saved) return; const nc = { id: o.id, cust: o.cust, created: o.created, saved: true, lines: [], stt: "talk" }; if (o.no) nc.no = o.no; orders.push(nc); pushOrder(nc); logAct(`Ürünsüz kart oluşturuldu: ${lbl(nc)}`); S.order = null; S.dirty = false; go("home"); toast("Kart kaydedildi ✓" + dupMsg(nc)); }   /* açık "Ürünsüz kaydet" düğmesi = bilinçli kayıt */
-  else if (a === "pot-convert") { const x = orders.find(y => y.id === S.sheet); if (!x) return; if (!closeSheet()) return; S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("prod"); }
+  else if (a === "pot-convert") { const x = orders.find(y => y.id === S.sheet); if (!x) return; if (!closeSheet()) return; S.retSheet = x.id; S.order = clone(orders.find(y => y.id === x.id) || x); S.dirty = false; go("prod"); }
   else if (a === "pot-del") {
     const x = orders.find(y => y.id === S.sheet);
     if (x && confirm("Kayıt silinsin mi?")) { logAct(`Silindi: ${lbl(x)}`); closeSheet(true); orders = orders.filter(y => y.id !== x.id); cache(); ordRef?.child(x.id).remove().catch(() => toast("Firebase'den silinemedi")); drawOrders(); toast("Silindi"); }
@@ -1387,9 +1410,11 @@ document.addEventListener("click", e => {
   else if (a === "show") go("res");
   else if (a === "more") { S.all[b.dataset.id] = true; render(true); }
   else if (a === "save") { if (!o || o.saved || !o.lines.length) return; const st = commitNew(); render(true); toast("Sipariş kaydedildi ✓" + dupMsg(st)); }   /* kaydedince çıkmaz: Özet / Makine ekranında kalır */
-  else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { logAct(`Silindi: ${lbl(o)}`); orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; S.dirty = false; go("home"); } }
+  else if (a === "delord") { if (confirm("Bu sipariş silinsin mi?")) { S.retSheet = null; logAct(`Silindi: ${lbl(o)}`); orders = orders.filter(x => x.id !== o.id); cache(); ordRef?.child(o.id).remove().catch(() => toast("Firebase'den silinemedi")); S.order = null; S.dirty = false; go("home"); } }
   else if (a === "del-line") { o.lines = o.lines.filter(l => l.id !== b.dataset.id && !(l.comp && l.comp.of === b.dataset.id)); persist(); render(true); }
   else if (a === "pay-tg") { withOrd(x => { if (x.pay) delete x.pay; else x.pay = { amt: "", paid: "" }; }); drawSheet(); }
+  else if (a === "sl-del") { const id = b.dataset.id; if (!confirm("Bu ürün satırı silinsin mi? (Kaydet'e basınca)")) return; withOrd(x => { x.lines = x.lines.filter(l => l.id !== id && !(l.comp && l.comp.of === id)); }); drawSheet(); }
+  else if (a === "smp-tg") { withOrd(x => { if (x.smp) delete x.smp; else x.smp = { t: "", d: "" }; }); drawSheet(); }
   else if (a === "shp-tg") { withOrd(x => { if (x.shp) delete x.shp; else x.shp = { d: "", no: "" }; }); drawSheet(); }
   else if (a === "ctn-tg") { withOrd(x => { if (x.ctn) delete x.ctn; else x.ctn = { no: "", eta: "" }; }); drawSheet(); }
   else if (a === "bind") {
@@ -1469,6 +1494,8 @@ document.addEventListener("input", e => {
   else if (S.sheet && S.draft && e.target.classList) {   /* pencere: yazarken taslak güncellenir → Kaydet düğmesi hemen yanar (blur/change beklenmez) */
     const c = e.target.classList, v = e.target.value;
     if (c.contains("pay-amt") || c.contains("pay-paid")) { const q = v.replace(/[^\d.,]/g, ""); if (q !== v) e.target.value = q; withOrd(o => { o.pay = o.pay || {}; o.pay[c.contains("pay-amt") ? "amt" : "paid"] = q; }); return; }
+    if (c.contains("sl-q") || c.contains("sl-d")) { const n = parseInt(v, 10); if (isNaN(n)) return; withOrd(o => setLineNum(o, e.target.dataset.id, c.contains("sl-q") ? "qty" : "done", n)); return; }
+    if (c.contains("smp-t") || c.contains("smp-d")) { withOrd(o => { o.smp = o.smp || {}; o.smp[c.contains("smp-t") ? "t" : "d"] = v; }); return; }
     if (c.contains("shp-d") || c.contains("shp-no")) { withOrd(o => { o.shp = o.shp || {}; o.shp[c.contains("shp-d") ? "d" : "no"] = v; }); return; }
     if (c.contains("ctn-no") || c.contains("ctn-eta")) { withOrd(o => { o.ctn = o.ctn || {}; o.ctn[c.contains("ctn-no") ? "no" : "eta"] = v; }); return; }
     if (c.contains("ps-t")) withOrd(o => { o.pst = v; });
@@ -1485,6 +1512,7 @@ document.addEventListener("change", e => {
   if (c.contains("ps-t")) withOrd(o => { o.pst = e.target.value.trim(); });
   else if (c.contains("no-t")) withOrd(o => { const v = cleanNo(e.target.value); if (v) o.no = v; else delete o.no; });
   else if (c.contains("nt-t")) withOrd(o => { o.cnote = e.target.value.trim(); });
+  else if (c.contains("sl-q") || c.contains("sl-d")) { withOrd(o => setLineNum(o, e.target.dataset.id, c.contains("sl-q") ? "qty" : "done", parseInt(e.target.value, 10) || 0)); drawSheet(); }
   else if (c.contains("st-dd")) { withOrd(o => { const st = arr(o.steps).find(y => y.id === e.target.dataset.id); if (st) st.d = e.target.value || ""; }); drawSheet(); }
 });
 document.addEventListener("keydown", e => {
