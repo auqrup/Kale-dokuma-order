@@ -168,7 +168,7 @@ button.stat{color:inherit;cursor:pointer;font:inherit}
 .oi small{color:var(--mu);font-size:.76rem;font-weight:600}
 .oi .os{font-size:.8rem;font-weight:700}
 .oi .ok{color:var(--run)}.oi .mid{color:var(--yarn)}.oi .bad{color:var(--mu)}.oi .warn{color:var(--stop)}
-.b-apply{background:var(--ac);color:var(--ac-d);border:0;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.b-bind{background:var(--card2);color:var(--tx);border:1px solid var(--ac);border-radius:9px;padding:7px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.pinl{color:var(--ac)!important;font-weight:700}
+.b-apply{background:var(--ac);color:var(--ac-d);border:0;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.b-bind{background:var(--card2);color:var(--tx);border:1px solid var(--ac);border-radius:9px;padding:7px 12px;font-weight:800;cursor:pointer;font-family:inherit;align-self:flex-start;margin-top:4px}.bbtns{display:flex;gap:6px;flex-wrap:wrap}.b-bind.ok{background:var(--ac);color:var(--ac-d)}.pinl{color:var(--ac)!important;font-weight:700}
 .osec{font-size:.8rem;font-weight:800;color:var(--ac);margin:12px 0 7px}
 #printSection{display:none}
 @media print{
@@ -551,7 +551,7 @@ function cardHtml(l) {
       <span class="w w${esc(l.width)}">${esc(l.width)} cm</span>
     </div>
     ${colorsHtml(l)}
-    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}${pinCount(l) ? ` 🔒${pinCount(l)}` : ""}${asgDays(l) ? ` · ⏱ ≈ ${asgDays(l)}` : ""}</button>
+    <button type="button" class="obtn">📋 Siparişler${ordCount(l) ? ` (${ordCount(l)})` : ""}${boundCount(l) ? ` 🔗${boundCount(l)}` : ""}${boundDays(l) ? ` · ⏱ ≈ ${boundDays(l)}` : ""}</button>
   </div>
   <div class="stripe bot" style="background:${warpHex(l.warps[0])}"></div>`;
 }
@@ -580,7 +580,7 @@ function ordItems(l) {
   Object.entries(ordersData).forEach(([oid, o]) => Object.entries(o?.lines || {}).forEach(([lk, ln]) => {
     const r = (ln.qty || 0) - (ln.done || 0); if (r <= 0) return;
     const it = { o, ln, r, oid, lk };
-    it.pinned = !!(ln.pin && ln.pin[l.id]);
+    it.bound = !!(ln.bound && ln.bound[l.id]);
     if (ln.asg && ln.asg[l.id] !== undefined) asg.push(it);
     else if (!ln.comp && arr(ln.ok).includes(l.id) && fits(ln, l)) pos.push(it);
   }));
@@ -588,27 +588,29 @@ function ordItems(l) {
   return { asg, pos };
 }
 const ordCount = l => { const x = ordItems(l); return x.asg.length + x.pos.length; };
-const asgDays = l => { const m = ordItems(l).asg.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null).reduce((a, b) => a + b, 0); return m > 0 ? fmtDays(m / dailyRate(l)) : ""; };
-const pinCount = l => ordItems(l).asg.filter(i => i.pinned && !i.ln.comp).length;
-const sinceTxt = t => { const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? "bugün" : d + " gün"; };
-/* Makineden bağlama: SADECE siparişin asg (atama) bilgisini yazar (siparis.html'deki "Bu makineye ata" ile aynı veri). 140'lık makinede diğer kanat için eşlik eden satır da eklenir. */
-function bindLine(oid, lk, on) {
+const boundDays = l => { const m = ordItems(l).asg.filter(i => i.bound && !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null).reduce((a, b) => a + b, 0); return m > 0 ? fmtDays(m / dailyRate(l)) : ""; };
+const boundCount = l => ordItems(l).asg.filter(i => i.bound && !i.ln.comp).length;
+/* Makineden bağlama: SADECE siparişin asg (öneri) ve bound (onay) bilgisini yazar. mode: "bind" = onayla (öneri yoksa onu da ekler; 140'lık makinede eşlik eden satır da), "unbind" = sadece onayı kaldır (öneri kalır), "drop" = öneriyi ve onayı kaldır. */
+function bindLine(oid, lk, mode) {
   const o = ordersData[oid], l = looms[ordId]; if (!o || !l || !ordRef) return;
   const lines = Object.entries(o.lines || {}), ln = (o.lines || {})[lk]; if (!ln) return;
-  const up = {}, base = `lines/${lk}`;
-  if (on) {
-    up[`${base}/asg/${l.id}`] = wingsOf(l).join("|");
-    if (l.width === 140 && !ln.full && !ln.color2 && !ln.comp) {
+  const up = {}, base = `lines/${lk}`, comps = lines.filter(([, x]) => x.comp && x.comp.of === ln.id && x.comp.m === l.id), t = Date.now();
+  if (mode === "bind") {
+    up[`${base}/asg/${l.id}`] = (ln.asg && ln.asg[l.id]) || wingsOf(l).join("|"); up[`${base}/bound/${l.id}`] = t;
+    comps.forEach(([k]) => { up[`lines/${k}/bound/${l.id}`] = t; });
+    if (!(ln.asg && ln.asg[l.id] !== undefined) && l.width === 140 && !ln.full && !ln.color2 && !ln.comp) {
       const w = [l.colors[0], l.colors[3]], other = w.find(c => c !== ln.color);
       const has = lines.some(([, x]) => x.comp && x.comp.of === ln.id) || lines.some(([, x]) => x !== ln && !x.comp && !x.color2 && x.k === ln.k && x.color === other && (x.qty || 0) - (x.done || 0) > 0);
-      if (other && other !== "0" && !has) up[`lines/comp_${Date.now().toString(36)}`] = { id: "c" + Date.now().toString(36), k: ln.k, color: other, qty: ln.qty, done: ln.done || 0, asg: { [l.id]: wingsOf(l).join("|") }, comp: { of: ln.id, m: l.id } };
+      if (other && other !== "0" && !has) up[`lines/comp_${t.toString(36)}`] = { id: "c" + t.toString(36), k: ln.k, color: other, qty: ln.qty, done: ln.done || 0, asg: { [l.id]: wingsOf(l).join("|") }, bound: { [l.id]: t }, comp: { of: ln.id, m: l.id } };
     }
+  } else if (mode === "unbind") {
+    up[`${base}/bound/${l.id}`] = null; comps.forEach(([k]) => { up[`lines/${k}/bound/${l.id}`] = null; });
   } else {
-    up[`${base}/asg/${l.id}`] = null; up[`${base}/pin/${l.id}`] = null;
-    lines.forEach(([k, x]) => { if (x.comp && x.comp.of === ln.id && x.comp.m === l.id) up[`lines/${k}`] = null; });
+    up[`${base}/asg/${l.id}`] = null; up[`${base}/bound/${l.id}`] = null; comps.forEach(([k]) => { up[`lines/${k}`] = null; });
   }
-  ordRef.child(oid).update(up).then(() => toast(on ? "Bu makineye bağlandı ✓" : "Bağlantı kaldırıldı")).catch(() => toast("Yazılamadı: yetkiniz yok veya bağlantı yok"));
+  ordRef.child(oid).update(up).then(() => toast(mode === "bind" ? "Bağlandı ✓ (onaylandı)" : mode === "unbind" ? "Onay kaldırıldı" : "Öneri kaldırıldı")).catch(() => toast("Yazılamadı: yetkiniz yok veya bağlantı yok"));
 }
+const cmpName = v => String(v || "").trim().toLowerCase();
 function itemHtml(it, l, assigned) {
   const { o, ln, r } = it, w = wingsOf(l), hit = hitOf(ln, l), notes = [], mtr = ln.comp ? null : lineM(ln, l);
   if (!ln.comp && hit > 0 && hit < w.length && !ln.full) notes.push(`<div class="os mid">◐ Diğer kanat ${esc(w.find(c => c !== ln.color))}: müşteri onu da alır</div>`);
@@ -618,21 +620,20 @@ function itemHtml(it, l, assigned) {
   return `<div class="oi"><div class="oh"><span class="dot" style="background:${hexOf(ln.color)};width:14px;height:14px"></span>
     <b>${esc(o.cust)}</b><small>Kalan: ${r}</small></div>
     <small>${esc(ln.pn || ln.k)} · ${esc(ln.color)}${mtr != null ? ` · ≈ ${mtr} m · ${daysTxt(l, mtr)}` : ""}</small>${ln.comp ? "<small>↳ Eşlik eden satır (diğer kanat)</small>" : ""}${notes.join("")}
-    ${it.pinned ? `<small class="pinl">🔒 ${new Date(ln.pin[l.id]).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" })}'den beri bu makinede (${sinceTxt(ln.pin[l.id])})</small>` : ""}
-    ${ln.comp ? "" : `<button type="button" class="b-bind" data-oid="${esc(it.oid)}" data-lk="${esc(it.lk)}" data-on="${assigned ? 0 : 1}">${assigned ? "✕ Bağlantıyı kaldır" : "🔗 Bu makineye bağla"}</button>`}
-    ${it.pinned && !ln.comp ? `<button type="button" class="b-apply" data-cust="${esc(o.cust)}">▶ Makineye uygula</button>` : ""}
+    ${it.bound ? `<small class="pinl">🔗 ${new Date(ln.bound[l.id]).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" })} tarihinde bağlandı (onaylı)</small>` : ""}
+    ${it.bound && !ln.comp && cmpName(o.cust) !== cmpName(l.currentCustomer) ? `<small class="os warn">⚠ Makinede şu an yazılı: ${esc((l.currentCustomer || "").trim() || "—")}</small>` : ""}
+    ${ln.comp ? "" : `<div class="bbtns">${it.bound ? `<button type="button" class="b-bind" data-oid="${esc(it.oid)}" data-lk="${esc(it.lk)}" data-mode="unbind">✕ Onayı kaldır</button><button type="button" class="b-apply" data-cust="${esc(o.cust)}">▶ Makineye uygula</button>`
+      : `<button type="button" class="b-bind ok" data-oid="${esc(it.oid)}" data-lk="${esc(it.lk)}" data-mode="bind">🔗 ${assigned ? "Bağla (onayla)" : "Bu makineye bağla"}</button>${assigned ? `<button type="button" class="b-bind" data-oid="${esc(it.oid)}" data-lk="${esc(it.lk)}" data-mode="drop">✕ Öneriyi kaldır</button>` : ""}`}</div>`}
     ${others.length ? `<small>📌 Ayrıca atandı: ${others.map(esc).join(", ")}</small>` : ""}</div>`;
 }
 function renderOrd() {
   const l = looms[ordId]; if (!l) return;
   $("ordTitle").textContent = `${l.id} Siparişleri`;
-  const all = ordItems(l), pin = all.asg.filter(i => i.pinned), asg = all.asg.filter(i => !i.pinned), pos = all.pos;
-  const pm = pin.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null), pinTotal = pm.length ? Math.round(pm.reduce((a, b) => a + b, 0) * 10) / 10 : null;
-  /* eşlik eden satır aynı tezgahta aynı anda üretilir: metraja tekrar eklenmez */
-  const mts = asg.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null);
-  const asgTotal = mts.length ? Math.round(mts.reduce((a, b) => a + b, 0) * 10) / 10 : null;
-  $("ordBody").innerHTML = (pin.length ? `<div class="osec">🔒 Bu makinede çalışıyor (${pin.length})${pinTotal != null ? ` · toplam ≈ ${pinTotal} m · ${daysTxt(l, pinTotal)}` : ""}</div>` + pin.map(i => itemHtml(i, l, true)).join("") : "")
-    + (asg.length ? `<div class="osec">📌 Bu makineye atananlar (${asg.length})${asgTotal != null ? ` · toplam ≈ ${asgTotal} m · ${daysTxt(l, asgTotal)}` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
+  const all = ordItems(l), bnd = all.asg.filter(i => i.bound), asg = all.asg.filter(i => !i.bound), pos = all.pos;
+  const tot = arr => { const q = arr.filter(i => !i.ln.comp).map(i => lineM(i.ln, l)).filter(v => v != null); return q.length ? Math.round(q.reduce((a, b) => a + b, 0) * 10) / 10 : null; };   /* eşlik eden satır aynı tezgahta aynı anda üretilir: metraja tekrar eklenmez */
+  const bt = tot(bnd), at = tot(asg);
+  $("ordBody").innerHTML = (bnd.length ? `<div class="osec">🔗 Bağlı — bu makinede yapılacak (${bnd.length})${bt != null ? ` · toplam ≈ ${bt} m · ${daysTxt(l, bt)}` : ""}</div>` + bnd.map(i => itemHtml(i, l, true)).join("") : "")
+    + (asg.length ? `<div class="osec">📌 Önerilen (${asg.length})${at != null ? ` · ≈ ${at} m · ${daysTxt(l, at)}` : ""}</div>` + asg.map(i => itemHtml(i, l, true)).join("") : "")
     + (pos.length ? `<div class="osec">Şu anki renkle yapılabilir (${pos.length})</div>` + pos.map(i => itemHtml(i, l, false)).join("") : "")
     || '<div class="empty">Şu anki renge uygun bekleyen sipariş yok.</div>';
 }
@@ -756,7 +757,7 @@ function loomEvents(old, nu) {
 function checkNewOrders() {   /* siparisleri sadece OKUR; yeni gorulenler icin olay yazar */
   const idsNow = Object.keys(ordersData || {}), seen = lsGet(EV_SEEN_ORD, null);
   if (!Array.isArray(seen)) { lsSet(EV_SEEN_ORD, idsNow); return; }   /* ilk çalıştırma: mevcut siparişler sessizce "görüldü" sayılır */
-  const S = new Set(seen), fresh = idsNow.filter(id => !S.has(id) && !(ordersData[id] || {}).kind);
+  const S = new Set(seen), fresh = idsNow.filter(id => !S.has(id));
   if (fresh.length) emitEvents(fresh.map(id => {
     const o = ordersData[id] || {}, n = Object.values(o.lines || {}).length;
     return { key: "ord_" + id, t: o.created || Date.now(), u: "", k: "order", m: "", x: `Yeni sipariş: ${o.cust || "?"} · ${n} satır` };
@@ -1004,7 +1005,7 @@ function initUi() {
   $("menuClose").onclick = () => $("menuModal").classList.remove("open");
   ["bkBtn", "actBtn", "colBtn", "pdfBtn", "outBtn"].forEach(id => $(id).addEventListener("click", () => $("menuModal").classList.remove("open")));
   $("saveBtn").onclick = saveLoom;
-  $("ordBody").addEventListener("click", e => { const b = e.target.closest(".b-apply"); if (b) applyPinned(b.dataset.cust); const g = e.target.closest(".b-bind"); if (g) bindLine(g.dataset.oid, g.dataset.lk, g.dataset.on === "1"); });
+  $("ordBody").addEventListener("click", e => { const b = e.target.closest(".b-apply"); if (b) applyPinned(b.dataset.cust); const g = e.target.closest(".b-bind"); if (g) bindLine(g.dataset.oid, g.dataset.lk, g.dataset.mode); });
   $("ordClose").onclick = () => $("ordModal").classList.remove("open");
   $("pdfBtn").onclick = printReport;
   document.addEventListener("keydown", e => { if (e.key === "Escape") { $("editModal").classList.remove("open"); $("colModal").classList.remove("open"); $("actModal").classList.remove("open"); $("infoModal").classList.remove("open"); $("bkModal").classList.remove("open"); $("notifModal").classList.remove("open"); $("menuModal").classList.remove("open"); $("ordModal").classList.remove("open"); } });

@@ -491,7 +491,7 @@ const normOrder = x => ({ ...x, saved: true, todos: undefined, stt: x.stt || (x.
 
 function allCust() {
   const m = new Map();
-  [...customers, ...orders.filter(o => !o.kind || o.kind === "payment").map(o => o.cust), ...Object.values(looms).flatMap(l => [l.currentCustomer])].forEach(n => {
+  [...customers, ...orders.map(o => o.cust), ...Object.values(looms).flatMap(l => [l.currentCustomer])].forEach(n => {
     n = (n || "").trim();
     if (n && n !== "-" && !m.has(lc(n))) m.set(lc(n), n);
   });
@@ -501,10 +501,10 @@ function allCust() {
 let S = { view:"home", order:null, cin:"", pk:null, sel:{}, all:{}, bkp:null, hq:"", hf:"all", hs:"due", sheet:null, dirty:false, draft:null, sdirty:false, hst:"all" };
 const prodOf = k => P.find(p => p.k === k);
 const rem = l => Math.max(0, (l.qty || 0) - (l.done || 0));
-/* TESPİT (pin): satır makineye atanmış VE şu an o makinede çalışıyor. ln.pin = { makine: zaman }. Satır bitince (kalan 0) otomatik düşer; bir makinede birden fazla sabitlenmiş satır olabilir. */
-const isPinned = (l, m) => !!(l.pin && l.pin[m]) && rem(l) > 0;
-const pinsOf = l => Object.keys(l.pin || {}).filter(m => isPinned(l, m));
-const sinceTxt = t => { const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? "bugün" : d + " gün"; };
+/* ÜÇ KAT: 📌 ÖNERİ (ln.asg[m]: merkez "bu satır bu makinede yapılsın" diye önerir) → 🔗 BAĞLI (ln.bound[m] = zaman: merkez bu makinede yapılacağını ONAYLADI; atölye bunu emir sayar) → FİİLİ durum = makinedeki "Mevcut müşteri" (atölyedekiler ELLE girer; bu sayfa makine verisine yazmaz).
+   Bağlı olması için önce önerilmiş (asg) olmalı; satır bitince (kalan 0) bağ kendiliğinden düşer. Bir makinede birden fazla bağlı satır olabilir. */
+const isBound = (l, m) => !!(l.bound && l.bound[m]) && rem(l) > 0;
+const boundOf = l => Object.keys(l.bound || {}).filter(m => isBound(l, m));
 /* ÇİFT satır (140 cm iki kanat): color + color2 TEK satırda, tek adet; iki kanat aynı anda çalışır */
 const colName = l => l.color2 ? `${l.color} + ${l.color2}` : l.color;
 const pairBg = ([a, b]) => `linear-gradient(90deg,${hexOf(a)} 50%,${hexOf(b)} 50%)`;
@@ -740,8 +740,8 @@ function extraHtml(l) {
 function resHtml(r, i, p, line) {
   const l = r.l, [stl, stc] = STATUS[l.status] || STATUS.running;
   const isA = (line.asg || {})[l.id] !== undefined;
-  const asgHtml = (isA ? `<span class="ok">📌 Atandı</span>${line.asg[l.id] !== wingSig(l) ? '<span class="warn">⚠ Atandığından beri renk değişti</span>' : ""}` : "")
-    + (isA ? `<button class="nb${isPinned(line, l.id) ? " on" : ""}" data-act="pin" data-line="${line.id}" data-m="${l.id}">${isPinned(line, l.id) ? "🔓 Sabitlemeyi kaldır" : "🔒 Şu an bu makinede çalışıyor"}</button>` : "")
+  const asgHtml = (isA ? `<span class="ok">${isBound(line, l.id) ? "🔗 Bağlandı (onaylı)" : "📌 Önerildi"}</span>${line.asg[l.id] !== wingSig(l) ? '<span class="warn">⚠ Atandığından beri renk değişti</span>' : ""}` : "")
+    + (isA ? `<button class="nb${isBound(line, l.id) ? " on" : ""}" data-act="bind" data-line="${line.id}" data-m="${l.id}">${isBound(line, l.id) ? "✕ Onayı kaldır" : "🔗 Bağla (bu makinede yapılacak)"}</button>` : "")
     + `<button class="nb" data-act="asg" data-line="${line.id}" data-m="${l.id}">${isA ? "✕ Atamayı kaldır" : "📌 Bu makineye ata"}</button>`;
   const dots = r.wings.map(c => `<span class="dot s" style="background:${hexOf(c)}"></span>`).join("");
   const names = r.wings.map(c => c === "0" ? "boş" : esc(c)).join(" + ");
@@ -780,31 +780,18 @@ const STT = {
   sample: { t: "Numune", ico: "🧵", c: "#5eead4" },
   think:  { t: "Müşteri düşünüyor", ico: "🤔", c: "#f9a8d4" },
   hold:   { t: "Beklemede", ico: "⏸", c: "#94a3b8" },
-  done:   { t: "Tamamlandı", ico: "✓", c: "var(--run)" },
-  ship_prep: { t: "Hazırlanıyor", ico: "📦", c: "#7dd3fc", k: "container" },
-  ship:      { t: "Yolda", ico: "🚢", c: "#fbbf24", k: "container" },
-  ship_cust: { t: "Gümrükte", ico: "🛃", c: "#f9a8d4", k: "container" },
-  ship_done: { t: "Teslim edildi", ico: "✓", c: "var(--run)", k: "container" },
-  pay:       { t: "Ödeme bekleniyor", ico: "💵", c: "#fbbf24", k: "payment" },
-  pay_part:  { t: "Kısmi ödendi", ico: "💸", c: "#7dd3fc", k: "payment" },
-  pay_done:  { t: "Ödendi", ico: "✓", c: "var(--run)", k: "payment" }
+  done:   { t: "Tamamlandı", ico: "✓", c: "var(--run)" }
 };
-/* KONTEYNER / ÖDEME KARTLARI: aynı kart listesinde, o.kind = "container" | "payment"; ürün satırı yok. Alanlar: cust (başlık / müşteri), cno (konteyner no / not),
-   amt (beklenen tutar USD), paid (alınan, USD), due (tahmini varış / vade). Durum: elle seçilir; ödemede seçilmediyse paid/amt'ten otomatik. */
-const KIND_DEF = { container: { ico: "🚢", t: "Konteyner", def: "ship" }, payment: { ico: "💵", t: "Ödeme", def: "pay" } };
-const DONE_STT = ["done", "ship_done", "pay_done"];
 const num = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) ? n : 0; };
-/* ÖDEME / KONTEYNER İŞARETİ (normal kartta): o.pay = {amt, paid} (USD) = ödeme bekleniyor; o.ctn = {no, eta} = konteyner yolda. (Eski ayrı kartlar kind=payment/container de aynı yardımcılarla okunur.) */
-const payOf = o => o.kind === "payment" ? { amt: o.amt, paid: o.paid } : o.pay || null;
+/* ÖDEME / KONTEYNER İŞARETİ (normal kartta): o.pay = {amt, paid} (USD) = ödeme bekleniyor; o.ctn = {no, eta} = konteyner yolda. */
+const payOf = o => o.pay || null;
 const payWait = o => { const p = payOf(o); if (!p) return false; const a = num(p.amt); return !(a > 0 && num(p.paid) >= a); };
 const payRest = o => { const p = payOf(o); const a = p ? num(p.amt) : 0; return a > 0 ? Math.max(0, a - num(p.paid)) : null; };
-const ctnOf = o => o.kind === "container" ? (stOf(o) === "ship_done" ? null : { no: o.cno, eta: o.due }) : o.ctn || null;
+const ctnOf = o => o.ctn || null;
 const money = v => "$" + num(v).toLocaleString("tr-TR", { maximumFractionDigits: 2 });
 const TENT = ["pot", "talk", "quote", "sample", "think"];   /* henüz kesin sipariş olmayanlar (raporda ayrı bölüm) */
 const stOf = o => {
-  if (o.kind) { const s = o.stt && STT[o.stt] && (STT[o.stt].k === o.kind || o.stt === "hold") ? o.stt : "";
-    if (s) return s; if (o.kind === "container") return "ship"; return num(o.amt) > 0 && num(o.paid) >= num(o.amt) ? "pay_done" : num(o.paid) > 0 ? "pay_part" : "pay"; }
-  const s = o.stt && STT[o.stt] && !STT[o.stt].k ? o.stt : ""; if (s && s !== "active") return s; if (!o.lines.length) return "pot"; return o.lines.every(l => rem(l) === 0) ? "done" : "active"; };
+  const s = o.stt && STT[o.stt] ? o.stt : ""; if (s && s !== "active") return s; if (!o.lines.length) return "pot"; return o.lines.every(l => rem(l) === 0) ? "done" : "active"; };
 /* MÜŞTERİ NOTU: müşteriye bağlıdır (o müşterinin TÜM siparişlerinde aynıdır), siparişe değil. Firebase: kale_siparis_v1/customer_notes/<anahtar> = metin ("" = silindi).
    Eski sürümde siparişe yazılmış not (o.note) varsa, müşterinin kendi notu yokken geçici olarak gösterilir. */
 const CNOTE_CACHE = "kale_customer_notes_cache";
@@ -823,7 +810,7 @@ const cleanNo = v => String(v || "").trim().slice(0, 12);
 const dupMsg = o => (o && o.no && orders.some(x => x.id !== o.id && lc(x.cust || "") === lc(o.cust || "") && String(x.no || "") === String(o.no))) ? " — ⚠ bu müşteride aynı numara var" : "";
 const stepLate = s => !s.ok && s.d && dueDays({ due: s.d }) <= 0;
 function ordInfo(o) {
-  const main = o.lines.filter(l => !l.comp), stt = stOf(o), isDone = DONE_STT.includes(stt), nl = o.lines.length === 0, d = dueDays(o);
+  const main = o.lines.filter(l => !l.comp), stt = stOf(o), isDone = stt === "done", nl = o.lines.length === 0, d = dueDays(o);
   const qty = main.reduce((s, l) => s + (l.qty || 0), 0), done = main.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0);
   const urg = d === null ? "none" : d < 0 ? "late" : d <= 3 ? "soon" : "ok";
   const dueTxt = d === null ? "Tarih yok" : d < 0 ? `${-d} gün gecikti` : d === 0 ? "Bugün" : `${d} gün kaldı`;
@@ -836,13 +823,12 @@ function ordInfo(o) {
 }
 function ocard(o) {
   const I = ordInfo(o), f = I.pend[0];
-  const kd = o.kind ? (o.kind === "container" ? `🚢 ${esc(o.cno || "Konteyner")}` : `💵 ${o.amt ? money(o.amt) : "tutar yok"}${num(o.paid) ? ` · alınan ${money(o.paid)}` : ""}`) : "";
-  const prod = o.kind ? kd : I.nl ? "" : (I.names.length ? esc(I.names[0]) + (I.names.length > 1 ? ` +${I.names.length - 1}` : "") + ` · ${I.colors} renk` : "Ürün yok");
-  const pn = [...new Set(o.lines.flatMap(pinsOf))];
+  const prod = I.nl ? "" : (I.names.length ? esc(I.names[0]) + (I.names.length > 1 ? ` +${I.names.length - 1}` : "") + ` · ${I.colors} renk` : "Ürün yok");
+  const pn = [...new Set(o.lines.flatMap(boundOf))];
   const tg = [payWait(o) ? `<span class="tg pay">💵 ${payRest(o) != null ? money(payRest(o)) : "ödeme"}</span>` : "", ctnOf(o) ? `<span class="tg ctn">🚢 ${esc((ctnOf(o).no || "yolda") + (ctnOf(o).eta ? " · " + fmtDue(ctnOf(o).eta) : ""))}</span>` : ""].join("");
-  const ps = [prod, tg, pn.length ? `🔒 ${pn.map(esc).join(", ")}` : "", I.pst ? `“${esc(I.pst)}”` : ""].filter(Boolean).join("<br>") || (I.nl && !o.kind ? "Ürün belirlenmedi" : "");
+  const ps = [prod, tg, pn.length ? `🔗 ${pn.map(esc).join(", ")}` : "", I.pst ? `“${esc(I.pst)}”` : ""].filter(Boolean).join("<br>") || (I.nl ? "Ürün belirlenmedi" : "");
   const nx = f ? `<div class="nxb${I.stLate ? " late" : ""}">${I.stLate ? "⏰" : "➡"} ${esc(f.t)}${f.d ? ` · ${fmtDue(f.d)}` : ""}${I.pend.length > 1 ? ` <b>+${I.pend.length - 1}</b>` : ""}</div>` : '<div class="nxb add">+ Sonraki adım ekle</div>';
-  const prog = I.nl || o.kind ? "" : `<span class="pbar"><i style="width:${I.pct}%"></i></span><span class="pnum"><span>${I.done} / ${I.qty}</span></span>`;
+  const prog = I.nl ? "" : `<span class="pbar"><i style="width:${I.pct}%"></i></span><span class="pnum"><span>${I.done} / ${I.qty}</span></span>`;
   return `<button type="button" class="oc${I.isDone ? " done" : ""}" style="--uc:${I.uc}" data-act="sheet" data-id="${esc(o.id)}">
     <span class="cn">${esc(o.cust)}${o.no ? ` <small class="no">#${esc(o.no)}</small>` : ""}</span><span class="bd">${esc(I.txt)}</span><span class="ps">${ps}</span>${prog}${nx}</button>`;
 }
@@ -853,7 +839,7 @@ function sortOrders(list, mode) {
 }
 function drawOrders() {
   const box = $("olist"); if (!box) return;
-  const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q) || lc(String(o.no || "")).includes(q) || lc(String(o.cno || "")).includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
+  const q = lc(S.hq.trim()), base = orders.filter(o => !q || lc(o.cust || "").includes(q) || lc(String(o.no || "")).includes(q)), info = new Map(base.map(o => [o.id, ordInfo(o)]));
   const byStt = base.filter(o => S.hst === "all" || info.get(o.id).stt === S.hst);
   const F = { all: () => true, late: i => i.late, next: i => !i.isDone && i.pend.length > 0, pay: (i, o) => payWait(o), ctn: (i, o) => !!ctnOf(o) };
   const cnt = k => byStt.filter(o => F[k](info.get(o.id), o)).length;
@@ -895,25 +881,25 @@ function drawSheet() {
   if (!o) { $("shOv").classList.remove("open"); return; }
   const I = ordInfo(o);
   const stepRows = I.steps.map(s => `<div class="td${s.ok ? " ok" : ""}"><input type="checkbox" data-act="st-tg" data-id="${esc(s.id)}"${s.ok ? " checked" : ""}><span>${esc(s.t)}</span><input type="date" class="inp st-dd${stepLate(s) ? " lt" : ""}" data-id="${esc(s.id)}" value="${esc(s.d || "")}" aria-label="Tarih"><button type="button" data-act="st-del" data-id="${esc(s.id)}" aria-label="Sil">✕</button></div>`).join("");
-  const chips = Object.keys(STT).filter(k => o.kind ? (STT[k].k === o.kind || k === "hold") : (!STT[k].k && (k !== "active" || !I.nl))).map(k => `<button type="button" class="${I.stt === k ? "sel" : ""}" data-act="stt" data-v="${k}">${STT[k].ico} ${esc(STT[k].t)}</button>`).join("");
+  const chips = Object.keys(STT).filter(k => (k !== "active" || !I.nl)).map(k => `<button type="button" class="${I.stt === k ? "sel" : ""}" data-act="stt" data-v="${k}">${STT[k].ico} ${esc(STT[k].t)}</button>`).join("");
   $("shBox").innerHTML = `<div class="shbar"><button type="button" class="sv${S.sdirty ? " on" : ""}" data-act="sh-save">💾 Kaydet</button><button type="button" class="sx" data-act="sheet-close" aria-label="Kapat">✕</button></div>
-    <h2 class="shtitle">${o.kind ? KIND_DEF[o.kind].ico + " " + esc(o.cust || (S.isNew ? "Yeni " + KIND_DEF[o.kind].t.toLowerCase() : "")) : esc(lbl(o)) + ' <button type="button" class="pen" data-act="cust-ren" aria-label="Müşteri adını düzenle">✏️</button>'}</h2>
+    <h2 class="shtitle">${esc(lbl(o))} <button type="button" class="pen" data-act="cust-ren" aria-label="Müşteri adını düzenle">✏️</button></h2>
     <div class="shc"><span class="bd" style="--uc:${I.uc}">${esc(I.txt)}</span><span>${esc(dateTxt(o))}</span></div>
     ${I.nl ? "" : `<div class="pbar"><i style="width:${I.pct}%"></i></div><div class="pnum" style="margin-top:4px"><span>${I.done} / ${I.qty}</span><span>%${I.pct}</span></div>`}
-    ${o.kind ? kindFields(o) : `<h3>🔢 Sipariş no</h3><input class="inp no-t" maxlength="12" value="${esc(o.no || "")}">`}
+    <h3>🔢 Sipariş no</h3><input class="inp no-t" maxlength="12" value="${esc(o.no || "")}">
     <h3>📌 Durum (kartın etiketi)</h3>
     <div class="qk" style="margin-top:0">${chips}</div>
     <input class="inp ps-t" style="margin-top:8px" maxlength="140" placeholder="Durum notu (isteğe bağlı) — örn: Fiyat bekliyor, 15 gün" value="${esc(I.pst)}">
-    ${o.kind ? "" : payCtnHtml(o)}
+    ${payCtnHtml(o)}
     <h3>➡ Sonraki adımlar (${I.pend.length} bekliyor)</h3>
     ${stepRows}
     <div class="tdadd"><input class="inp st-new" maxlength="140" placeholder="Örn: Kırmızı iplik bekleniyor"><input type="date" class="inp st-d" style="flex:none;width:auto;max-width:150px"><button type="button" data-act="st-add">Ekle</button></div>
-    ${o.kind ? "" : `<h3>📝 Müşteri notu</h3><textarea class="inp nt-t" rows="3" maxlength="600">${esc(o.cnote || "")}</textarea>
+    <h3>📝 Müşteri notu</h3><textarea class="inp nt-t" rows="3" maxlength="600">${esc(o.cnote || "")}</textarea>
     <h3>💲 Fiyatlar (USD)</h3>
     ${arr(o.cprices).map(r => `<div class="prow"><input class="inp pr-n" data-id="${esc(r.id)}" maxlength="60" value="${esc(r.n)}"><span class="usd">$</span><input class="inp pr-p" data-id="${esc(r.id)}" inputmode="decimal" maxlength="10" value="${esc(r.p)}">${r.d ? `<small class="pd" title="Fiyatın girildiği tarih">${esc(fmtDue(r.d))}</small>` : ""}<button type="button" data-act="pr-del" data-id="${esc(r.id)}" aria-label="Sil">✕</button></div>`).join("")}
-    <button type="button" class="second" data-act="pr-add" style="margin-top:6px">+ Satır ekle</button>`}
-    ${o.kind ? "" : I.nl ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
-    ${o.kind ? (S.isNew ? "" : '<button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>') : I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
+    <button type="button" class="second" data-act="pr-add" style="margin-top:6px">+ Satır ekle</button>
+    ${I.nl ? "" : `<h3>Ürünler</h3>${linesInfoHtml(o)}`}
+    ${I.nl ? '<button type="button" class="primary" data-act="pot-convert">➕ Ürün ekle</button><button type="button" class="second" data-act="pot-del" style="color:var(--stop)">🗑 Kaydı sil</button>' : '<button type="button" class="primary" data-act="sheet-open">📂 Siparişi aç (ürün / makine / düzenle)</button>'}`;
   $("shOv").classList.add("open");
 }
 function payCtnHtml(o) {
@@ -924,52 +910,26 @@ function payCtnHtml(o) {
     <label class="chk"><input type="checkbox" data-act="ctn-tg"${c ? " checked" : ""}><span>🚢 Konteyner yolda</span></label>
     ${c ? `<div class="prow"><input class="inp ctn-no" maxlength="80" placeholder="Konteyner no / not" value="${esc(c.no || "")}"><input type="date" class="inp ctn-eta" style="flex:none;width:auto;max-width:150px" value="${esc(c.eta || "")}"></div>` : ""}`;
 }
-function kindFields(o) {
-  const c = o.kind === "container", rest = c ? "" : (num(o.amt) ? ` · kalan ${money(Math.max(0, num(o.amt) - num(o.paid)))}` : "");
-  return `<h3>${c ? "🚢 Başlık" : "👤 Müşteri"}</h3><input class="inp kc-cust" maxlength="60" list="kcdl" placeholder="${c ? "Örn: Irak – Kale konteyneri" : "Müşteri adı"}" value="${esc(o.cust || "")}">
-    <datalist id="kcdl">${allCust().map(n => `<option value="${esc(n)}">`).join("")}</datalist>
-    ${c ? `<h3>Konteyner no / içerik</h3><input class="inp kc-no" maxlength="80" placeholder="Konteyner no, içindeki siparişler..." value="${esc(o.cno || "")}">`
-        : `<h3>Beklenen tutar (USD)</h3><input class="inp kc-amt" inputmode="decimal" maxlength="12" value="${esc(o.amt || "")}">
-           <h3>Alınan (USD)${rest}</h3><input class="inp kc-paid" inputmode="decimal" maxlength="12" value="${esc(o.paid || "")}">
-           <h3>Referans / not</h3><input class="inp kc-no" maxlength="80" placeholder="Hangi sipariş / fatura" value="${esc(o.cno || "")}">`}
-    <h3>${c ? "📅 Tahmini varış" : "📅 Vade / beklenen tarih"}</h3><input type="date" class="inp kc-due" value="${esc(o.due || "")}">`;
-}
-function openNewCard(kind) {
-  const id = uid(); hideHov(); S.sheet = id; S.isNew = true; S.draft = { id, cust: "", kind, created: Date.now(), saved: true, lines: [], steps: [], cnote: "", cprices: [] }; S.sdirty = false; drawSheet();
-}
 function markSheet() { const b = $("shBox"); if (b) b.querySelectorAll(".sv").forEach(x => x.classList.toggle("on", S.sdirty)); }
 /* Pencere SADECE kendi alanlarını yazar (no / stt / pst / steps; + müşteri notu); ürün satırlarına (yapılan adet vb.) dokunmaz. */
 function saveSheet(quiet) {
   if (!S.draft) return true;
   if (!S.sdirty) { if (!quiet) toast("Değişiklik yok"); return true; }
   const d = S.draft;
-  let cur = orders.find(x => x.id === d.id);
-  if (S.isNew && d.kind) {   /* yeni konteyner / ödeme kartı: ilk Kaydet'te oluşur */
-    if (!String(d.cust || "").trim()) { toast(d.kind === "container" ? "Başlık yazın" : "Müşteri adı yazın"); return false; }
-    const nc = clone(d); delete nc.cnote; delete nc.cprices; nc.cust = cleanName(nc.cust); nc.steps = arr(nc.steps);
-    ["cno", "amt", "paid", "due", "pst", "stt"].forEach(k => { if (!nc[k]) delete nc[k]; }); delete nc.no;
-    orders.push(nc); pushOrder(nc); S.isNew = false; S.sdirty = false; S.draft = mkDraft(nc); drawOrders(); toast("Kaydedildi ✓"); drawSheet(); return true;
-  }
+  const cur = orders.find(x => x.id === d.id);
   if (!cur) { toast("Sipariş bulunamadı"); return false; }
   const before = clone(cur);
-  if (cur.kind) {
-    if (!String(d.cust || "").trim()) { toast("Başlık / müşteri boş olamaz"); return false; }
-    cur.cust = cleanName(d.cust); ["cno", "amt", "paid", "due"].forEach(k => { const v = String(d[k] || "").trim(); if (v) cur[k] = v; else delete cur[k]; });
-    if (ordRef) ordRef.child(cur.id).update({ cust: cur.cust, cno: cur.cno || null, amt: cur.amt || null, paid: cur.paid || null, due: cur.due || null }).catch(() => toast("Firebase'e yazılamadı (yerelde saklandı)"));
-  }
-  const nv = String(d.cnote || "").trim(), nk = custKey(cur.cust), noteChanged = !cur.kind && nv !== noteOf(cur);   /* müşteri notu: siparişe değil MÜŞTERİYE yazılır */
+  const nv = String(d.cnote || "").trim(), nk = custKey(cur.cust), noteChanged = nv !== noteOf(cur);   /* müşteri notu: siparişe değil MÜŞTERİYE yazılır */
   const oldP = new Map(pricesOf(cur).map(r => [r.id, r]));
   const rows = arr(d.cprices).map(r => { const n = String(r.n || "").trim(), p = String(r.p || "").trim(), o0 = oldP.get(r.id); return { id: r.id, n, p, ...(p ? { d: o0 && o0.p === p && o0.d ? o0.d : todayIso() } : {}) }; }).filter(r => r.n || r.p);   /* fiyat yeni / değişti → bugünün tarihi kaydedilir; değişmediyse eski tarih kalır */
   const sig = a => JSON.stringify(a.map(r => [String(r.n || "").trim(), String(r.p || "").trim()]).filter(r => r[0] || r[1]));
-  const priceChanged = !cur.kind && sig(rows) !== sig(pricesOf(cur));   /* fiyatlar da MÜŞTERİYE bağlı */
+  const priceChanged = sig(rows) !== sig(pricesOf(cur));   /* fiyatlar da MÜŞTERİYE bağlı */
   cur.steps = clone(arr(d.steps)); delete cur.next; delete cur.pot; delete cur.todos; delete cur.note;
   if (d.no) cur.no = d.no; else delete cur.no;
   const pst = String(d.pst || "").trim(); if (pst) cur.pst = pst; else delete cur.pst;
   if (d.stt && d.stt !== "active") cur.stt = d.stt; else delete cur.stt;
-  if (!cur.kind) {
-    if (d.pay) cur.pay = { amt: String(d.pay.amt || "").trim(), paid: String(d.pay.paid || "").trim() }; else delete cur.pay;
-    if (d.ctn) cur.ctn = { no: String(d.ctn.no || "").trim(), eta: String(d.ctn.eta || "") }; else delete cur.ctn;
-  }
+  if (d.pay) cur.pay = { amt: String(d.pay.amt || "").trim(), paid: String(d.pay.paid || "").trim() }; else delete cur.pay;
+  if (d.ctn) cur.ctn = { no: String(d.ctn.no || "").trim(), eta: String(d.ctn.eta || "") }; else delete cur.ctn;
   orderDiff(before, cur).forEach(logAct);
   if (priceChanged) { const ob = new Map([...oldP.values()].map(r => [r.id, r])), nb = new Map(rows.map(r => [r.id, r]));
     rows.forEach(r => { const q = ob.get(r.id); if (!q || (!q.p && r.p)) { if (r.p) logAct(`${cur.cust}: fiyat eklendi — ${r.n || "?"} $${r.p}`); } else if (q.p !== r.p) logAct(`${cur.cust}: fiyat değişti — ${r.n || "?"} $${q.p || "—"} → $${r.p || "—"}`); });
@@ -986,10 +946,10 @@ function closeSheet(force) {
     if (confirm("Değişiklikler kaydedilsin mi?")) saveSheet(true);
     else if (!confirm("Kaydetmeden kapatılsın mı? Değişiklikler silinecek.")) return false;
   }
-  S.sheet = null; S.draft = null; S.sdirty = false; S.isNew = false; $("shOv").classList.remove("open"); return true;
+  S.sheet = null; S.draft = null; S.sdirty = false; $("shOv").classList.remove("open"); return true;
 }
 function refreshSheet() {
-  if (!S.sheet || S.sdirty || S.isNew) return;   /* taslak varken uzaktan gelen güncelleme ezmesin */
+  if (!S.sheet || S.sdirty) return;   /* taslak varken uzaktan gelen güncelleme ezmesin */
   const a = document.activeElement;
   if (a && $("shBox").contains(a) && /INPUT|TEXTAREA/.test(a.tagName)) return;   /* yazarken yenileme */
   const o = orders.find(x => x.id === S.sheet); if (!o) { closeSheet(true); return; }
@@ -1080,7 +1040,7 @@ function showHov(card) {
 function lineHtml(l) {
   const p = prodOf(l.k), r = rem(l);
   const am = Object.keys(l.asg || {}), chg = am.filter(m => looms[m] && l.asg[m] !== wingSig(looms[m]));
-  const asgLine = am.length ? `<div class="lq"><span>📌 ${am.map(m => { const t = l.comp ? null : lineM(l, looms[m]); return (isPinned(l, m) ? "🔒 " : "") + esc(m) + (t != null ? ` (≈${t} m · ${daysTxt(looms[m], t)})` : ""); }).join(", ")}</span>${chg.length ? `<span class="warn">⚠ renk değişti: ${chg.map(esc).join(", ")}</span>` : ""}</div>` : "";
+  const asgLine = am.length ? `<div class="lq"><span>📌 ${am.map(m => { const t = l.comp ? null : lineM(l, looms[m]); return (isBound(l, m) ? "🔗 " : "") + esc(m) + (t != null ? ` (≈${t} m · ${daysTxt(looms[m], t)})` : ""); }).join(", ")}</span>${chg.length ? `<span class="warn">⚠ renk değişti: ${chg.map(esc).join(", ")}</span>` : ""}</div>` : "";
   return `<div class="line${r ? "" : " dn"}"><div class="lh"><span class="dot" style="background:${dotBg(l)}"></span>
     <b>${esc(p ? pname(p) : l.k)} · ${esc(colName(l))}</b>${l.comp ? "" : `<button data-act="del-line" data-id="${l.id}" aria-label="Sil">✕</button>`}</div>${l.comp ? `<div class="lq"><span class="ok">↳ Eşlik eden satır (${esc(l.comp.m)} makinesinin diğer kanadı) · Yapılan asıl satırla birlikte değişir</span></div>` : ""}
     <div class="lq"><span>Sipariş: ${l.comp ? `<b>${l.qty}</b>` : `<input class="q-in" type="number" inputmode="numeric" min="1" value="${l.qty}" data-id="${l.id}">`}</span>
@@ -1271,7 +1231,7 @@ function orderDiff(a, b) {   /* iki kart durumu arasındaki fark → hareket cü
   else if (a.ctn && b.ctn && (String(a.ctn.no || "") !== String(b.ctn.no || "") || String(a.ctn.eta || "") !== String(b.ctn.eta || ""))) out.push(`${L}: 🚢 konteyner bilgisi güncellendi${b.ctn.no ? " (" + b.ctn.no + ")" : ""}`);
   const keys = (o, f) => new Set(o.lines.flatMap(l => Object.keys(l[f] || {}).map(m => l.id + "|" + m)));
   const nm = (o, id) => { const l = o.lines.find(x => x.id === id), p = l && prodOf(l.k); return l ? `${p ? pname(p) : l.k} · ${colName(l)}` : ""; };
-  [["asg", "makineye atandı", "atama kaldırıldı"], ["pin", "🔒 şu an çalışıyor işaretlendi", "🔒 sabitleme kaldırıldı"]].forEach(([f, add, del]) => {
+  [["asg", "makineye önerildi", "öneri kaldırıldı"], ["bound", "🔗 makineye bağlandı (onaylandı)", "🔗 onay kaldırıldı"]].forEach(([f, add, del]) => {
     const ka = keys(a, f), kb = keys(b, f);
     kb.forEach(k => { if (!ka.has(k)) { const [id, m] = k.split("|"); if (!(f === "asg" && b.lines.find(x => x.id === id)?.comp)) out.push(`${L}: ${nm(b, id)} → ${m}: ${add}`); } });
     ka.forEach(k => { if (!kb.has(k)) { const [id, m] = k.split("|"); if (!(f === "asg" && a.lines.find(x => x.id === id)?.comp)) out.push(`${L}: ${nm(a, id)} → ${m}: ${del}`); } });
@@ -1425,18 +1385,18 @@ document.addEventListener("click", e => {
   else if (a === "del-line") { o.lines = o.lines.filter(l => l.id !== b.dataset.id && !(l.comp && l.comp.of === b.dataset.id)); persist(); render(true); }
   else if (a === "pay-tg") { withOrd(x => { if (x.pay) delete x.pay; else x.pay = { amt: "", paid: "" }; }); drawSheet(); }
   else if (a === "ctn-tg") { withOrd(x => { if (x.ctn) delete x.ctn; else x.ctn = { no: "", eta: "" }; }); drawSheet(); }
-  else if (a === "pin") {
-    const ln = o.lines.find(x => x.id === b.dataset.line), m = b.dataset.m; if (!ln || !(ln.asg && ln.asg[m] !== undefined)) return toast("Önce makineye atayın");
-    const on = !isPinned(ln, m), grp = o.lines.filter(x => x === ln || (x.comp && x.comp.of === ln.id && x.comp.m === m));   /* eşlik eden satır birlikte */
-    grp.forEach(x => { x.pin = x.pin || {}; if (on) x.pin[m] = Date.now(); else delete x.pin[m]; if (!Object.keys(x.pin).length) delete x.pin; });
-    persist(); render(true); toast(on ? `🔒 ${m} makinesinde çalışıyor olarak işaretlendi` : "Sabitleme kaldırıldı");
+  else if (a === "bind") {
+    const ln = o.lines.find(x => x.id === b.dataset.line), m = b.dataset.m; if (!ln || !(ln.asg && ln.asg[m] !== undefined)) return toast("Önce makineye atayın (öneri)");
+    const on = !isBound(ln, m), grp = o.lines.filter(x => x === ln || (x.comp && x.comp.of === ln.id && x.comp.m === m));   /* eşlik eden satır birlikte */
+    grp.forEach(x => { x.bound = x.bound || {}; if (on) x.bound[m] = Date.now(); else delete x.bound[m]; if (!Object.keys(x.bound).length) delete x.bound; });
+    persist(); render(true); toast(on ? `🔗 ${m} makinesine bağlandı (onaylandı)` : "Onay kaldırıldı");
   }
   else if (a === "asg") {
     const ln = o.lines.find(x => x.id === b.dataset.line), m = b.dataset.m, lm = looms[m]; if (!ln || !lm) return;
     ln.asg = ln.asg || {};
     if (ln.asg[m] !== undefined) {
       /* atamayı kaldır -> eşlik eden satır da silinir */
-      delete ln.asg[m]; if (ln.pin) { delete ln.pin[m]; if (!Object.keys(ln.pin).length) delete ln.pin; }
+      delete ln.asg[m]; if (ln.bound) { delete ln.bound[m]; if (!Object.keys(ln.bound).length) delete ln.bound; }
       o.lines = o.lines.filter(x => !(x.comp && x.comp.of === ln.id && x.comp.m === m));
     } else {
       ln.asg[m] = wingSig(lm);
@@ -1460,7 +1420,6 @@ document.addEventListener("click", e => {
     if (prev === "home") goHome(); else go(prev);
   }
   else if (a === "home") goHome();
-  else if (a === "newkind") { if (!leaveOk()) return; S.order = null; go("home"); openNewCard(b.dataset.k); }
   else if (a === "bk-hide") { bkHide = true; drawBkBar(); }
   else if (a === "bk-today") {
     const f = buildBackup(); downloadText(`kale-yedek-${ymdNow()}.json`, JSON.stringify(f));
@@ -1504,9 +1463,7 @@ document.addEventListener("input", e => {
     const c = e.target.classList, v = e.target.value;
     if (c.contains("pay-amt") || c.contains("pay-paid")) { const q = v.replace(/[^\d.,]/g, ""); if (q !== v) e.target.value = q; withOrd(o => { o.pay = o.pay || {}; o.pay[c.contains("pay-amt") ? "amt" : "paid"] = q; }); return; }
     if (c.contains("ctn-no") || c.contains("ctn-eta")) { withOrd(o => { o.ctn = o.ctn || {}; o.ctn[c.contains("ctn-no") ? "no" : "eta"] = v; }); return; }
-    const kf = ["kc-cust", "kc-no", "kc-amt", "kc-paid", "kc-due"].find(k => c.contains(k));
-    if (kf) { const f = { "kc-cust": "cust", "kc-no": "cno", "kc-amt": "amt", "kc-paid": "paid", "kc-due": "due" }[kf]; withOrd(o => { o[f] = v; }); if (kf === "kc-amt" || kf === "kc-paid") { const I = $("shBox").querySelector(".shc .bd"); if (I && S.draft && !S.draft.stt) { const x = ordInfo(S.draft); I.textContent = x.txt; } } }
-    else if (c.contains("ps-t")) withOrd(o => { o.pst = v; });
+    if (c.contains("ps-t")) withOrd(o => { o.pst = v; });
     else if (c.contains("no-t")) withOrd(o => { const n = cleanNo(v); if (n) o.no = n; else delete o.no; });
     else if (c.contains("nt-t")) withOrd(o => { o.cnote = v; });
     else if (c.contains("pr-n") || c.contains("pr-p")) withOrd(o => { const r = arr(o.cprices).find(y => y.id === e.target.dataset.id); if (!r) return; if (c.contains("pr-n")) r.n = v; else { const p = v.replace(/[^\d.,]/g, ""); if (p !== v) e.target.value = p; r.p = p; } });
