@@ -242,6 +242,7 @@ body.dirty main{padding-bottom:90px}
 .pd{color:var(--mu);font-size:.66rem;font-weight:700;white-space:nowrap;align-self:center}
 .bn{background:var(--stop);color:#fff;border-radius:99px;font-size:.62rem;font-weight:800;padding:1px 6px;margin-left:4px}
 .ac-row{display:flex;gap:10px;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--bd);margin-bottom:6px;font-size:.86rem}.ac-row.new{border-color:var(--ac)}.ac-t{color:var(--mu);font-weight:700;font-size:.74rem;flex:none;padding-top:2px}
+.bkbar{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--ac),#e8a33c);color:var(--ac-d);border-radius:12px;padding:12px 14px;margin:8px 0}.bkbar b{flex:1;font-size:.95rem}.bkbar button{border:0;border-radius:9px;padding:10px 14px;font-weight:800;font-family:inherit;cursor:pointer;background:#1a1405;color:var(--ac)}.bkbar .x{background:transparent;color:var(--ac-d);padding:6px 8px;font-size:1.1rem}
 .card{background:var(--card,var(--bg));border:1px solid var(--bd);border-radius:13px;padding:14px;margin-bottom:12px}.card p{margin:6px 0 10px}.card .primary,.card .second{width:100%}.card textarea{margin:8px 0 6px}
 textarea.inp{font-size:.8rem;margin-top:6px}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
@@ -287,6 +288,7 @@ body *{visibility:hidden}
     <button class="nb" data-act="menu">☰ Menü</button>
     <button class="nb" data-act="bell" aria-label="Hareketler">🔔<span id="bellN" class="bn" style="display:none"></span></button>
   </div>
+  <div id="bkBar"></div>
   <div class="tools" id="tools"></div>
   <div class="crumbs" id="crumbs"></div>
   <div class="flow" id="flow"></div>
@@ -1227,9 +1229,18 @@ function go(v) { S.view = v; render(); }
 function startOrder(name) {
   S.order = { id: uid(), cust: name, created: Date.now(), saved: false, lines: [] }; go("prod");
 }
+/* ---------- GÜNLÜK YEDEK ŞERİDİ: günün ilk açılışında büyük şerit; basınca yedek iner. Hangi gün alındığı Firebase'de (kale_siparis_v1/backup_meta) → tüm cihazlarda ortak ---------- */
+let bkMeta = null, bkMetaOk = false, bkHide = false;
+const dayIso = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); };
+function drawBkBar() {
+  const el = $("bkBar"); if (!el) return;
+  const need = bkMetaOk && !bkHide && !(bkMeta && bkMeta.day === dayIso());
+  el.innerHTML = need ? `<div class="bkbar"><b>💾 Bugünün yedeği alınmadı</b><button type="button" data-act="bk-today">Bugünün yedeğini al</button><button type="button" class="x" data-act="bk-hide" aria-label="Sonra">✕</button></div>` : "";
+}
+setInterval(drawBkBar, 60000);
 /* ---------- HAREKET KAYDI + 🔔 BİLDİRİM: kale_siparis_v1/activity/<push-id> = {t, u, x}; 3 hesap için ortak; 10 günden eskiler sayfa açılınca silinir ---------- */
 const ACT_DAYS = 10, ACT_READ = "kale_act_read";
-let actRef = null, acts = {}, actCleaned = false;
+let actRef = null, acts = {}, actCleaned = false, metaRef = null;
 const meName = () => { try { return (firebase.auth().currentUser?.email || "").split("@")[0] || "?"; } catch { return "?"; } };
 function logAct(x) { if (!actRef || !x) return; try { actRef.push({ t: Date.now(), u: meName(), x: String(x).slice(0, 200) }); } catch {} }
 const actList = () => Object.values(acts || {}).filter(a => a && a.t >= Date.now() - ACT_DAYS * 864e5).sort((a, b) => b.t - a.t);
@@ -1450,9 +1461,15 @@ document.addEventListener("click", e => {
   }
   else if (a === "home") goHome();
   else if (a === "newkind") { if (!leaveOk()) return; S.order = null; go("home"); openNewCard(b.dataset.k); }
+  else if (a === "bk-hide") { bkHide = true; drawBkBar(); }
+  else if (a === "bk-today") {
+    const f = buildBackup(); downloadText(`kale-yedek-${ymdNow()}.json`, JSON.stringify(f));
+    if (metaRef) metaRef.set({ day: dayIso(), u: meName(), t: Date.now() }).catch(() => toast("Yedek kaydı yazılamadı"));
+    bkMeta = { day: dayIso() }; drawBkBar(); logAct(`Günlük yedek alındı (${f.orders.length} sipariş)`); toast(`Yedek indirildi ✓ (${f.orders.length} sipariş)`);
+  }
   else if (a === "bell") { if (!leaveOk()) return; S.order = null; S.actSeen = actRead(); try { localStorage.setItem(ACT_READ, String(Date.now())); } catch {} updateBell(); go("acts"); }
   else if (a === "backup") { S.bkp = null; go("backup"); }
-  else if (a === "bk-dl") { const f = buildBackup(); downloadText(`kale-yedek-${ymdNow()}.json`, JSON.stringify(f)); toast(`Yedek indirildi ✓ (${f.orders.length} sipariş)`); }
+  else if (a === "bk-dl") { const f = buildBackup(); downloadText(`kale-yedek-${ymdNow()}.json`, JSON.stringify(f)); toast(`Yedek indirildi ✓ (${f.orders.length} sipariş)`); if (metaRef) metaRef.set({ day: dayIso(), u: meName(), t: Date.now() }).catch(() => {}); }
   else if (a === "bk-pick") $("bkfile").click();
   else if (a === "bk-paste") bkLoad($("bkt").value);
   else if (a === "bk-apply") bkApply();
@@ -1606,6 +1623,8 @@ function startData() {
   notesRef.on("value", s => { custNotes = s.val() || {}; try { localStorage.setItem(CNOTE_CACHE, JSON.stringify(custNotes)); } catch {} drawOrders(); refreshSheet(); }, denied);
   pricesRef = db.ref("kale_siparis_v1/customer_prices");
   pricesRef.on("value", s => { custPrices = s.val() || {}; try { localStorage.setItem(CPRICE_CACHE, JSON.stringify(custPrices)); } catch {} refreshSheet(); }, denied);
+  metaRef = db.ref("kale_siparis_v1/backup_meta");
+  metaRef.on("value", s => { bkMeta = s.val(); bkMetaOk = true; drawBkBar(); }, denied);
   actRef = db.ref("kale_siparis_v1/activity");
   actRef.on("value", s => {
     acts = s.val() || {};
