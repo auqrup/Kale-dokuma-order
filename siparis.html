@@ -191,7 +191,6 @@ body.dirty main{padding-bottom:90px}
 .qk button.sel{border-color:var(--ac);color:var(--ac);background:rgba(240,198,116,.12)}
 .hst{flex:none;width:auto;padding:7px 10px;font-size:.85rem;border-radius:10px}
 .td small.lt{color:var(--stop)}
-.rpt tr.on td{background:#fffbea;font-size:.74rem}
 .cn small.no{color:var(--ac);font-weight:800;font-size:.78em;white-space:nowrap}
 .tb b{margin-left:4px;color:var(--stop)}
 .flow{display:none}
@@ -278,30 +277,42 @@ body.dirty main{padding-bottom:90px}
 .card{background:var(--card,var(--bg));border:1px solid var(--bd);border-radius:13px;padding:14px;margin-bottom:12px}.card p{margin:6px 0 10px}.card .primary,.card .second{width:100%}.card textarea{margin:8px 0 6px}
 textarea.inp{font-size:.8rem;margin-top:6px}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--ac);padding:9px 16px;border-radius:9px;font-size:.84rem;font-weight:600;z-index:200;display:none}
-.rep{background:#fff;color:#111;border-radius:10px;padding:14px;overflow-x:auto;font-size:.8rem;line-height:1.4}
-.rep h1{font-size:1.05rem;margin:0;color:#111}
-.rep h2{font-size:.9rem;margin:16px 0 6px;color:#111;border-bottom:2px solid #111;padding-bottom:3px}
-.rep p{margin:2px 0;color:#333}
-.rhead{display:flex;justify-content:space-between;gap:10px;border-bottom:3px solid #111;padding-bottom:8px}
-.rdate{font-size:.74rem;color:#444;white-space:nowrap}
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
-.kpi{border:1px solid #bbb;border-radius:6px;padding:6px 4px;text-align:center;font-size:.7rem;color:#444}
-.kpi b{display:block;font-size:1.05rem;color:#111}
-.rpt{width:100%;border-collapse:collapse;margin:6px 0 10px}
-.rpt th,.rpt td{border:1px solid #bbb;padding:5px 7px;text-align:left;font-size:.76rem;vertical-align:top}
-.rpt th{background:#eef2f7}
-.rpt tr.oh td{background:#f6f0dc}
-.rep .bad{color:#b91c1c;font-weight:700}
-.rep .okc{color:#15803d;font-weight:700}
-.alist{margin:4px 0 0 18px;padding:0}
-.rfoot{margin-top:14px;font-size:.7rem;color:#555}
+.rep{background:#fff;color:#1f2937;border-radius:10px;padding:18px;overflow-x:auto;font-size:.8rem;line-height:1.45;font-family:var(--ff)}
+.rep .mu{color:#9ca3af}.rep .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:2px solid #111827;padding-bottom:10px}
+.rhead small{letter-spacing:.18em;font-weight:800;color:#6b7280;font-size:.66rem}.rep h1{font-size:1.25rem;margin:2px 0 0;color:#111827;font-weight:800}
+.rdate{text-align:right;font-size:.7rem;color:#6b7280;white-space:nowrap}.rdate b{color:#111827;font-size:.8rem}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 6px}
+@media(min-width:820px){.kpis{grid-template-columns:repeat(6,1fr)}}
+.kpi{border:1px solid #e5e7eb;border-top:3px solid #111827;border-radius:6px;padding:8px 10px;background:#f9fafb}
+.kpi b{display:block;font-size:1.15rem;color:#111827;font-weight:800;font-variant-numeric:tabular-nums}.kpi span{font-size:.66rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.kpi.bad{border-top-color:#b91c1c}.kpi.bad b{color:#b91c1c}.kpi.warn{border-top-color:#d97706}.kpi.warn b{color:#b45309}
+.rs{margin-top:16px}.rep h2{display:flex;align-items:center;gap:8px;font-size:.86rem;margin:0 0 6px;color:#111827;text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.rep h2 span{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#111827;color:#fff;font-size:.66rem}.rep h2 em{font-style:normal;color:#6b7280;font-weight:700}
+.rep p{margin:2px 0;color:#374151}
+.rpt{width:100%;border-collapse:collapse;margin:4px 0 4px}
+.rpt th,.rpt td{border-bottom:1px solid #e5e7eb;padding:6px 8px;text-align:left;font-size:.76rem;vertical-align:middle}
+.rpt th{background:#f3f4f6;color:#4b5563;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;font-weight:800;border-bottom:1px solid #d1d5db}
+.rpt tbody tr:nth-child(even) td{background:#fafafa}.rpt tr.tot td{font-weight:800;border-top:2px solid #111827;background:#fff}
+.rep .tag{display:inline-block;border-radius:99px;padding:1px 8px;font-size:.66rem;font-weight:800;white-space:nowrap}.tag.ok{background:#dcfce7;color:#166534}.tag.warn{background:#fef3c7;color:#92400e}.tag.bad{background:#fee2e2;color:#991b1b}
+.rep .pb{display:inline-block;width:46px;height:6px;background:#e5e7eb;border-radius:9px;overflow:hidden;vertical-align:middle;margin-right:6px}.rep .pb i{display:block;height:100%;background:#111827}
+.rep .bad{color:#b91c1c;font-weight:700}.rep .okc{color:#15803d;font-weight:700}
+.alist{margin:4px 0 0 18px;padding:0}.alist li{margin:2px 0}
+.rfoot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:.66rem;color:#6b7280}
 #printSection{display:none}
 @media print{
+html,body{background:#fff!important}
+body>*:not(#printSection){display:none!important}
 body *{visibility:hidden}
 #printSection,#printSection *{visibility:visible}
-#printSection{display:block!important;position:absolute;left:0;top:0;width:100%;background:#fff!important;color:#000!important;padding:12px}
+#printSection{display:block!important;position:static;width:100%;background:#fff!important;color:#000!important;padding:0}
 #printSection .rep{font-size:9.5pt;padding:0;border-radius:0}
 #printSection .rpt tr{page-break-inside:avoid}
+#printSection .kpis{grid-template-columns:repeat(6,1fr)}
+#printSection .rep{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#printSection thead{display:table-header-group}
+#printSection .rs{page-break-inside:auto}#printSection h2{page-break-after:avoid}
+@page{size:A4;margin:12mm}
 }
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -707,67 +718,51 @@ function renameCustomer(oldName, raw) {
 /* ---------- Rapor ---------- */
 const todayMid = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 const dueDays = o => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(o.due || ""); return m ? Math.round((new Date(+m[1], +m[2] - 1, +m[3]) - todayMid()) / 864e5) : null; };
-function reportHtml() {
-  const now = new Date(), date = now.toLocaleDateString("tr-TR") + " " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+function reportHtml() {   /* yönetim raporu: kısa, tablo ağırlıklı, emoji yok; sipariş başına TEK satır */
+  const now = new Date(), date = now.toLocaleDateString("tr-TR") + " · " + now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
   const remO = o => o.lines.reduce((s, l) => s + rem(l), 0);
   const open = orders.filter(o => remO(o) > 0 && !TENT.includes(stOf(o))).sort((a, b) => ((dueDays(a) ?? 1e9) - (dueDays(b) ?? 1e9)) || (a.created - b.created));
-  const doneO = orders.filter(o => o.lines.length && remO(o) === 0);
-  const load = {}, late = [], changed = [];
-  let unassigned = 0;
+  const doneN = orders.filter(o => o.lines.length && remO(o) === 0).length;
   const prog = o => { const L = o.lines.filter(l => !l.comp), q = L.reduce((s, l) => s + (l.qty || 0), 0), d = L.reduce((s, l) => s + Math.min(l.done || 0, l.qty || 0), 0); return q ? Math.round(d * 100 / q) : 0; };
-  const potO = orders.filter(o => TENT.includes(stOf(o)));
-  const smpO = orders.filter(o => smpOf(o)), shpO = orders.filter(o => shpOf(o)).sort((a, b) => (shpOf(a).d || "9").localeCompare(shpOf(b).d || "9")), ctnO = orders.filter(o => ctnOf(o)), payO = orders.filter(payWait);
-  const payTotal = payO.reduce((s, o) => s + (payRest(o) || 0), 0);
-  const dRow = d => { const n = d ? dueDays({ due: d }) : null; return n === null ? "—" : n < 0 ? `<span class="bad">${-n} gün gecikti</span>` : n === 0 ? "Bugün" : `${n} gün kaldı`; };
-  const stepLateList = [];
-  orders.forEach(o => ordInfo(o).pend.filter(stepLate).forEach(s => stepLateList.push(`${lbl(o)}: ${s.t} (${fmtDue(s.d)})`)));
-  const pendTotal = orders.reduce((n, o) => n + ordInfo(o).pend.length, 0);
-  const extra = (o, cols) => {
-    const I = ordInfo(o), pend = I.pend.map((s, i) => `${i + 1}) ${esc(s.t)}${s.d ? ` (${fmtDue(s.d)})` : ""}${stepLate(s) ? ' <span class="bad">⏰</span>' : ""}`), cn = noteOf(o);
-    const parts = [pend.length ? `<b>➡ Sonraki adımlar:</b> ${pend.join(" · ")}` : "", cn ? `<b>📝 Müşteri notu:</b> ${esc(cn)}` : ""].filter(Boolean);
-    return parts.length ? `<tr class="on"><td colspan="${cols}">${parts.join("<br>")}</td></tr>` : "";
-  };
-    const orderRows = open.map(o => {
-    const dd = dueDays(o); if (dd !== null && dd < 0) late.push(`${lbl(o)} (${Math.abs(dd)} gün gecikti)`);
-    const dueTxt = o.due ? `${fmtDue(o.due)} <span class="${dd < 0 ? "bad" : ""}">(${dd < 0 ? Math.abs(dd) + " gün gecikti" : dd === 0 ? "bugün" : dd + " gün kaldı"})</span>` : "belirtilmedi";
-    let h = `<tr class="oh"><td colspan="5"><b>${esc(lbl(o))}</b> · Oluşturma: ${new Date(o.created).toLocaleDateString("tr-TR")} · Teslim: ${dueTxt} · İlerleme: %${prog(o)}${stOf(o) !== "active" ? ` · Durum: ${esc(STT[stOf(o)].t)}` : ""}${o.pst ? ` · “${esc(o.pst)}”` : ""}</td></tr>`;
-    h += extra(o, 5);
+  const potO = orders.filter(o => TENT.includes(stOf(o))), payO = orders.filter(payWait), payTotal = payO.reduce((s, o) => s + (payRest(o) || 0), 0);
+  const logi = [...orders.filter(o => shpOf(o)).map(o => ({ o, t: "Sevkiyat planı", ref: shpOf(o).no, d: shpOf(o).d })), ...orders.filter(o => ctnOf(o)).map(o => ({ o, t: "Konteyner (yolda)", ref: ctnOf(o).no, d: ctnOf(o).eta }))].sort((a, b) => (a.d || "9").localeCompare(b.d || "9"));
+  const dLeft = d => { const n = d ? dueDays({ due: d }) : null; return n === null ? '<span class="mu">—</span>' : n < 0 ? `<span class="bad">${-n} gün gecikme</span>` : n === 0 ? "Bugün" : `${n} gün`; };
+  const fd = d => d ? esc(fmtDue(d)) : '<span class="mu">—</span>';
+  const load = {}, changed = [], late = [], stepLate = []; let unassigned = 0;
+  const rows = open.map(o => {
+    const dd = dueDays(o), ms = new Set();
+    if (dd !== null && dd < 0) late.push(o);
     o.lines.filter(l => rem(l) > 0).forEach(l => {
-      const p = prodOf(l.k), ms = Object.keys(l.asg || {});
-      let mach;
-      if (!ms.length) { if (!l.comp) unassigned++; mach = '<span class="bad">atanmadı</span>'; }
-      else mach = ms.map(m => {
-        const lm = looms[m], t = (l.comp || !lm) ? null : lineM(l, lm);
-        if (lm && !l.comp) {
-          const e = load[m] = load[m] || { n: 0, m: 0 }; e.n++; e.m += t || 0;
-          if (l.asg[m] !== wingSig(lm)) changed.push(`${lbl(o)}: ${p ? pname(p) : l.k} · ${colName(l)} → ${m}`);
-        }
-        return esc(m) + (t != null ? ` · ≈${t} m · ${daysTxt(lm, t)}` : "");
-      }).join("<br>");
-      h += `<tr><td>${l.comp ? "↳ " : ""}${esc(p ? pname(p) : l.k)} · ${esc(colName(l))}</td><td>${l.qty}</td><td>${l.done || 0}</td><td><b>${rem(l)}</b></td><td>${mach}</td></tr>`;
+      const am = Object.keys(l.asg || {}).filter(m => looms[m]);
+      if (!am.length && !l.comp) unassigned++;
+      am.forEach(m => { ms.add(m); if (l.comp) return; const lm = looms[m], t = lineM(l, lm), e = load[m] = load[m] || { n: 0, m: 0 }; e.n++; e.m += t || 0; if (l.asg[m] !== wingSig(lm)) changed.push(m); });
     });
-    return h;
+    const st = dd === null ? '<span class="mu">Tarihsiz</span>' : dd < 0 ? '<span class="tag bad">Gecikmede</span>' : dd <= 3 ? '<span class="tag warn">Yaklaşıyor</span>' : '<span class="tag ok">Planda</span>';
+    const p = prog(o), un = o.lines.some(l => !l.comp && rem(l) > 0 && !Object.keys(l.asg || {}).some(m => looms[m]));
+    return `<tr><td><b>${esc(o.cust)}</b>${o.no ? `<span class="mu"> #${esc(o.no)}</span>` : ""}</td><td>${fd(o.due)}</td><td>${dLeft(o.due)}</td>
+      <td><span class="pb"><i style="width:${p}%"></i></span><span class="num">%${p}</span></td><td class="num">${remO(o)}</td>
+      <td>${[...ms].map(esc).join(", ") || ""}${un ? `${ms.size ? " " : ""}<span class="mu">+ planlanmamış</span>` : ""}</td><td>${st}</td></tr>`;
   }).join("");
-  const totalM = Math.round(Object.values(load).reduce((s, e) => s + e.m, 0));
-  const kpi = (v, lab, cls) => `<div class="kpi"><b class="${cls || ""}">${v}</b>${lab}</div>`;
+  orders.forEach(o => ordInfo(o).pend.filter(s => !s.ok && s.d && dueDays({ due: s.d }) <= 0).forEach(s => stepLate.push(o.cust)));
+  const few = (arr, f) => { const u = [...new Set(arr.map(f))]; return u.slice(0, 3).map(esc).join(", ") + (u.length > 3 ? ` +${u.length - 3}` : ""); };
+  const warn = [late.length ? `<li><b>${late.length}</b> sipariş teslim tarihini geçti: ${few(late, o => lbl(o))}</li>` : "",
+    unassigned ? `<li><b>${unassigned}</b> ürün satırı henüz makineye planlanmadı</li>` : "",
+    changed.length ? `<li><b>${changed.length}</b> planlı satırda makinenin rengi değişmiş: ${few(changed, m => m)}</li>` : "",
+    stepLate.length ? `<li><b>${stepLate.length}</b> takip adımının tarihi geldi / geçti: ${few(stepLate, c => c)}</li>` : ""].join("");
   const loadRows = Object.entries(load).map(([m, e]) => ({ m, e, lm: looms[m], d: e.m / dailyRate(looms[m]) })).sort((a, b) => b.d - a.d).map(({ m, e, lm, d }) =>
-    `<tr><td><b>${esc(m)}</b></td><td>${lm.width} cm</td><td>${lm.extra === "spingel" ? "ŞPİNGEL" : lm.extra === "simli" ? "SİMLİ" : lm.width === 200 ? "—" : "seçilmedi"}</td><td>${dailyRate(lm)} m/gün</td><td>${e.n}</td><td>≈ ${Math.round(e.m * 10) / 10} m</td><td><b>≈ ${fmtDays(d)}</b></td></tr>`).join("");
-  const attn = [late.length ? `<li><span class="bad">Geciken siparişler:</span> ${late.map(esc).join(", ")}</li>` : "",
-    unassigned ? `<li><span class="bad">Makineye atanmamış satır:</span> ${unassigned}</li>` : "",
-    changed.length ? `<li><span class="bad">Renk değişimi gereken atamalar:</span> ${changed.map(esc).join("; ")}</li>` : "",
-    stepLateList.length ? `<li><span class="bad">Tarihi gelen / geçen adımlar:</span> ${stepLateList.map(esc).join("; ")}</li>` : ""].join("");
-  return `<div class="rhead"><div><h1>🧵 KALE DOKUMA – SİPARİŞ RAPORU</h1><p>Mevcut sipariş durumu ve tahmini üretim süreleri</p></div><div class="rdate">${esc(date)}</div></div>
-    <div class="kpis">${kpi(open.length, "Açık sipariş")}${kpi(open.reduce((s, o) => s + remO(o), 0), "Toplam kalan adet")}${kpi("≈ " + totalM + " m", "Atanan toplam metraj")}${kpi(unassigned, "Atanmamış satır", unassigned ? "bad" : "")}${kpi(late.length, "Geciken sipariş", late.length ? "bad" : "")}${kpi(doneO.length, "Tamamlanan sipariş")}${kpi(potO.length, "Görüşmede / muhtemel")}${kpi(pendTotal, "Bekleyen adım", stepLateList.length ? "bad" : "")}</div>
-    <h2>Dikkat gerektirenler</h2>${attn ? `<ul class="alist">${attn}</ul>` : '<p class="okc">Dikkat gerektiren durum yok ✓</p>'}
-    <h2>Açık siparişler</h2>${open.length ? `<table class="rpt"><thead><tr><th>Ürün · Renk</th><th>Sipariş</th><th>Yapılan</th><th>Kalan</th><th>Makine · ≈ metre · ≈ süre</th></tr></thead><tbody>${orderRows}</tbody></table>` : "<p>Açık sipariş yok.</p>"}
-    ${smpO.length ? `<h2>🧵 Numune bekleyenler (${smpO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Numune</th><th>Tarih</th></tr></thead><tbody>${smpO.map(o => { const h = smpOf(o); return `<tr><td><b>${esc(lbl(o))}</b></td><td>${esc(h.t || "—")}</td><td>${h.d ? esc(fmtDue(h.d)) + "<br>" + dRow(h.d) : "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
-    ${shpO.length ? `<h2>📦 Planlanan sevkiyatlar (${shpO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Tarih</th><th>Not</th></tr></thead><tbody>${shpO.map(o => { const h = shpOf(o); return `<tr><td><b>${esc(lbl(o))}</b></td><td>${h.d ? esc(fmtDue(h.d)) + "<br>" + dRow(h.d) : "—"}</td><td>${esc(h.no || "—")}</td></tr>`; }).join("")}</tbody></table>` : ""}
-    ${ctnO.length ? `<h2>🚢 Yoldaki konteynerler (${ctnO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Konteyner</th><th>Varış</th><th>Sonraki adımlar</th></tr></thead><tbody>${ctnO.map(o => { const I = ordInfo(o), c = ctnOf(o); return `<tr><td><b>${esc(o.cust)}</b></td><td>${esc(c.no || "—")}</td><td>${c.eta ? esc(fmtDue(c.eta)) + "<br>" : ""}${dRow(c.eta)}</td><td>${I.pend.map(s => esc(s.t) + (s.d ? ` (${esc(fmtDue(s.d))})` : "")).join("<br>") || "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
-    ${payO.length ? `<h2>💵 Beklenen ödemeler (${payO.length}) · kalan ${money(payTotal)}</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Tutar</th><th>Alınan</th><th>Kalan</th></tr></thead><tbody>${payO.map(o => { const p = payOf(o); return `<tr><td><b>${esc(lbl(o))}</b></td><td>${num(p.amt) ? money(p.amt) : "—"}</td><td>${money(p.paid)}</td><td><b>${payRest(o) != null ? money(payRest(o)) : "—"}</b></td></tr>`; }).join("")}</tbody></table>` : ""}
-    ${potO.length ? `<h2>💬 İletişimdeki siparişler (${potO.length})</h2><table class="rpt"><thead><tr><th>Müşteri</th><th>Durum</th><th>Sonraki adımlar</th><th>Ürün / Müşteri notu</th></tr></thead><tbody>${potO.map(o => { const I = ordInfo(o); return `<tr><td><b>${esc(o.cust)}</b><br>${new Date(o.created).toLocaleDateString("tr-TR")}</td><td>${esc(STT[I.stt].ico + " " + STT[I.stt].t)}${o.pst ? `<br>“${esc(o.pst)}”` : ""}</td><td>${I.pend.map((s, i) => `${i + 1}) ${esc(s.t)}${s.d ? ` (${fmtDue(s.d)})` : ""}${stepLate(s) ? ' <span class="bad">⏰</span>' : ""}`).join("<br>") || "—"}</td><td>${[I.nl ? "" : esc(o.lines.filter(l => !l.comp).map(l => { const p = prodOf(l.k); return (p ? pname(p) : l.k) + " " + colName(l) + " × " + l.qty; }).join("; ")), noteOf(o) ? "📝 " + esc(noteOf(o)) : ""].filter(Boolean).join("<br>") || "—"}</td></tr>`; }).join("")}</tbody></table>` : ""}
-    <h2>Makine iş yükü (atanmış açık satırlar)</h2>${loadRows ? `<table class="rpt"><thead><tr><th>Makine</th><th>En</th><th>Özellik</th><th>Günlük hız</th><th>Satır</th><th>Toplam metraj</th><th>Tahmini süre</th></tr></thead><tbody>${loadRows}</tbody></table>` : "<p>Henüz makineye atanmış satır yok.</p>"}
-    <h2>Tamamlanan siparişler (${doneO.length})</h2><p>${doneO.length ? doneO.slice(0, 20).map(o => esc(lbl(o))).join(", ") + (doneO.length > 20 ? " …" : "") : "—"}</p>
-    <p class="rfoot">Tahmini süre = ilgili tezgahın kalan metrajı ÷ günlük üretim (200 cm: 240 m · 140 cm: SİMLİ 210 / ŞPİNGEL 370 m · 160 cm: SİMLİ 210 / ŞPİNGEL 350 m). Değerler yaklaşıktır; özelliği seçilmemiş 140/160 cm tezgahlarda SİMLİ hızı varsayılmıştır. Eşlik eden satırlar aynı tezgahta aynı anda üretildiği için metraja tekrar eklenmez.</p>`;
+    `<tr><td><b>${esc(m)}</b></td><td>${lm.width} cm${lm.extra === "spingel" ? " · Şpingel" : lm.extra === "simli" ? " · Simli" : ""}</td><td class="num">${e.n}</td><td class="num">${Math.round(e.m).toLocaleString("tr-TR")} m</td><td class="num"><b>${fmtDays(d)}</b></td></tr>`).join("");
+  const kpi = (v, lab, cls) => `<div class="kpi${cls ? " " + cls : ""}"><b>${v}</b><span>${lab}</span></div>`;
+  const sec = (n, t, body) => `<section class="rs"><h2><span>${n}</span>${t}</h2>${body}</section>`;
+  let n = 0;
+  return `<div class="rhead"><div><small>KALE DOKUMA</small><h1>Sipariş Durum Raporu</h1></div><div class="rdate">Rapor tarihi<br><b>${esc(date)}</b></div></div>
+    <div class="kpis">${kpi(open.length, "Açık sipariş")}${kpi(open.reduce((s, o) => s + remO(o), 0).toLocaleString("tr-TR"), "Kalan adet")}${kpi(late.length, "Geciken sipariş", late.length ? "bad" : "")}${kpi(unassigned, "Planlanmamış satır", unassigned ? "warn" : "")}${kpi(money(payTotal), "Bekleyen tahsilat")}${kpi(logi.length, "Sevkiyat / konteyner")}</div>
+    ${sec(++n, "Uyarılar", warn ? `<ul class="alist">${warn}</ul>` : '<p class="okc">Uyarı yok.</p>')}
+    ${sec(++n, `Açık siparişler <em>${open.length}</em>`, open.length ? `<table class="rpt"><thead><tr><th>Müşteri</th><th>Teslim</th><th>Kalan süre</th><th>İlerleme</th><th class="num">Kalan adet</th><th>Makine</th><th>Durum</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="mu">Açık sipariş yok.</p>')}
+    ${logi.length ? sec(++n, `Lojistik <em>${logi.length}</em>`, `<table class="rpt"><thead><tr><th>Tür</th><th>Müşteri</th><th>Referans</th><th>Tarih</th><th>Kalan</th></tr></thead><tbody>${logi.map(x => `<tr><td>${x.t}</td><td><b>${esc(x.o.cust)}</b></td><td>${esc(x.ref || "—")}</td><td>${fd(x.d)}</td><td>${dLeft(x.d)}</td></tr>`).join("")}</tbody></table>`) : ""}
+    ${payO.length ? sec(++n, `Tahsilat <em>${payO.length}</em>`, `<table class="rpt"><thead><tr><th>Müşteri</th><th class="num">Tutar</th><th class="num">Alınan</th><th class="num">Kalan</th></tr></thead><tbody>${payO.map(o => { const p = payOf(o); return `<tr><td><b>${esc(o.cust)}</b>${o.no ? `<span class="mu"> #${esc(o.no)}</span>` : ""}</td><td class="num">${num(p.amt) ? money(p.amt) : "—"}</td><td class="num">${money(p.paid)}</td><td class="num"><b>${payRest(o) != null ? money(payRest(o)) : "—"}</b></td></tr>`; }).join("")}<tr class="tot"><td>Toplam</td><td></td><td></td><td class="num">${money(payTotal)}</td></tr></tbody></table>`) : ""}
+    ${potO.length ? sec(++n, `Satış süreci <em>${potO.length}</em>`, `<table class="rpt"><thead><tr><th>Müşteri</th><th>Aşama</th><th>Numune</th><th>Sonraki adım</th></tr></thead><tbody>${potO.map(o => { const I = ordInfo(o), f = I.pend[0], sm = smpOf(o); return `<tr><td><b>${esc(o.cust)}</b></td><td>${esc(STT[I.stt].t)}</td><td>${sm ? esc(sm.t || "Bekleniyor") + (sm.d ? ` · ${fd(sm.d)}` : "") : '<span class="mu">—</span>'}</td><td>${f ? esc(f.t) + (f.d ? ` · ${fd(f.d)}` : "") : '<span class="mu">—</span>'}</td></tr>`; }).join("")}</tbody></table>`) : ""}
+    ${loadRows ? sec(++n, "Makine yükü", `<table class="rpt"><thead><tr><th>Makine</th><th>Tip</th><th class="num">Satır</th><th class="num">Metraj</th><th class="num">Tahmini süre</th></tr></thead><tbody>${loadRows}</tbody></table>`) : ""}
+    <div class="rfoot"><span>Tamamlanan sipariş: ${doneN}</span><span>Süreler yaklaşıktır (kalan metraj ÷ makinenin günlük üretimi).</span></div>`;
 }
 
 /* ---------- Görünümler ---------- */
